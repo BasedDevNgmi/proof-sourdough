@@ -49,12 +49,18 @@ export function Timer({
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progress);
 
+  const isComplete = remaining === 0;
+
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex flex-col items-center gap-4">
       {label && (
-        <span className="text-xs text-stone-500 font-medium">{label}</span>
+        <span className="text-[10px] text-stone-600 font-medium uppercase tracking-wider">{label}</span>
       )}
-      <div className="relative w-28 h-28">
+      <div className="relative w-32 h-32">
+        {/* Ambient glow when running */}
+        {running && (
+          <div className="absolute inset-0 rounded-full bg-amber-500/5 blur-xl animate-gentle-pulse" />
+        )}
         <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
           <circle
             cx="50"
@@ -62,8 +68,8 @@ export function Timer({
             r={radius}
             fill="none"
             stroke="currentColor"
-            strokeWidth="3"
-            className="text-stone-800"
+            strokeWidth="2"
+            className="text-stone-800/50"
           />
           <circle
             cx="50"
@@ -71,43 +77,50 @@ export function Timer({
             r={radius}
             fill="none"
             stroke="currentColor"
-            strokeWidth="3"
+            strokeWidth="2.5"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
             className={`transition-all duration-1000 ease-linear ${
-              remaining === 0 ? "text-emerald-400" : "text-amber-500"
+              isComplete ? "text-emerald-400" : "text-amber-500"
             }`}
           />
         </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span
-            className={`font-mono text-xl font-medium tabular-nums ${
-              remaining === 0 ? "text-emerald-400" : "text-stone-200"
+            className={`font-mono text-2xl font-light tabular-nums tracking-wider ${
+              isComplete ? "text-emerald-400" : "text-stone-200"
             } ${running ? "animate-gentle-pulse" : ""}`}
           >
             {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
           </span>
+          {isComplete && (
+            <span className="text-[9px] text-emerald-500/80 uppercase tracking-widest mt-1">Done</span>
+          )}
         </div>
       </div>
-      <div className="flex gap-3">
+      <div className="flex gap-2">
         <button
           type="button"
           onClick={() => setRunning(!running)}
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-stone-800 active:bg-stone-700 transition-colors"
+          className={`flex items-center justify-center w-11 h-11 rounded-full transition-all duration-200 ${
+            running
+              ? "bg-stone-800 hover:bg-stone-700"
+              : "bg-gradient-to-b from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500"
+          }`}
         >
           {running ? (
-            <Pause size={18} className="text-stone-300" />
+            <Pause size={16} className="text-stone-300" />
           ) : (
-            <Play size={18} className="text-amber-500 ml-0.5" />
+            <Play size={16} className="text-stone-950 ml-0.5" />
           )}
         </button>
         <button
           type="button"
           onClick={reset}
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-stone-800 active:bg-stone-700 transition-colors"
+          className="flex items-center justify-center w-11 h-11 rounded-full bg-stone-800/50 hover:bg-stone-800 transition-colors"
         >
-          <RotateCcw size={16} className="text-stone-400" />
+          <RotateCcw size={14} className="text-stone-400" />
         </button>
       </div>
     </div>

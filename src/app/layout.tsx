@@ -50,7 +50,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-stone-950">
-        <main className="flex-1 pb-20">{children}</main>
+        <main className="flex-1 pb-20 lg:pb-0 lg:pl-64">{children}</main>
         <BottomNav />
       </body>
     </html>

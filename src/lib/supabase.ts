@@ -16,6 +16,7 @@ export type BakeSession = {
   crumb_rating: number | null
   crust_rating: number | null
   flavor_rating: number | null
+  // DB columns keep _f suffix but we store Celsius values
   ambient_temp_f: number | null
   humidity_percent: number | null
   dough_temp_f: number | null
@@ -33,6 +34,14 @@ export type BakeSession = {
   bake_temp_f: number | null
   created_at: string
   updated_at: string
+}
+
+// UI-facing aliases for clarity
+export type { BakeSession as BakeSessionRow }
+
+// Helper to access ambient temp as Celsius
+export function getAmbientTempC(session: BakeSession): number | null {
+  return session.ambient_temp_f
 }
 
 export type BakeStepLog = {

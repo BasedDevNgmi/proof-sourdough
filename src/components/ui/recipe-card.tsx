@@ -2,13 +2,19 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Clock, Droplets, Gauge } from "lucide-react";
+import { Clock, Droplets, Gauge, ArrowUpRight } from "lucide-react";
 import type { Recipe } from "@/data/recipes";
 
 const difficultyColor = {
   beginner: "text-emerald-400",
   intermediate: "text-amber-400",
   advanced: "text-rose-400",
+};
+
+const difficultyBg = {
+  beginner: "bg-emerald-500/10",
+  intermediate: "bg-amber-500/10",
+  advanced: "bg-rose-500/10",
 };
 
 const categoryEmoji: Record<string, string> = {
@@ -39,16 +45,19 @@ export function RecipeCard({
     >
       <Link
         href={`/recipes/${recipe.id}`}
-        className="block bg-stone-900 rounded-2xl p-4 active:bg-stone-800 transition-colors duration-150 border border-stone-800/50"
+        className="group block bg-stone-900 rounded-2xl p-4 active:bg-stone-800 transition-all duration-300 border border-stone-800/50 card-glow"
       >
-        <div className="flex items-start gap-3">
-          <div className="text-2xl mt-0.5">
+        <div className="flex items-start gap-3.5">
+          <div className="text-2xl mt-0.5 w-10 h-10 flex items-center justify-center rounded-xl bg-stone-800/50 group-hover:bg-stone-800 transition-colors shrink-0">
             {categoryEmoji[recipe.category] || "🍞"}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-stone-100 truncate">
-              {recipe.title}
-            </h3>
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="font-medium text-stone-100 truncate group-hover:text-amber-50 transition-colors">
+                {recipe.title}
+              </h3>
+              <ArrowUpRight size={14} className="text-stone-700 group-hover:text-amber-500/50 transition-colors shrink-0 mt-1" />
+            </div>
             {recipe.subtitle && (
               <p className="text-xs text-stone-500 mt-0.5">{recipe.subtitle}</p>
             )}
@@ -67,7 +76,7 @@ export function RecipeCard({
                 </span>
               )}
               <span
-                className={`flex items-center gap-1 ${difficultyColor[recipe.difficulty]}`}
+                className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md ${difficultyColor[recipe.difficulty]} ${difficultyBg[recipe.difficulty]}`}
               >
                 <Gauge size={12} />
                 {recipe.difficulty}
