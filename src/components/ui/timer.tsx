@@ -3,43 +3,162 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Play, Pause, RotateCcw } from "lucide-react";
 
+function requestNotificationPermission() {
+  if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+function sendNotification(label?: string) {
+  if (typeof window === "undefined") return;
+  if ("vibrate" in navigator) {
+    navigator.vibrate([200, 100, 200, 100, 200]);
+  }
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification("Timer done!", {
+      body: label ? `${label} is complete` : "Your timer has finished",
+      icon: "/icon-192.png",
+      tag: "proof-timer",
+    });
+  }
+}
+
 export function Timer({
   durationMinutes,
   label,
+  storageKey,
   onComplete,
 }: {
   durationMinutes: number;
   label?: string;
+  storageKey?: string;
   onComplete?: () => void;
 }) {
   const totalSeconds = durationMinutes * 60;
+  const lsKey = storageKey || `proof-timer-${label || durationMinutes}`;
+
+  const [endTime, setEndTime] = useState<number | null>(null);
   const [remaining, setRemaining] = useState(totalSeconds);
   const [running, setRunning] = useState(false);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
+  const completedRef = useRef(false);
 
+  // Restore state from localStorage on mount
   useEffect(() => {
-    if (!running || remaining <= 0) return;
-    const interval = setInterval(() => {
-      setRemaining((prev) => {
-        if (prev <= 1) {
-          setRunning(false);
-          onCompleteRef.current?.();
-          if (typeof window !== "undefined" && "vibrate" in navigator) {
-            navigator.vibrate([200, 100, 200]);
+    requestNotificationPermission();
+
+    const stored = localStorage.getItem(lsKey);
+    if (stored) {
+      try {
+        const { endTime: storedEnd, running: wasRunning } = JSON.parse(stored);
+        if (wasRunning && storedEnd) {
+          const now = Date.now();
+          const left = Math.max(0, Math.ceil((storedEnd - now) / 1000));
+          if (left > 0) {
+            setEndTime(storedEnd);
+            setRemaining(left);
+            setRunning(true);
+          } else {
+            setRemaining(0);
+            setRunning(false);
+            localStorage.removeItem(lsKey);
+            if (!completedRef.current) {
+              completedRef.current = true;
+              sendNotification(label);
+              onCompleteRef.current?.();
+            }
           }
-          return 0;
+        } else if (!wasRunning && storedEnd) {
+          // Was paused — restore remaining time
+          const left = Math.max(0, Math.ceil((storedEnd - Date.now()) / 1000));
+          setRemaining(left > 0 ? left : totalSeconds);
         }
-        return prev - 1;
-      });
-    }, 1000);
+      } catch {
+        localStorage.removeItem(lsKey);
+      }
+    }
+  }, [lsKey, totalSeconds, label]);
+
+  // Persist state changes to localStorage
+  useEffect(() => {
+    if (running && endTime) {
+      localStorage.setItem(lsKey, JSON.stringify({ endTime, running: true }));
+    } else if (!running && remaining < totalSeconds && remaining > 0) {
+      const futureEnd = Date.now() + remaining * 1000;
+      localStorage.setItem(lsKey, JSON.stringify({ endTime: futureEnd, running: false }));
+    }
+  }, [running, endTime, remaining, lsKey, totalSeconds]);
+
+  // Tick loop — calculates from endTime so it works after backgrounding
+  useEffect(() => {
+    if (!running || !endTime) return;
+
+    const tick = () => {
+      const now = Date.now();
+      const left = Math.max(0, Math.ceil((endTime - now) / 1000));
+      setRemaining(left);
+
+      if (left <= 0) {
+        setRunning(false);
+        localStorage.removeItem(lsKey);
+        if (!completedRef.current) {
+          completedRef.current = true;
+          sendNotification(label);
+          onCompleteRef.current?.();
+        }
+      }
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [running, remaining]);
+  }, [running, endTime, lsKey, label]);
+
+  // Also recalculate on visibility change (tab/app comes back to foreground)
+  useEffect(() => {
+    const handler = () => {
+      if (document.visibilityState === "visible" && running && endTime) {
+        const now = Date.now();
+        const left = Math.max(0, Math.ceil((endTime - now) / 1000));
+        setRemaining(left);
+        if (left <= 0) {
+          setRunning(false);
+          localStorage.removeItem(lsKey);
+          if (!completedRef.current) {
+            completedRef.current = true;
+            sendNotification(label);
+            onCompleteRef.current?.();
+          }
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
+  }, [running, endTime, lsKey, label]);
+
+  const start = useCallback(() => {
+    completedRef.current = false;
+    const end = Date.now() + remaining * 1000;
+    setEndTime(end);
+    setRunning(true);
+  }, [remaining]);
+
+  const pause = useCallback(() => {
+    if (endTime) {
+      const left = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+      setRemaining(left);
+    }
+    setRunning(false);
+  }, [endTime]);
 
   const reset = useCallback(() => {
     setRunning(false);
+    setEndTime(null);
     setRemaining(totalSeconds);
-  }, [totalSeconds]);
+    completedRef.current = false;
+    localStorage.removeItem(lsKey);
+  }, [totalSeconds, lsKey]);
 
   const minutes = Math.floor(remaining / 60);
   const seconds = remaining % 60;
@@ -57,7 +176,6 @@ export function Timer({
         <span className="text-[10px] text-stone-600 font-medium uppercase tracking-wider">{label}</span>
       )}
       <div className="relative w-32 h-32">
-        {/* Ambient glow when running */}
         {running && (
           <div className="absolute inset-0 rounded-full bg-amber-500/5 blur-xl animate-gentle-pulse" />
         )}
@@ -102,7 +220,7 @@ export function Timer({
       <div className="flex gap-2">
         <button
           type="button"
-          onClick={() => setRunning(!running)}
+          onClick={() => (running ? pause() : start())}
           className={`flex items-center justify-center w-11 h-11 rounded-full transition-all duration-200 ${
             running
               ? "bg-stone-800 hover:bg-stone-700"

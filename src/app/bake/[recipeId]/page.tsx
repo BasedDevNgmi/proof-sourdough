@@ -18,6 +18,7 @@ import {
 import { getRecipeById } from "@/data/recipes";
 import { supabase } from "@/lib/supabase";
 import { Timer } from "@/components/ui/timer";
+import { requestWakeLock, releaseWakeLock, reacquireOnVisibility } from "@/lib/wake-lock";
 
 export default function BakeSessionPage({
   params,
@@ -51,6 +52,59 @@ export default function BakeSessionPage({
   const [flourBrand, setFlourBrand] = useState("");
   const [ambientTemp, setAmbientTemp] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const sessionStorageKey = `proof-bake-${recipeId}`;
+
+  // Restore session state from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(sessionStorageKey);
+    if (stored) {
+      try {
+        const state = JSON.parse(stored);
+        if (state.currentStep !== undefined) setCurrentStep(state.currentStep);
+        if (state.completedSteps) setCompletedSteps(new Set(state.completedSteps));
+        if (state.stepNotes) setStepNotes(state.stepNotes);
+        if (state.stepTemps) setStepTemps(state.stepTemps);
+        if (state.sessionId && !sessionId) setSessionId(state.sessionId);
+      } catch {
+        localStorage.removeItem(sessionStorageKey);
+      }
+    }
+  }, []);
+
+  // Persist session state to localStorage on changes
+  useEffect(() => {
+    if (!sessionId) return;
+    const state = {
+      sessionId,
+      currentStep,
+      completedSteps: [...completedSteps],
+      stepNotes,
+      stepTemps,
+    };
+    localStorage.setItem(sessionStorageKey, JSON.stringify(state));
+  }, [sessionId, currentStep, completedSteps, stepNotes, stepTemps, sessionStorageKey]);
+
+  // Wake lock — keep screen on during bake
+  useEffect(() => {
+    requestWakeLock();
+    const cleanup = reacquireOnVisibility();
+    return () => {
+      releaseWakeLock();
+      cleanup();
+    };
+  }, []);
+
+  // Warn before leaving mid-bake
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (completedSteps.size < (recipe?.steps.length || 0)) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [completedSteps, recipe]);
 
   useEffect(() => {
     if (!sessionId && recipe) {
@@ -118,15 +172,28 @@ export default function BakeSessionPage({
       .eq("id", sessionId);
 
     setSaving(false);
+    cleanupSession();
     router.push(`/journal/${sessionId}`);
   }
 
+  function cleanupSession() {
+    localStorage.removeItem(sessionStorageKey);
+    // Clean up any timer storage for this recipe
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(`proof-timer-${recipeId}-`)) {
+        localStorage.removeItem(key);
+      }
+    }
+  }
+
   async function abandonBake() {
-    if (!sessionId) return;
+    if (!sessionId || !confirm("Abandon this bake? Your progress will be lost.")) return;
     await supabase
       .from("bake_sessions")
       .update({ status: "abandoned", completed_at: new Date().toISOString() })
       .eq("id", sessionId);
+    cleanupSession();
     router.push("/");
   }
 
@@ -265,7 +332,7 @@ export default function BakeSessionPage({
                   {/* Timer */}
                   {timerMinutes && (
                     <div className="flex justify-center mb-4">
-                      <Timer durationMinutes={timerMinutes} label={step.title} />
+                      <Timer durationMinutes={timerMinutes} label={step.title} storageKey={`proof-timer-${recipeId}-step-${currentStep}`} />
                     </div>
                   )}
 
