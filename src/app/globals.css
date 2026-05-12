@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+:root {
+  --color-stone-950: #0c0a09;
+  --color-stone-900: #1c1917;
+  --color-stone-800: #292524;
+  --color-stone-700: #44403c;
+  --color-stone-600: #57534e;
+  --color-stone-500: #78716c;
+  --color-stone-400: #a8a29e;
+  --color-stone-300: #d6d3d1;
+  --color-stone-200: #e7e5e3;
+  --color-stone-100: #f5f5f4;
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+  --color-amber-900: #78350f;
+}
+
+@theme inline {
+  --color-background: var(--color-stone-950);
+  --color-foreground: var(--color-stone-100);
+  --color-card: var(--color-stone-900);
+  --color-card-hover: var(--color-stone-800);
+  --color-border: var(--color-stone-800);
+  --color-muted: var(--color-stone-500);
+  --color-accent: var(--color-amber-500);
+  --color-accent-dim: var(--color-amber-900);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-playfair);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  background: var(--color-stone-950);
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-stone-950);
+  color: var(--color-stone-100);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+input, textarea, select {
+  font-size: 16px;
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth scroll for recipe steps */
+.snap-x {
+  scroll-snap-type: x mandatory;
+}
+.snap-center {
+  scroll-snap-align: center;
+}
+
+/* Glass effect */
+.glass {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(28, 25, 23, 0.85);
+}
+
+/* Warm glow effect */
+.glow-amber {
+  box-shadow: 0 0 40px rgba(245, 158, 11, 0.08);
+}
+
+/* Progress ring animation */
+@keyframes progress-ring {
+  0% { stroke-dashoffset: 283; }
+}
+
+/* Pulse for active timers */
+@keyframes gentle-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.animate-gentle-pulse {
+  animation: gentle-pulse 2s ease-in-out infinite;
+}
+
+/* Safe area for mobile */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+}
+.mb-safe {
+  margin-bottom: max(env(safe-area-inset-bottom), 0px);
+}
