@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Clock, Droplets, Gauge, ArrowUpRight } from "lucide-react";
 import type { Recipe } from "@/data/recipes";
+import { books } from "@/data/recipes";
 
 const difficultyColor = {
   beginner: "text-emerald-400",
@@ -64,7 +65,7 @@ export function RecipeCard({
             <p className="text-xs text-stone-400 mt-1.5 line-clamp-2 leading-relaxed">
               {recipe.description}
             </p>
-            <div className="flex items-center gap-3 mt-3 text-[11px] text-stone-500">
+            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-3 text-[11px] text-stone-500">
               <span className="flex items-center gap-1">
                 <Clock size={12} />
                 {recipe.totalTime}
@@ -80,6 +81,9 @@ export function RecipeCard({
               >
                 <Gauge size={12} />
                 {recipe.difficulty}
+              </span>
+              <span className="text-stone-600 text-[10px]">
+                {books.find(b => b.id === recipe.bookId)?.title}
               </span>
             </div>
           </div>

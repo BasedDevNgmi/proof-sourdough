@@ -2,11 +2,10 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X } from "lucide-react";
-import { recipes, getCategories } from "@/data/recipes";
+import { Search, X, BookOpen } from "lucide-react";
+import { recipes, getCategories, books } from "@/data/recipes";
 import { RecipeCard } from "@/components/ui/recipe-card";
 import { PageHeader } from "@/components/ui/page-header";
-import type { RecipeCategory } from "@/data/recipes";
 
 const categoryLabels: Record<string, string> = {
   all: "All",
@@ -21,10 +20,14 @@ const categoryLabels: Record<string, string> = {
 export default function RecipesPage() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [activeBook, setActiveBook] = useState<string>("all");
   const categories = getCategories();
 
   const filtered = useMemo(() => {
     let result = recipes;
+    if (activeBook !== "all") {
+      result = result.filter((r) => r.bookId === activeBook);
+    }
     if (activeCategory !== "all") {
       result = result.filter((r) => r.category === activeCategory);
     }
@@ -38,12 +41,12 @@ export default function RecipesPage() {
       );
     }
     return result;
-  }, [activeCategory, search]);
+  }, [activeCategory, activeBook, search]);
 
   return (
     <div className="min-h-screen">
       <div className="max-w-6xl mx-auto">
-        <PageHeader title="Recipes" subtitle={`${recipes.length} recipes from The Perfect Loaf`} />
+        <PageHeader title="Recipes" subtitle={`${recipes.length} recipes from ${books.length} books`} />
 
         {/* Search */}
         <div className="px-5 mb-4">
@@ -68,6 +71,27 @@ export default function RecipesPage() {
                 <X size={16} />
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Book Filter */}
+        <div className="px-5 mb-3">
+          <div className="flex gap-2 items-center">
+            <BookOpen size={12} className="text-stone-600 shrink-0" />
+            {[{ id: "all", title: "All Books" }, ...books].map((book) => (
+              <button
+                key={book.id}
+                type="button"
+                onClick={() => setActiveBook(book.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 ${
+                  activeBook === book.id
+                    ? "bg-stone-200 text-stone-950"
+                    : "bg-stone-800/50 text-stone-400 active:bg-stone-700 hover:bg-stone-700/50"
+                }`}
+              >
+                {book.title}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -120,6 +144,7 @@ export default function RecipesPage() {
                 onClick={() => {
                   setSearch("");
                   setActiveCategory("all");
+                  setActiveBook("all");
                 }}
                 className="text-amber-500 text-sm mt-2"
               >
