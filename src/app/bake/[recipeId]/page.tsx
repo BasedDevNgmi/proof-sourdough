@@ -16,7 +16,7 @@ import {
   Thermometer,
 } from "lucide-react";
 import confetti from "canvas-confetti";
-import { getRecipeById } from "@/data/recipes";
+import { getRecipeById, type Recipe, type Ingredient } from "@/data/recipes";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth-provider";
 import { Timer } from "@/components/ui/timer";
@@ -24,6 +24,72 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { safeGetJSON, safeSetJSON } from "@/lib/safe-storage";
 import { requestWakeLock, releaseWakeLock, reacquireOnVisibility } from "@/lib/wake-lock";
 import { trackEvent } from "@/lib/analytics";
+
+type StepIngredientGroup = { group: string; label: string; items: Ingredient[] };
+
+function getStepIngredients(recipe: Recipe, stepIndex: number): StepIngredientGroup[] {
+  const step = recipe.steps[stepIndex];
+  const title = step.title.toLowerCase();
+  const fullText = `${step.title} ${step.instructions}`.toLowerCase();
+
+  const results: StepIngredientGroup[] = [];
+  const coveredTerms = new Set<string>();
+
+  const groups: { key: keyof Recipe["ingredients"]; label: string; titleOnly: boolean; titlePattern: RegExp }[] = [
+    { key: "levain", label: "Levain", titleOnly: true, titlePattern: /\blevain\b|\bstarter\b/i },
+    { key: "filling", label: "Filling", titleOnly: false, titlePattern: /\bfill/i },
+    { key: "topping", label: "Topping", titleOnly: false, titlePattern: /\btopp/i },
+    { key: "additions", label: "Additions", titleOnly: false, titlePattern: /\baddition/i },
+    { key: "main", label: "Dough", titleOnly: false, titlePattern: /^$/ },
+  ];
+
+  for (const { key, label, titleOnly, titlePattern } of groups) {
+    const items = recipe.ingredients[key];
+    if (!items?.length) continue;
+
+    const titleMatch = titlePattern.test(title);
+
+    if (titleMatch) {
+      results.push({ group: key, label, items });
+      items.forEach((ing) => extractTerms(ing.name).forEach((t) => coveredTerms.add(t)));
+      coveredTerms.add(key);
+      continue;
+    }
+
+    if (titleOnly) continue;
+
+    const matched = items.filter((ing) => {
+      const terms = extractTerms(ing.name);
+      if (terms.some((t) => coveredTerms.has(t))) return false;
+      return isIngredientInText(ing.name, fullText);
+    });
+
+    if (matched.length > 0) {
+      results.push({ group: key, label, items: matched });
+      matched.forEach((ing) => extractTerms(ing.name).forEach((t) => coveredTerms.add(t)));
+    }
+  }
+
+  return results;
+}
+
+function extractTerms(name: string): string[] {
+  const cleaned = name.toLowerCase().replace(/\([^)]*\)/g, "").replace(/~[\d.]+%\s*/g, "").replace(/[,;]/g, "").trim();
+  const skip = new Set(["ripe", "fine", "coarse", "fresh", "dried", "unsalted", "melted", "room", "temperature", "large", "small", "medium", "sea", "warm", "cold", "hot", "and", "for", "the", "with"]);
+  return cleaned.split(/\s+/).filter((w) => !skip.has(w) && w.length > 2);
+}
+
+function isIngredientInText(name: string, text: string): boolean {
+  const cleaned = name.toLowerCase().replace(/\([^)]*\)/g, "").replace(/~[\d.]+%\s*/g, "").replace(/[,;]/g, "").trim();
+  const skip = new Set(["ripe", "fine", "coarse", "fresh", "dried", "unsalted", "melted", "room", "temperature", "large", "small", "medium", "sea", "warm", "cold", "hot", "and", "for", "the", "with"]);
+  const words = cleaned.split(/\s+/).filter((w) => !skip.has(w) && w.length > 2);
+
+  for (const word of words) {
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`\\b${escaped}s?\\b`, "i").test(text)) return true;
+  }
+  return false;
+}
 
 export default function BakeSessionPage({
   params,
@@ -45,7 +111,6 @@ export default function BakeSessionPage({
   const [stepTemps, setStepTemps] = useState<Record<number, string>>({});
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [showTempInput, setShowTempInput] = useState(false);
-  const [showIngredients, setShowIngredients] = useState(false);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(new Set());
   const [showFinishModal, setShowFinishModal] = useState(false);
 
@@ -332,93 +397,73 @@ export default function BakeSessionPage({
               </button>
             ))}
           </nav>
-          <div className="px-3 pb-3">
-            <button
-              type="button"
-              onClick={() => setShowIngredients(!showIngredients)}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors"
-              style={
-                showIngredients
-                  ? { background: "var(--accent-muted, rgba(217,119,6,0.15))", color: "var(--accent)" }
-                  : { background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", color: "var(--text-muted)" }
-              }
-            >
-              <span className="flex items-center gap-1.5">🧂 Ingredients</span>
-              <span style={{ fontSize: 10 }}>{showIngredients ? "▲" : "▼"}</span>
-            </button>
-            <AnimatePresence>
-              {showIngredients && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="pt-2 space-y-3">
-                    {(["levain", "main", "additions", "filling", "topping"] as const).map((group) => {
-                      const items = recipe.ingredients[group];
-                      if (!items || items.length === 0) return null;
-                      const groupLabel = group === "main" ? "Dough" : group.charAt(0).toUpperCase() + group.slice(1);
-                      return (
-                        <div key={group}>
-                          <p className="text-[9px] font-semibold uppercase tracking-wider mb-1.5 px-1" style={{ color: "var(--text-muted)" }}>
-                            {groupLabel}
-                          </p>
-                          <div className="space-y-0.5">
-                            {items.map((ing) => {
-                              const key = `${group}-${ing.name}`;
-                              const checked = checkedIngredients.has(key);
-                              return (
-                                <button
-                                  key={key}
-                                  type="button"
-                                  onClick={() => {
-                                    setCheckedIngredients((prev) => {
-                                      const next = new Set(prev);
-                                      if (next.has(key)) next.delete(key);
-                                      else next.add(key);
-                                      return next;
-                                    });
-                                  }}
-                                  className="w-full flex items-center gap-2 text-left px-1 py-1 rounded-lg transition-colors hover:bg-[var(--card-hover-subtle)]"
-                                >
-                                  <div
-                                    className="w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0"
-                                    style={{
-                                      borderColor: checked ? "var(--accent)" : "var(--border-subtle)",
-                                      background: checked ? "var(--accent)" : "transparent",
-                                    }}
-                                  >
-                                    {checked && <Check size={8} style={{ color: "var(--bg)" }} />}
-                                  </div>
-                                  <span
-                                    className="text-[11px] flex-1 truncate"
-                                    style={{
-                                      color: "var(--text-secondary)",
-                                      opacity: checked ? 0.4 : 1,
-                                      textDecoration: checked ? "line-through" : "none",
-                                    }}
-                                  >
-                                    {ing.name}
-                                  </span>
-                                  <span
-                                    className="text-[10px] tabular-nums shrink-0"
-                                    style={{ color: "var(--text-muted)", opacity: checked ? 0.4 : 1 }}
-                                  >
-                                    {ing.weight}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          {(() => {
+            const sidebarIngs = getStepIngredients(recipe, currentStep);
+            if (sidebarIngs.length === 0) return null;
+            return (
+              <div className="px-3 pb-3">
+                <p className="text-[9px] font-semibold uppercase tracking-wider mb-2 px-1 flex items-center gap-1.5" style={{ color: "var(--accent)" }}>
+                  🧂 This step
+                </p>
+                <div className="space-y-2.5">
+                  {sidebarIngs.map(({ group, label, items }) => (
+                    <div key={group}>
+                      <p className="text-[9px] font-semibold uppercase tracking-wider mb-1 px-1" style={{ color: "var(--text-muted)" }}>
+                        {label}
+                      </p>
+                      <div className="space-y-0.5">
+                        {items.map((ing) => {
+                          const key = `${group}-${ing.name}`;
+                          const checked = checkedIngredients.has(key);
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() => {
+                                setCheckedIngredients((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(key)) next.delete(key);
+                                  else next.add(key);
+                                  return next;
+                                });
+                              }}
+                              className="w-full flex items-center gap-2 text-left px-1 py-1 rounded-lg transition-colors hover:bg-[var(--card-hover-subtle)]"
+                            >
+                              <div
+                                className="w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0"
+                                style={{
+                                  borderColor: checked ? "var(--accent)" : "var(--border-subtle)",
+                                  background: checked ? "var(--accent)" : "transparent",
+                                }}
+                              >
+                                {checked && <Check size={8} style={{ color: "var(--bg)" }} />}
+                              </div>
+                              <span
+                                className="text-[11px] flex-1 truncate"
+                                style={{
+                                  color: "var(--text-secondary)",
+                                  opacity: checked ? 0.4 : 1,
+                                  textDecoration: checked ? "line-through" : "none",
+                                }}
+                              >
+                                {ing.name}
+                              </span>
+                              <span
+                                className="text-[10px] tabular-nums shrink-0"
+                                style={{ color: "var(--text-muted)", opacity: checked ? 0.4 : 1 }}
+                              >
+                                {ing.weight}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
           <div className="px-5 pb-6 space-y-2">
             <button
               type="button"
@@ -595,78 +640,71 @@ export default function BakeSessionPage({
                       </div>
                     )}
 
-                    {showIngredients && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="mb-4"
-                      >
+                    {(() => {
+                      const stepIngs = getStepIngredients(recipe, currentStep);
+                      if (stepIngs.length === 0) return null;
+                      return (
                         <div
-                          className="rounded-2xl p-4 space-y-4"
+                          className="rounded-2xl p-4 space-y-3 mb-4"
                           style={{ background: "var(--card)", border: "1px solid var(--border-subtle)" }}
                         >
-                          {(["levain", "main", "additions", "filling", "topping"] as const).map((group) => {
-                            const items = recipe.ingredients[group];
-                            if (!items || items.length === 0) return null;
-                            const groupLabel = group === "main" ? "Dough" : group.charAt(0).toUpperCase() + group.slice(1);
-                            return (
-                              <div key={group}>
-                                <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                                  {groupLabel}
-                                </p>
-                                <div className="space-y-1.5">
-                                  {items.map((ing) => {
-                                    const key = `${group}-${ing.name}`;
-                                    const checked = checkedIngredients.has(key);
-                                    return (
-                                      <button
-                                        key={key}
-                                        type="button"
-                                        onClick={() => {
-                                          setCheckedIngredients((prev) => {
-                                            const next = new Set(prev);
-                                            if (next.has(key)) next.delete(key);
-                                            else next.add(key);
-                                            return next;
-                                          });
+                          {stepIngs.map(({ group, label, items }) => (
+                            <div key={group}>
+                              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                                {label}
+                              </p>
+                              <div className="space-y-1.5">
+                                {items.map((ing) => {
+                                  const key = `${group}-${ing.name}`;
+                                  const checked = checkedIngredients.has(key);
+                                  return (
+                                    <button
+                                      key={key}
+                                      type="button"
+                                      onClick={() => {
+                                        setCheckedIngredients((prev) => {
+                                          const next = new Set(prev);
+                                          if (next.has(key)) next.delete(key);
+                                          else next.add(key);
+                                          return next;
+                                        });
+                                      }}
+                                      className="w-full flex items-center gap-2.5 text-left py-1"
+                                    >
+                                      <div
+                                        className="w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors"
+                                        style={{
+                                          borderColor: checked ? "var(--accent)" : "var(--border-subtle)",
+                                          background: checked ? "var(--accent)" : "transparent",
                                         }}
-                                        className="w-full flex items-center gap-2.5 text-left py-1 group/ing"
                                       >
-                                        <div
-                                          className="w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors"
-                                          style={{
-                                            borderColor: checked ? "var(--accent)" : "var(--border-subtle)",
-                                            background: checked ? "var(--accent)" : "transparent",
-                                          }}
-                                        >
-                                          {checked && <Check size={10} style={{ color: "var(--bg)" }} />}
-                                        </div>
-                                        <span
-                                          className="text-sm flex-1 transition-opacity"
-                                          style={{
-                                            color: "var(--text-secondary)",
-                                            opacity: checked ? 0.4 : 1,
-                                            textDecoration: checked ? "line-through" : "none",
-                                          }}
-                                        >
-                                          {ing.name}
-                                        </span>
-                                        <span
-                                          className="text-xs tabular-nums shrink-0"
-                                          style={{ color: "var(--text-muted)", opacity: checked ? 0.4 : 1 }}
-                                        >
-                                          {ing.weight}
-                                        </span>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
+                                        {checked && <Check size={10} style={{ color: "var(--bg)" }} />}
+                                      </div>
+                                      <span
+                                        className="text-sm flex-1 transition-opacity"
+                                        style={{
+                                          color: "var(--text-secondary)",
+                                          opacity: checked ? 0.4 : 1,
+                                          textDecoration: checked ? "line-through" : "none",
+                                        }}
+                                      >
+                                        {ing.name}
+                                      </span>
+                                      <span
+                                        className="text-xs tabular-nums shrink-0"
+                                        style={{ color: "var(--text-muted)", opacity: checked ? 0.4 : 1 }}
+                                      >
+                                        {ing.weight}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
                               </div>
-                            );
-                          })}
+                            </div>
+                          ))}
                         </div>
-                      </motion.div>
-                    )}
+                      );
+                    })()}
 
                     {showNoteInput && (
                       <motion.div
@@ -725,18 +763,6 @@ export default function BakeSessionPage({
 
                 {/* Action Buttons */}
                 <div className="flex gap-2 mb-4 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => setShowIngredients(!showIngredients)}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
-                    style={
-                      showIngredients
-                        ? { background: "var(--accent-muted, rgba(217,119,6,0.15))", color: "var(--accent)", border: "1px solid var(--accent-border, rgba(217,119,6,0.2))" }
-                        : { background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", color: "var(--text-muted)", border: "1px solid transparent" }
-                    }
-                  >
-                    🧂 Ingredients
-                  </button>
                   <button
                     type="button"
                     onClick={() => setShowNoteInput(!showNoteInput)}
