@@ -45,6 +45,8 @@ export default function BakeSessionPage({
   const [stepTemps, setStepTemps] = useState<Record<number, string>>({});
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [showTempInput, setShowTempInput] = useState(false);
+  const [showIngredients, setShowIngredients] = useState(false);
+  const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(new Set());
   const [showFinishModal, setShowFinishModal] = useState(false);
 
   const [justCompletedStep, setJustCompletedStep] = useState<number | null>(null);
@@ -330,6 +332,93 @@ export default function BakeSessionPage({
               </button>
             ))}
           </nav>
+          <div className="px-3 pb-3">
+            <button
+              type="button"
+              onClick={() => setShowIngredients(!showIngredients)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors"
+              style={
+                showIngredients
+                  ? { background: "var(--accent-muted, rgba(217,119,6,0.15))", color: "var(--accent)" }
+                  : { background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", color: "var(--text-muted)" }
+              }
+            >
+              <span className="flex items-center gap-1.5">🧂 Ingredients</span>
+              <span style={{ fontSize: 10 }}>{showIngredients ? "▲" : "▼"}</span>
+            </button>
+            <AnimatePresence>
+              {showIngredients && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-2 space-y-3">
+                    {(["levain", "main", "additions", "filling", "topping"] as const).map((group) => {
+                      const items = recipe.ingredients[group];
+                      if (!items || items.length === 0) return null;
+                      const groupLabel = group === "main" ? "Dough" : group.charAt(0).toUpperCase() + group.slice(1);
+                      return (
+                        <div key={group}>
+                          <p className="text-[9px] font-semibold uppercase tracking-wider mb-1.5 px-1" style={{ color: "var(--text-muted)" }}>
+                            {groupLabel}
+                          </p>
+                          <div className="space-y-0.5">
+                            {items.map((ing) => {
+                              const key = `${group}-${ing.name}`;
+                              const checked = checkedIngredients.has(key);
+                              return (
+                                <button
+                                  key={key}
+                                  type="button"
+                                  onClick={() => {
+                                    setCheckedIngredients((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(key)) next.delete(key);
+                                      else next.add(key);
+                                      return next;
+                                    });
+                                  }}
+                                  className="w-full flex items-center gap-2 text-left px-1 py-1 rounded-lg transition-colors hover:bg-[var(--card-hover-subtle)]"
+                                >
+                                  <div
+                                    className="w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0"
+                                    style={{
+                                      borderColor: checked ? "var(--accent)" : "var(--border-subtle)",
+                                      background: checked ? "var(--accent)" : "transparent",
+                                    }}
+                                  >
+                                    {checked && <Check size={8} style={{ color: "var(--bg)" }} />}
+                                  </div>
+                                  <span
+                                    className="text-[11px] flex-1 truncate"
+                                    style={{
+                                      color: "var(--text-secondary)",
+                                      opacity: checked ? 0.4 : 1,
+                                      textDecoration: checked ? "line-through" : "none",
+                                    }}
+                                  >
+                                    {ing.name}
+                                  </span>
+                                  <span
+                                    className="text-[10px] tabular-nums shrink-0"
+                                    style={{ color: "var(--text-muted)", opacity: checked ? 0.4 : 1 }}
+                                  >
+                                    {ing.weight}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           <div className="px-5 pb-6 space-y-2">
             <button
               type="button"
@@ -506,6 +595,79 @@ export default function BakeSessionPage({
                       </div>
                     )}
 
+                    {showIngredients && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="mb-4"
+                      >
+                        <div
+                          className="rounded-2xl p-4 space-y-4"
+                          style={{ background: "var(--card)", border: "1px solid var(--border-subtle)" }}
+                        >
+                          {(["levain", "main", "additions", "filling", "topping"] as const).map((group) => {
+                            const items = recipe.ingredients[group];
+                            if (!items || items.length === 0) return null;
+                            const groupLabel = group === "main" ? "Dough" : group.charAt(0).toUpperCase() + group.slice(1);
+                            return (
+                              <div key={group}>
+                                <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
+                                  {groupLabel}
+                                </p>
+                                <div className="space-y-1.5">
+                                  {items.map((ing) => {
+                                    const key = `${group}-${ing.name}`;
+                                    const checked = checkedIngredients.has(key);
+                                    return (
+                                      <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => {
+                                          setCheckedIngredients((prev) => {
+                                            const next = new Set(prev);
+                                            if (next.has(key)) next.delete(key);
+                                            else next.add(key);
+                                            return next;
+                                          });
+                                        }}
+                                        className="w-full flex items-center gap-2.5 text-left py-1 group/ing"
+                                      >
+                                        <div
+                                          className="w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors"
+                                          style={{
+                                            borderColor: checked ? "var(--accent)" : "var(--border-subtle)",
+                                            background: checked ? "var(--accent)" : "transparent",
+                                          }}
+                                        >
+                                          {checked && <Check size={10} style={{ color: "var(--bg)" }} />}
+                                        </div>
+                                        <span
+                                          className="text-sm flex-1 transition-opacity"
+                                          style={{
+                                            color: "var(--text-secondary)",
+                                            opacity: checked ? 0.4 : 1,
+                                            textDecoration: checked ? "line-through" : "none",
+                                          }}
+                                        >
+                                          {ing.name}
+                                        </span>
+                                        <span
+                                          className="text-xs tabular-nums shrink-0"
+                                          style={{ color: "var(--text-muted)", opacity: checked ? 0.4 : 1 }}
+                                        >
+                                          {ing.weight}
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+
                     {showNoteInput && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
@@ -562,7 +724,19 @@ export default function BakeSessionPage({
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-2 mb-4">
+                <div className="flex gap-2 mb-4 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setShowIngredients(!showIngredients)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+                    style={
+                      showIngredients
+                        ? { background: "var(--accent-muted, rgba(217,119,6,0.15))", color: "var(--accent)", border: "1px solid var(--accent-border, rgba(217,119,6,0.2))" }
+                        : { background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", color: "var(--text-muted)", border: "1px solid transparent" }
+                    }
+                  >
+                    🧂 Ingredients
+                  </button>
                   <button
                     type="button"
                     onClick={() => setShowNoteInput(!showNoteInput)}

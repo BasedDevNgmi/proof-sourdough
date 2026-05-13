@@ -12,6 +12,7 @@ import { Icon } from "@/components/illustrations/icons";
 import { BreadIllustration } from "@/components/illustrations/bread-illustration";
 import { Steam } from "@/components/illustrations/steam";
 import { formatDistanceToNow } from "date-fns";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function RecipeDetailPage({
@@ -157,27 +158,44 @@ export default function RecipeDetailPage({
           </Link>
         </div>
 
-        {/* Illustration container */}
-        <div style={{
-          position: "relative", aspectRatio: "1 / 1",
-          background: "radial-gradient(circle at 50% 30%, var(--surface-2), var(--surface))",
-          borderRadius: "var(--radius-xl)", border: "1px solid var(--border)",
-          display: "grid", placeItems: "center", overflow: "hidden",
-        }}>
+        {/* Hero image / illustration */}
+        {recipe.image ? (
           <div style={{
-            position: "absolute", inset: 0,
-            background: `radial-gradient(circle at 20% 30%, var(--crust-soft) 1.5px, transparent 2.5px),
-                         radial-gradient(circle at 60% 70%, var(--leaf-soft) 1px, transparent 2px),
-                         radial-gradient(circle at 80% 20%, var(--jam-soft) 1px, transparent 2px)`,
-            backgroundSize: "60px 60px", opacity: 0.3,
-          }} />
-          <div style={{ position: "absolute", top: 40, left: "50%", transform: "translateX(-50%)", width: 60, height: 60 }}>
-            <Steam count={6} />
+            position: "relative", aspectRatio: "1 / 1",
+            borderRadius: "var(--radius-xl)", border: "1px solid var(--border)",
+            overflow: "hidden",
+          }}>
+            <Image
+              src={recipe.image}
+              alt={recipe.title}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
+              priority
+            />
           </div>
-          <div className="anim-float">
-            <BreadIllustration seed={recipe.id} size={300} />
+        ) : (
+          <div style={{
+            position: "relative", aspectRatio: "1 / 1",
+            background: "radial-gradient(circle at 50% 30%, var(--surface-2), var(--surface))",
+            borderRadius: "var(--radius-xl)", border: "1px solid var(--border)",
+            display: "grid", placeItems: "center", overflow: "hidden",
+          }}>
+            <div style={{
+              position: "absolute", inset: 0,
+              background: `radial-gradient(circle at 20% 30%, var(--crust-soft) 1.5px, transparent 2.5px),
+                           radial-gradient(circle at 60% 70%, var(--leaf-soft) 1px, transparent 2px),
+                           radial-gradient(circle at 80% 20%, var(--jam-soft) 1px, transparent 2px)`,
+              backgroundSize: "60px 60px", opacity: 0.3,
+            }} />
+            <div style={{ position: "absolute", top: 40, left: "50%", transform: "translateX(-50%)", width: 60, height: 60 }}>
+              <Steam count={6} />
+            </div>
+            <div className="anim-float">
+              <BreadIllustration seed={recipe.id} size={300} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Tags */}
