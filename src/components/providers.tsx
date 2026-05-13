@@ -10,7 +10,6 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { OfflineIndicator } from "@/components/ui/offline-indicator";
 import { InstallPrompt } from "@/components/ui/install-prompt";
-import { FlourMotes } from "@/components/illustrations/flour-motes";
 import { trackEvent } from "@/lib/analytics";
 import { flushQueue } from "@/lib/offline-queue";
 import { supabase } from "@/lib/supabase";
@@ -94,7 +93,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
                 <OfflineIndicator />
                 <InstallPrompt />
                 <KonamiToast />
-                <FlourMotes />
               </>
             )}
           </AuthGuard>
