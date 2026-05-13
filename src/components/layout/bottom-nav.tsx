@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, ChefHat, NotebookPen, Sun, Moon, LogOut, User } from "lucide-react";
+import { motion } from "framer-motion";
+import { Home, BookOpen, ChefHat, NotebookPen, Sun, Moon, Wheat, LogOut, User } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/components/auth-provider";
 
@@ -62,8 +63,8 @@ export function BottomNav() {
             className="flex items-center gap-2.5 w-full px-4 py-2.5 rounded-xl transition-all duration-200"
             style={{ color: "var(--text-muted)" }}
           >
-            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-            <span className="text-xs font-medium">{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+            {theme === "dark" ? <Sun size={16} /> : theme === "light" ? <Wheat size={16} /> : <Moon size={16} />}
+            <span className="text-xs font-medium">{theme === "dark" ? "Light mode" : theme === "light" ? "Crust mode" : "Dark mode"}</span>
           </button>
           <button
             type="button"
@@ -98,9 +99,17 @@ export function BottomNav() {
               <Link
                 key={href}
                 href={href}
-                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200"
+                className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200"
                 style={{ color: isActive ? "var(--accent)" : "var(--text-muted)" }}
               >
+                {isActive && (
+                  <motion.div
+                    layoutId="nav-pill"
+                    className="absolute inset-0 rounded-xl"
+                    style={{ background: "var(--accent-surface)", zIndex: -1 }}
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
                 <Icon size={22} strokeWidth={isActive ? 2.2 : 1.6} />
                 <span className="text-[10px] font-medium tracking-wide">
                   {label}
@@ -114,7 +123,7 @@ export function BottomNav() {
             className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200"
             style={{ color: "var(--text-muted)" }}
           >
-            {theme === "dark" ? <Sun size={20} strokeWidth={1.6} /> : <Moon size={20} strokeWidth={1.6} />}
+            {theme === "dark" ? <Sun size={20} strokeWidth={1.6} /> : theme === "light" ? <Wheat size={20} strokeWidth={1.6} /> : <Moon size={20} strokeWidth={1.6} />}
             <span className="text-[10px] font-medium tracking-wide">Theme</span>
           </button>
         </div>

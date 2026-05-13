@@ -59,6 +59,35 @@
   color-scheme: light;
 }
 
+/* ─── Crust theme — deep bakery warmth ─── */
+[data-theme="crust"] {
+  --bg: #1a0f00;
+  --bg-subtle: #221508;
+  --card: #2a1a08;
+  --card-hover: #332010;
+  --border: #3d2a14;
+  --border-subtle: #2e1e0c;
+  --text: #f5e6c8;
+  --text-secondary: #d4c4a0;
+  --text-muted: #a67c52;
+  --text-faint: #7a5a38;
+  --text-ghost: #5a4028;
+  --accent: #e89b2d;
+  --accent-hover: #f0a83a;
+  --accent-dim: rgba(232, 155, 45, 0.15);
+  --accent-surface: rgba(232, 155, 45, 0.08);
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.4);
+  --glass-bg: rgba(26, 15, 0, 0.85);
+  --nav-bg: rgba(26, 15, 0, 0.92);
+  --glow-color: rgba(232, 155, 45, 0.06);
+  --glow-border: rgba(232, 155, 45, 0.1);
+  --gradient-from: #f5e6c8;
+  --gradient-to: #d4c4a0;
+  --scrollbar-thumb: rgba(166, 124, 82, 0.3);
+  --scrollbar-hover: rgba(166, 124, 82, 0.5);
+  color-scheme: dark;
+}
+
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--text);
@@ -261,4 +290,66 @@ input, textarea, select {
 }
 [data-theme="light"] .recipe-hero::after {
   background: linear-gradient(to top, var(--bg) 0%, rgba(250, 249, 247, 0.3) 40%, transparent 70%);
+}
+
+/* Flour particle animations */
+@keyframes flour-drift-1 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(12px, -18px); }
+  50% { transform: translate(-8px, -30px); }
+  75% { transform: translate(15px, -12px); }
+}
+@keyframes flour-drift-2 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-15px, -10px); }
+  50% { transform: translate(10px, -25px); }
+  75% { transform: translate(-5px, -15px); }
+}
+@keyframes flour-drift-3 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(8px, -22px); }
+  50% { transform: translate(-12px, -8px); }
+  75% { transform: translate(18px, -28px); }
+}
+@keyframes flour-drift-4 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-10px, -15px); }
+  50% { transform: translate(15px, -20px); }
+  75% { transform: translate(-8px, -30px); }
+}
+@keyframes flour-drift-5 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(20px, -12px); }
+  50% { transform: translate(-5px, -28px); }
+  75% { transform: translate(10px, -8px); }
+}
+@keyframes flour-drift-6 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-18px, -20px); }
+  50% { transform: translate(8px, -10px); }
+  75% { transform: translate(-12px, -25px); }
+}
+@keyframes flour-drift-7 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(10px, -25px); }
+  50% { transform: translate(-15px, -15px); }
+  75% { transform: translate(5px, -30px); }
+}
+@keyframes flour-drift-8 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-8px, -18px); }
+  50% { transform: translate(12px, -22px); }
+  75% { transform: translate(-10px, -10px); }
+}
+@keyframes flour-drift-9 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(15px, -8px); }
+  50% { transform: translate(-10px, -20px); }
+  75% { transform: translate(8px, -28px); }
+}
+@keyframes flour-drift-10 {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-12px, -22px); }
+  50% { transform: translate(10px, -12px); }
+  75% { transform: translate(-5px, -18px); }
 }

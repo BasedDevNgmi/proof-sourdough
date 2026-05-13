@@ -64,7 +64,7 @@ export default function RecipesPage() {
             />
             <input
               type="text"
-              placeholder="Search recipes, ingredients, tags..."
+              placeholder="What are you in the mood for?"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-xl py-3 pl-11 pr-11 text-sm transition-all duration-300 focus:outline-none"
@@ -194,11 +194,18 @@ export default function RecipesPage() {
               transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
               className="text-center py-20"
             >
+              <motion.div
+                animate={{ y: [0, -6, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                className="mx-auto mb-3 w-fit"
+              >
+                <Search size={32} style={{ color: "var(--text-ghost)" }} />
+              </motion.div>
               <p
                 className="text-sm"
                 style={{ color: "var(--text-muted)" }}
               >
-                No recipes found
+                Nothing here. Even sourdough starter needs something to work with.
               </p>
               <button
                 type="button"
@@ -216,7 +223,7 @@ export default function RecipesPage() {
                   (e.currentTarget.style.color = "var(--accent)")
                 }
               >
-                Clear filters
+                Start fresh
               </button>
             </motion.div>
           )}

@@ -13,6 +13,7 @@ import {
   Edit3,
   Save,
   ChefHat,
+  Share2,
 } from "lucide-react";
 import { supabase, type BakeSession, type BakeStepLog } from "@/lib/supabase";
 import { getRecipeById } from "@/data/recipes";
@@ -87,6 +88,17 @@ export default function JournalDetailPage({
     setEditing(false);
   }
 
+  async function shareBake() {
+    if (!bake || !recipe) return;
+    const stars = bake.overall_rating ? "★".repeat(bake.overall_rating) + "☆".repeat(5 - bake.overall_rating) : "";
+    const text = `Just baked ${recipe.title}${stars ? ` ${stars}` : ""} with Proof 🍞`;
+    if (navigator.share) {
+      await navigator.share({ title: "My Bake", text, url: window.location.href });
+    } else {
+      await navigator.clipboard.writeText(`${text}\n${window.location.href}`);
+    }
+  }
+
   async function deleteBake() {
     if (!bake || !confirm("Delete this bake log? This cannot be undone."))
       return;
@@ -148,6 +160,14 @@ export default function JournalDetailPage({
                 </h1>
               </div>
               <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={shareBake}
+                  className="p-2 transition-colors"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  <Share2 size={16} />
+                </button>
                 <button
                   type="button"
                   onClick={() => setEditing(!editing)}

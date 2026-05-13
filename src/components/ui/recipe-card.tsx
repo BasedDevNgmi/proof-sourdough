@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -35,6 +36,27 @@ export function RecipeCard({
   recipe: Recipe;
   index?: number;
 }) {
+  const cardRef = useRef<HTMLAnchorElement>(null);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    const rotateY = Math.max(-3, Math.min(3, (x / rect.width) * 6));
+    const rotateX = Math.max(-3, Math.min(3, -(y / rect.height) * 6));
+    el.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    el.style.transition = "transform 0.1s ease-out";
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    el.style.transform = "perspective(800px) rotateX(0deg) rotateY(0deg)";
+    el.style.transition = "transform 0.4s ease-out";
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -46,9 +68,12 @@ export function RecipeCard({
       }}
     >
       <Link
+        ref={cardRef}
         href={`/recipes/${recipe.id}`}
         className="group block rounded-2xl overflow-hidden transition-all duration-300 card-glow"
         style={{ background: "var(--card)", border: "1px solid var(--border-subtle)" }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
       >
         {recipe.image && (
           <div className="relative h-36 overflow-hidden">

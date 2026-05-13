@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { getRecipeById, books } from "@/data/recipes";
 import { supabase, type BakeSession } from "@/lib/supabase";
+import { trackEvent } from "@/lib/analytics";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
@@ -40,9 +41,44 @@ export default function RecipeDetailPage({
   );
   const [pastBakes, setPastBakes] = useState<BakeSession[]>([]);
   const [multiplier, setMultiplier] = useState(1);
+  const tipRotations = useRef<Record<string, number>>({});
+
+  function getTipRotation(key: string): number {
+    if (!tipRotations.current[key]) {
+      tipRotations.current[key] = -0.3 - Math.random() * 0.7;
+    }
+    return tipRotations.current[key];
+  }
+  const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(new Set());
+
+  // Load checklist from localStorage
+  useEffect(() => {
+    if (!recipe) return;
+    try {
+      const stored = localStorage.getItem(`proof-checklist-${recipe.id}`);
+      if (stored) setCheckedIngredients(new Set(JSON.parse(stored)));
+    } catch {}
+  }, [recipe?.id]);
+
+  function toggleIngredient(key: string) {
+    setCheckedIngredients((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      if (recipe) {
+        localStorage.setItem(`proof-checklist-${recipe.id}`, JSON.stringify([...next]));
+      }
+      return next;
+    });
+  }
+
+  function allCheckedInGroup(group: string, items: { name: string }[]) {
+    return items.length > 0 && items.every((_, i) => checkedIngredients.has(`${group}-${i}`));
+  }
 
   useEffect(() => {
     if (!recipe) return;
+    trackEvent("recipe_viewed", { recipe_id: recipe.id, recipe_title: recipe.title });
     supabase
       .from("bake_sessions")
       .select("*")
@@ -397,10 +433,13 @@ export default function RecipeDetailPage({
                   {recipe.ingredients.levain && recipe.ingredients.levain.length > 0 && (
                     <div className="mb-8">
                       <h3
-                        className="text-[11px] font-medium uppercase tracking-widest mb-4"
+                        className="text-[11px] font-medium uppercase tracking-widest mb-4 flex items-center gap-2"
                         style={{ color: "var(--text-muted)" }}
                       >
                         Levain
+                        {allCheckedInGroup("levain", recipe.ingredients.levain) && (
+                          <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--accent)" }}>Ready!</span>
+                        )}
                       </h3>
                       <div
                         className="rounded-xl overflow-hidden"
@@ -409,20 +448,25 @@ export default function RecipeDetailPage({
                           border: "1px solid var(--border-subtle)",
                         }}
                       >
-                        {recipe.ingredients.levain.map((ing, i) => (
+                        {recipe.ingredients.levain.map((ing, i) => {
+                          const ck = `levain-${i}`;
+                          const on = checkedIngredients.has(ck);
+                          return (
                           <div
                             key={i}
-                            className="flex items-center justify-between px-4 py-3"
+                            onClick={() => toggleIngredient(ck)}
+                            className="flex items-center justify-between px-4 py-3 cursor-pointer select-none transition-opacity"
                             style={{
                               borderBottom:
                                 i < recipe.ingredients.levain!.length - 1
                                   ? "1px solid var(--border-subtle)"
                                   : "none",
+                              opacity: on ? 0.4 : 1,
                             }}
                           >
                             <span
                               className="text-sm"
-                              style={{ color: "var(--text-secondary)" }}
+                              style={{ color: "var(--text-secondary)", textDecoration: on ? "line-through" : "none" }}
                             >
                               {ing.name}
                             </span>
@@ -437,13 +481,14 @@ export default function RecipeDetailPage({
                               )}
                               <span
                                 className="text-sm font-medium tabular-nums"
-                                style={{ color: "var(--text)" }}
+                                style={{ color: "var(--text)", textDecoration: on ? "line-through" : "none" }}
                               >
                                 {scaleWeight(ing.weight)}
                               </span>
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -451,10 +496,13 @@ export default function RecipeDetailPage({
                   {/* Main Ingredients */}
                   <div className="mb-8">
                     <h3
-                      className="text-[11px] font-medium uppercase tracking-widest mb-4"
+                      className="text-[11px] font-medium uppercase tracking-widest mb-4 flex items-center gap-2"
                       style={{ color: "var(--text-muted)" }}
                     >
                       Main Dough
+                      {allCheckedInGroup("main", recipe.ingredients.main) && (
+                        <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--accent)" }}>Ready!</span>
+                      )}
                     </h3>
                     <div
                       className="rounded-xl overflow-hidden"
@@ -463,21 +511,26 @@ export default function RecipeDetailPage({
                         border: "1px solid var(--border-subtle)",
                       }}
                     >
-                      {recipe.ingredients.main.map((ing, i) => (
+                      {recipe.ingredients.main.map((ing, i) => {
+                        const ck = `main-${i}`;
+                        const on = checkedIngredients.has(ck);
+                        return (
                         <div
                           key={i}
-                          className="flex items-center justify-between px-4 py-3"
+                          onClick={() => toggleIngredient(ck)}
+                          className="flex items-center justify-between px-4 py-3 cursor-pointer select-none transition-opacity"
                           style={{
                             borderBottom:
                               i < recipe.ingredients.main.length - 1
                                 ? "1px solid var(--border-subtle)"
                                 : "none",
+                            opacity: on ? 0.4 : 1,
                           }}
                         >
                           <div className="flex-1 min-w-0">
                             <span
                               className="text-sm"
-                              style={{ color: "var(--text-secondary)" }}
+                              style={{ color: "var(--text-secondary)", textDecoration: on ? "line-through" : "none" }}
                             >
                               {ing.name}
                             </span>
@@ -501,13 +554,14 @@ export default function RecipeDetailPage({
                             )}
                             <span
                               className="text-sm font-medium tabular-nums"
-                              style={{ color: "var(--text)" }}
+                              style={{ color: "var(--text)", textDecoration: on ? "line-through" : "none" }}
                             >
                               {scaleWeight(ing.weight)}
                             </span>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -516,10 +570,13 @@ export default function RecipeDetailPage({
                     recipe.ingredients.additions.length > 0 && (
                       <div className="mb-8">
                         <h3
-                          className="text-[11px] font-medium uppercase tracking-widest mb-4"
+                          className="text-[11px] font-medium uppercase tracking-widest mb-4 flex items-center gap-2"
                           style={{ color: "var(--text-muted)" }}
                         >
                           Additions
+                          {allCheckedInGroup("additions", recipe.ingredients.additions) && (
+                            <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--accent)" }}>Ready!</span>
+                          )}
                         </h3>
                         <div
                           className="rounded-xl overflow-hidden"
@@ -528,31 +585,37 @@ export default function RecipeDetailPage({
                             border: "1px solid var(--border-subtle)",
                           }}
                         >
-                          {recipe.ingredients.additions.map((ing, i) => (
+                          {recipe.ingredients.additions.map((ing, i) => {
+                            const ck = `additions-${i}`;
+                            const on = checkedIngredients.has(ck);
+                            return (
                             <div
                               key={i}
-                              className="flex items-center justify-between px-4 py-3"
+                              onClick={() => toggleIngredient(ck)}
+                              className="flex items-center justify-between px-4 py-3 cursor-pointer select-none transition-opacity"
                               style={{
                                 borderBottom:
                                   i < recipe.ingredients.additions!.length - 1
                                     ? "1px solid var(--border-subtle)"
                                     : "none",
+                                opacity: on ? 0.4 : 1,
                               }}
                             >
                               <span
                                 className="text-sm"
-                                style={{ color: "var(--text-secondary)" }}
+                                style={{ color: "var(--text-secondary)", textDecoration: on ? "line-through" : "none" }}
                               >
                                 {ing.name}
                               </span>
                               <span
                                 className="text-sm font-medium tabular-nums"
-                                style={{ color: "var(--text)" }}
+                                style={{ color: "var(--text)", textDecoration: on ? "line-through" : "none" }}
                               >
                                 {scaleWeight(ing.weight)}
                               </span>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -562,10 +625,13 @@ export default function RecipeDetailPage({
                     recipe.ingredients.filling.length > 0 && (
                       <div className="mb-8">
                         <h3
-                          className="text-[11px] font-medium uppercase tracking-widest mb-4"
+                          className="text-[11px] font-medium uppercase tracking-widest mb-4 flex items-center gap-2"
                           style={{ color: "var(--text-muted)" }}
                         >
                           Filling
+                          {allCheckedInGroup("filling", recipe.ingredients.filling) && (
+                            <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--accent)" }}>Ready!</span>
+                          )}
                         </h3>
                         <div
                           className="rounded-xl overflow-hidden"
@@ -574,31 +640,37 @@ export default function RecipeDetailPage({
                             border: "1px solid var(--border-subtle)",
                           }}
                         >
-                          {recipe.ingredients.filling.map((ing, i) => (
+                          {recipe.ingredients.filling.map((ing, i) => {
+                            const ck = `filling-${i}`;
+                            const on = checkedIngredients.has(ck);
+                            return (
                             <div
                               key={i}
-                              className="flex items-center justify-between px-4 py-3"
+                              onClick={() => toggleIngredient(ck)}
+                              className="flex items-center justify-between px-4 py-3 cursor-pointer select-none transition-opacity"
                               style={{
                                 borderBottom:
                                   i < recipe.ingredients.filling!.length - 1
                                     ? "1px solid var(--border-subtle)"
                                     : "none",
+                                opacity: on ? 0.4 : 1,
                               }}
                             >
                               <span
                                 className="text-sm"
-                                style={{ color: "var(--text-secondary)" }}
+                                style={{ color: "var(--text-secondary)", textDecoration: on ? "line-through" : "none" }}
                               >
                                 {ing.name}
                               </span>
                               <span
                                 className="text-sm font-medium tabular-nums"
-                                style={{ color: "var(--text)" }}
+                                style={{ color: "var(--text)", textDecoration: on ? "line-through" : "none" }}
                               >
                                 {scaleWeight(ing.weight)}
                               </span>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -716,15 +788,21 @@ export default function RecipeDetailPage({
                       {step.tip && (
                         <div
                           className="mt-3 rounded-lg p-3"
-                          style={{ background: "var(--bg-subtle)" }}
+                          style={{
+                            background: "var(--bg-subtle)",
+                            transform: `rotate(${getTipRotation(`step-${step.step}`)}deg)`,
+                          }}
                         >
                           <p
-                            className="text-xs flex items-start gap-2 leading-relaxed"
-                            style={{ color: "var(--text-secondary)" }}
+                            className="text-base flex items-start gap-2 leading-relaxed"
+                            style={{
+                              color: "var(--text-secondary)",
+                              fontFamily: "var(--font-caveat)",
+                            }}
                           >
                             <Lightbulb
                               size={12}
-                              className="mt-0.5 shrink-0"
+                              className="mt-1 shrink-0"
                               style={{ color: "var(--accent)" }}
                             />
                             {step.tip}
@@ -752,16 +830,20 @@ export default function RecipeDetailPage({
                   style={{
                     background: "var(--card)",
                     border: "1px solid var(--border-subtle)",
+                    transform: `rotate(${getTipRotation(`tip-${i}`)}deg)`,
                   }}
                 >
                   <Lightbulb
                     size={16}
-                    className="mt-0.5 shrink-0"
+                    className="mt-1 shrink-0"
                     style={{ color: "var(--accent)" }}
                   />
                   <p
-                    className="text-sm leading-relaxed"
-                    style={{ color: "var(--text-secondary)" }}
+                    className="text-base leading-relaxed"
+                    style={{
+                      color: "var(--text-secondary)",
+                      fontFamily: "var(--font-caveat)",
+                    }}
                   >
                     {tip}
                   </p>

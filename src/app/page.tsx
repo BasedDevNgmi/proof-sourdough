@@ -21,6 +21,51 @@ const fadeIn = {
   animate: { opacity: 1, y: 0 },
 };
 
+const BAKING_WISDOMS = [
+  "Cold dough shapes easier.",
+  "Trust the process. And the starter.",
+  "The best bread is the one you actually bake.",
+  "Flour, water, salt, time. That’s it.",
+  "Your starter knows what it’s doing.",
+  "Patience is the secret ingredient.",
+  "Steam in the first ten minutes changes everything.",
+  "A wet dough is a good dough.",
+  "The fridge is your friend.",
+  "Score with confidence, not caution.",
+  "Good bread can’t be rushed.",
+  "Listen to your dough. It tells you when it’s ready.",
+  "Autolyse: the laziest step with the biggest payoff.",
+  "Bulk fermentation is where the magic happens.",
+  "Every oven lies. Get a thermometer.",
+];
+
+function getDailyWisdom(): string {
+  const today = new Date();
+  const dayIndex = (today.getFullYear() * 366 + today.getMonth() * 31 + today.getDate()) % BAKING_WISDOMS.length;
+  return BAKING_WISDOMS[dayIndex];
+}
+
+const FLOUR_PARTICLES = [
+  { top: "15%", left: "8%", size: 3, anim: "flour-drift-1", dur: "18s" },
+  { top: "25%", left: "85%", size: 2, anim: "flour-drift-2", dur: "22s" },
+  { top: "40%", left: "20%", size: 4, anim: "flour-drift-3", dur: "25s" },
+  { top: "10%", left: "60%", size: 2, anim: "flour-drift-4", dur: "20s" },
+  { top: "55%", left: "75%", size: 3, anim: "flour-drift-5", dur: "28s" },
+  { top: "35%", left: "45%", size: 2, anim: "flour-drift-6", dur: "16s" },
+  { top: "60%", left: "30%", size: 3, anim: "flour-drift-7", dur: "24s" },
+  { top: "20%", left: "92%", size: 4, anim: "flour-drift-8", dur: "30s" },
+  { top: "50%", left: "12%", size: 2, anim: "flour-drift-9", dur: "19s" },
+  { top: "45%", left: "55%", size: 3, anim: "flour-drift-10", dur: "27s" },
+];
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 7) return "Still up? Let’s bake.";
+  if (hour < 12) return "Rise and shine.";
+  if (hour < 17) return "Afternoon proof.";
+  return "Evening bake session.";
+}
+
 export default function HomePage() {
   const [recentBakes, setRecentBakes] = useState<BakeSession[]>([]);
   const [activeBake, setActiveBake] = useState<BakeSession | null>(null);
@@ -96,6 +141,24 @@ export default function HomePage() {
             style={{ background: "var(--glow-color)" }}
           />
 
+          {/* Floating flour particles */}
+          {FLOUR_PARTICLES.map((p, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full pointer-events-none"
+              style={{
+                top: p.top,
+                left: p.left,
+                width: p.size,
+                height: p.size,
+                background: "var(--text-ghost)",
+                opacity: 0.2,
+                animation: `${p.anim} ${p.dur} ease-in-out infinite`,
+                willChange: "transform",
+              }}
+            />
+          ))}
+
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -123,7 +186,13 @@ export default function HomePage() {
               className="text-sm mt-3 lg:text-base leading-relaxed max-w-sm"
               style={{ color: "var(--text-faint)" }}
             >
-              Your sourdough companion
+              {getGreeting()}
+            </p>
+            <p
+              className="text-xs italic mt-2 max-w-xs"
+              style={{ color: "var(--text-faint)" }}
+            >
+              {getDailyWisdom()}
             </p>
           </motion.div>
         </motion.div>
@@ -187,7 +256,7 @@ export default function HomePage() {
               className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-4"
               style={{ color: "var(--text-muted)" }}
             >
-              Overview
+              The Dough Report
             </h2>
             <div className="grid grid-cols-3 gap-3">
               {[
@@ -240,7 +309,7 @@ export default function HomePage() {
               className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-4"
               style={{ color: "var(--text-muted)" }}
             >
-              Quick Actions
+              What&apos;s baking?
             </h2>
             <div className="grid grid-cols-2 gap-3 h-[calc(100%-2rem)]">
               <Link

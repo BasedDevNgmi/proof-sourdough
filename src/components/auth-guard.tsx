@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
+import { StarterBubbles } from "@/components/ui/starter-bubbles";
 
 const PUBLIC_PATHS = ["/login"];
 
@@ -21,7 +22,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg)" }}>
         <div className="flex flex-col items-center gap-4">
-          <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: "var(--border)", borderTopColor: "var(--accent)" }} />
+          <StarterBubbles />
           <p
             className="font-[family-name:var(--font-playfair)] text-xl font-semibold tracking-tight"
             style={{ color: "var(--text)" }}

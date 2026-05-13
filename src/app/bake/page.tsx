@@ -36,7 +36,7 @@ export default function BakePage() {
   return (
     <div className="min-h-screen">
       <div className="max-w-6xl mx-auto">
-        <PageHeader title="Start a Bake" subtitle="Choose a recipe to begin" />
+        <PageHeader title="Start a Bake" subtitle="Pick your adventure" />
 
         {/* Active Bakes */}
         {activeBakes.length > 0 && (

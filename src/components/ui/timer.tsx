@@ -3,6 +3,29 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Play, Pause, RotateCcw } from "lucide-react";
 
+let audioCtx: AudioContext | null = null;
+function playSound(type: "ding" | "tick") {
+  if (typeof window === "undefined") return;
+  if (!audioCtx) audioCtx = new AudioContext();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  if (type === "ding") {
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.6);
+  } else {
+    osc.frequency.value = 600;
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.05);
+  }
+}
+
 function requestNotificationPermission() {
   if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
     Notification.requestPermission();
@@ -11,6 +34,7 @@ function requestNotificationPermission() {
 
 function sendNotification(label?: string) {
   if (typeof window === "undefined") return;
+  playSound("ding");
   if ("vibrate" in navigator) {
     navigator.vibrate([200, 100, 200, 100, 200]);
   }
@@ -133,6 +157,7 @@ export function Timer({
   }, [running, endTime, lsKey, label]);
 
   const start = useCallback(() => {
+    playSound("tick");
     completedRef.current = false;
     const end = Date.now() + remaining * 1000;
     setEndTime(end);
@@ -140,6 +165,7 @@ export function Timer({
   }, [remaining]);
 
   const pause = useCallback(() => {
+    playSound("tick");
     if (endTime) {
       const left = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
       setRemaining(left);

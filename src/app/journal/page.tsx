@@ -47,7 +47,7 @@ export default function JournalPage() {
   return (
     <div className="min-h-screen">
       <div className="max-w-6xl mx-auto">
-        <PageHeader title="Journal" subtitle="Your baking history" />
+        <PageHeader title="Journal" subtitle="Every loaf tells a story" />
 
         {/* Filter */}
         <div className="px-5 mb-5 flex gap-2">
@@ -79,14 +79,20 @@ export default function JournalPage() {
               animate={{ opacity: 1 }}
               className="text-center py-16"
             >
-              <Calendar size={32} className="mx-auto mb-3" style={{ color: "var(--text-ghost)" }} />
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>No bakes yet</p>
+              <motion.div
+                animate={{ y: [0, -6, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                className="mx-auto mb-3 w-fit"
+              >
+                <Calendar size={32} style={{ color: "var(--text-ghost)" }} />
+              </motion.div>
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>Your journal is as empty as a bread basket before dinner</p>
               <Link
                 href="/bake"
                 className="text-sm mt-2 inline-block"
                 style={{ color: "var(--accent)" }}
               >
-                Start your first bake
+                Bake your first story
               </Link>
             </motion.div>
           ) : (

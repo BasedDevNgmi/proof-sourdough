@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth-provider";
+import { StarterBubbles } from "@/components/ui/starter-bubbles";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -87,7 +88,7 @@ export default function LoginPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg)" }}>
-        <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: "var(--border)", borderTopColor: "var(--accent)" }} />
+        <StarterBubbles />
       </div>
     );
   }
@@ -108,10 +109,24 @@ export default function LoginPage() {
             className="font-[family-name:var(--font-playfair)] text-4xl font-semibold tracking-tight"
             style={{ color: "var(--text)" }}
           >
-            Proof
+            {["P", "r", "o", "o", "f"].map((letter, i) => (
+              <motion.span
+                key={i}
+                className="inline-block"
+                animate={{ y: [0, -3, 0] }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: i * 0.15,
+                }}
+              >
+                {letter}
+              </motion.span>
+            ))}
           </h1>
           <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
-            Your sourdough companion
+            Good bread takes time. So do we.
           </p>
         </div>
 
@@ -168,6 +183,7 @@ export default function LoginPage() {
                   placeholder="Name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  maxLength={100}
                   className="w-full rounded-xl py-3 px-4 text-sm focus:outline-none transition-colors"
                   style={{ background: "var(--bg-subtle)", border: "1px solid var(--border)", color: "var(--text)" }}
                 />
@@ -213,7 +229,7 @@ export default function LoginPage() {
               className="w-full mt-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
               style={{ background: "var(--accent-surface)", color: "var(--accent)" }}
             >
-              Send magic link instead
+              Skip the password, use a magic link
             </button>
 
             {/* Toggle mode */}

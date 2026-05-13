@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect, useCallback } from "react";
+import { use, useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,11 +15,15 @@ import {
   X,
   Thermometer,
 } from "lucide-react";
+import confetti from "canvas-confetti";
 import { getRecipeById } from "@/data/recipes";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth-provider";
 import { Timer } from "@/components/ui/timer";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { safeGetJSON, safeSetJSON } from "@/lib/safe-storage";
 import { requestWakeLock, releaseWakeLock, reacquireOnVisibility } from "@/lib/wake-lock";
+import { trackEvent } from "@/lib/analytics";
 
 export default function BakeSessionPage({
   params,
@@ -43,6 +47,9 @@ export default function BakeSessionPage({
   const [showTempInput, setShowTempInput] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
 
+  const [justCompletedStep, setJustCompletedStep] = useState<number | null>(null);
+  const tipRotations = useRef<Record<string, number>>({});
+
   const [overallRating, setOverallRating] = useState(0);
   const [crumbRating, setCrumbRating] = useState(0);
   const [crustRating, setCrustRating] = useState(0);
@@ -54,37 +61,41 @@ export default function BakeSessionPage({
   const [flourBrand, setFlourBrand] = useState("");
   const [ambientTemp, setAmbientTemp] = useState("");
   const [saving, setSaving] = useState(false);
+  const startingSession = useRef(false);
+
+  function getTipRotation(key: string): number {
+    if (!tipRotations.current[key]) {
+      tipRotations.current[key] = -0.3 - Math.random() * 0.7;
+    }
+    return tipRotations.current[key];
+  }
 
   const sessionStorageKey = `proof-bake-${recipeId}`;
 
-  // Restore session state from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(sessionStorageKey);
-    if (stored) {
-      try {
-        const state = JSON.parse(stored);
-        if (state.currentStep !== undefined) setCurrentStep(state.currentStep);
-        if (state.completedSteps) setCompletedSteps(new Set(state.completedSteps));
-        if (state.stepNotes) setStepNotes(state.stepNotes);
-        if (state.stepTemps) setStepTemps(state.stepTemps);
-        if (state.sessionId && !sessionId) setSessionId(state.sessionId);
-      } catch {
-        localStorage.removeItem(sessionStorageKey);
-      }
-    }
+    const state = safeGetJSON<{
+      currentStep?: number;
+      completedSteps?: number[];
+      stepNotes?: Record<number, string>;
+      stepTemps?: Record<number, string>;
+      sessionId?: string;
+    }>(sessionStorageKey, {});
+    if (state.currentStep !== undefined) setCurrentStep(state.currentStep);
+    if (state.completedSteps) setCompletedSteps(new Set(state.completedSteps));
+    if (state.stepNotes) setStepNotes(state.stepNotes);
+    if (state.stepTemps) setStepTemps(state.stepTemps);
+    if (state.sessionId && !sessionId) setSessionId(state.sessionId);
   }, []);
 
-  // Persist session state to localStorage on changes
   useEffect(() => {
     if (!sessionId) return;
-    const state = {
+    safeSetJSON(sessionStorageKey, {
       sessionId,
       currentStep,
       completedSteps: [...completedSteps],
       stepNotes,
       stepTemps,
-    };
-    localStorage.setItem(sessionStorageKey, JSON.stringify(state));
+    });
   }, [sessionId, currentStep, completedSteps, stepNotes, stepTemps, sessionStorageKey]);
 
   // Wake lock — keep screen on during bake
@@ -115,20 +126,27 @@ export default function BakeSessionPage({
   }, [recipe]);
 
   async function startSession() {
-    const { data } = await supabase
-      .from("bake_sessions")
-      .insert({
-        recipe_id: recipeId,
-        book_id: recipe?.bookId || "the-perfect-loaf",
-        status: "in-progress",
-        user_id: user?.id,
-      })
-      .select()
-      .single();
+    if (startingSession.current) return;
+    startingSession.current = true;
+    try {
+      const { data } = await supabase
+        .from("bake_sessions")
+        .insert({
+          recipe_id: recipeId,
+          book_id: recipe?.bookId || "the-perfect-loaf",
+          status: "in-progress",
+          user_id: user?.id,
+        })
+        .select()
+        .single();
 
-    if (data) {
-      setSessionId(data.id);
-      window.history.replaceState(null, "", `?session=${data.id}`);
+      if (data) {
+        setSessionId(data.id);
+        window.history.replaceState(null, "", `?session=${data.id}`);
+        trackEvent("bake_started", { recipe_id: recipeId, recipe_title: recipe?.title });
+      }
+    } finally {
+      startingSession.current = false;
     }
   }
 
@@ -148,9 +166,10 @@ export default function BakeSessionPage({
             ? parseFloat(stepTemps[stepNum])
             : null,
         });
+        trackEvent("bake_step_completed", { step: stepNum, recipe_id: recipeId });
       }
     },
-    [sessionId, recipe, stepNotes, stepTemps]
+    [sessionId, recipe, stepNotes, stepTemps, recipeId]
   );
 
   async function finishBake() {
@@ -177,6 +196,17 @@ export default function BakeSessionPage({
 
     setSaving(false);
     cleanupSession();
+    trackEvent("bake_completed", { recipe_id: recipeId, overall_rating: overallRating });
+
+    // Flour confetti celebration
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      colors: ["#fef3c7", "#f5f5f4", "#d6d3d1", "#f59e0b"],
+    });
+
+    // Delay navigation so animation plays
+    await new Promise((resolve) => setTimeout(resolve, 800));
     router.push(`/journal/${sessionId}`);
   }
 
@@ -227,6 +257,7 @@ export default function BakeSessionPage({
   const timerMinutes = parseTimerMinutes(step?.duration);
 
   return (
+    <ErrorBoundary variant="bake">
     <div className="min-h-screen flex flex-col lg:pl-0" style={{ background: "var(--bg)" }}>
       <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full">
         {/* Top Bar */}
@@ -282,19 +313,53 @@ export default function BakeSessionPage({
               {/* Step Header */}
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
-                    style={
-                      completedSteps.has(currentStep)
-                        ? { background: "var(--success, #10b981)", color: "var(--bg)" }
-                        : { background: "var(--accent-muted, rgba(217,119,6,0.15))", color: "var(--accent)" }
-                    }
-                  >
-                    {completedSteps.has(currentStep) ? (
-                      <Check size={16} />
-                    ) : (
-                      step.step
-                    )}
+                  <div className="relative w-8 h-8">
+                    {/* Ring pulse on step complete */}
+                    <AnimatePresence>
+                      {justCompletedStep === currentStep && (
+                        <motion.div
+                          className="absolute inset-0 rounded-full"
+                          style={{ background: "var(--accent)" }}
+                          initial={{ scale: 1, opacity: 0.6 }}
+                          animate={{ scale: 1.8, opacity: 0 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.4, ease: "easeOut" }}
+                        />
+                      )}
+                    </AnimatePresence>
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold relative"
+                      style={
+                        completedSteps.has(currentStep)
+                          ? { background: "var(--success, #10b981)", color: "var(--bg)" }
+                          : { background: "var(--accent-muted, rgba(217,119,6,0.15))", color: "var(--accent)" }
+                      }
+                    >
+                      <AnimatePresence mode="wait">
+                        {completedSteps.has(currentStep) ? (
+                          <motion.span
+                            key="check"
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.5 }}
+                            transition={{ duration: 0.2 }}
+                            style={{ color: justCompletedStep === currentStep ? "var(--bg)" : undefined }}
+                          >
+                            <Check size={16} style={{ color: justCompletedStep === currentStep ? "var(--accent)" : "var(--bg)" }} />
+                          </motion.span>
+                        ) : (
+                          <motion.span
+                            key="number"
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.5 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            {step.step}
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
                   <h2 className="font-[family-name:var(--font-playfair)] text-xl lg:text-2xl font-semibold" style={{ color: "var(--text)" }}>
                     {step.title}
@@ -324,11 +389,24 @@ export default function BakeSessionPage({
 
                   {/* Tip */}
                   {step.tip && (
-                    <div className="rounded-xl p-3 mb-4" style={{ background: "var(--accent-muted, rgba(217,119,6,0.05))", border: "1px solid var(--accent-border, rgba(217,119,6,0.1))" }}>
-                      <p className="text-xs flex items-start gap-2" style={{ color: "var(--text-secondary)" }}>
+                    <div
+                      className="rounded-xl p-3 mb-4"
+                      style={{
+                        background: "var(--accent-muted, rgba(217,119,6,0.05))",
+                        border: "1px solid var(--accent-border, rgba(217,119,6,0.1))",
+                        transform: `rotate(${getTipRotation(`bake-step-${currentStep}`)}deg)`,
+                      }}
+                    >
+                      <p
+                        className="text-base flex items-start gap-2"
+                        style={{
+                          color: "var(--text-secondary)",
+                          fontFamily: "var(--font-caveat)",
+                        }}
+                      >
                         <Lightbulb
                           size={14}
-                          className="mt-0.5 shrink-0"
+                          className="mt-1 shrink-0"
                           style={{ color: "var(--accent)" }}
                         />
                         {step.tip}
@@ -382,12 +460,14 @@ export default function BakeSessionPage({
                         <input
                           type="number"
                           value={stepTemps[currentStep] || ""}
-                          onChange={(e) =>
-                            setStepTemps((prev) => ({
-                              ...prev,
-                              [currentStep]: e.target.value,
-                            }))
-                          }
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            if (v === "" || (Number(v) >= 0 && Number(v) <= 500)) {
+                              setStepTemps((prev) => ({ ...prev, [currentStep]: v }));
+                            }
+                          }}
+                          min={0}
+                          max={500}
                           placeholder="Temp"
                           className="w-24 rounded-xl px-3 py-2 text-sm focus:outline-none"
                           style={{
@@ -451,9 +531,13 @@ export default function BakeSessionPage({
               type="button"
               onClick={() => {
                 markStepComplete(currentStep);
-                if (currentStep < totalSteps - 1) {
-                  setCurrentStep(currentStep + 1);
-                }
+                setJustCompletedStep(currentStep);
+                setTimeout(() => {
+                  setJustCompletedStep(null);
+                  if (currentStep < totalSteps - 1) {
+                    setCurrentStep(currentStep + 1);
+                  }
+                }, 500);
               }}
               className="flex-1 h-12 font-semibold text-sm rounded-xl flex items-center justify-center gap-2 transition-colors"
               style={{ background: "var(--accent)", color: "var(--bg)" }}
@@ -565,14 +649,19 @@ export default function BakeSessionPage({
                         <p className="text-xs mb-1.5" style={{ color: "var(--text-muted)" }}>{label}</p>
                         <div className="flex gap-1">
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <button
+                            <motion.button
                               key={star}
                               type="button"
-                              onClick={() => set(star)}
-                              className="text-lg active:scale-110 hover:scale-110 transition-transform"
+                              onClick={() => {
+                                navigator.vibrate?.(10);
+                                set(star);
+                              }}
+                              whileTap={{ scale: 1.3 }}
+                              transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                              className="text-lg"
                             >
                               {star <= value ? "★" : "☆"}
-                            </button>
+                            </motion.button>
                           ))}
                         </div>
                       </div>
@@ -667,6 +756,7 @@ export default function BakeSessionPage({
                         type="text"
                         value={flourBrand}
                         onChange={(e) => setFlourBrand(e.target.value)}
+                        maxLength={100}
                         placeholder="King Arthur..."
                         className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
                         style={{
@@ -683,7 +773,14 @@ export default function BakeSessionPage({
                       <input
                         type="number"
                         value={ambientTemp}
-                        onChange={(e) => setAmbientTemp(e.target.value)}
+                        min={-10}
+                        max={60}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === "" || (Number(v) >= -10 && Number(v) <= 60)) {
+                            setAmbientTemp(v);
+                          }
+                        }}
                         placeholder="22"
                         className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
                         style={{
@@ -723,5 +820,6 @@ export default function BakeSessionPage({
         )}
       </AnimatePresence>
     </div>
+    </ErrorBoundary>
   );
 }
