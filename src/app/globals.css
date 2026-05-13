@@ -273,45 +273,6 @@ input, textarea, select {
   border-color: var(--border-strong);
 }
 
-
-/* Gradient text */
-.gradient-text {
-  background: linear-gradient(135deg, var(--ink) 0%, var(--ink-soft) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Gradient number text */
-.gradient-num {
-  background: linear-gradient(135deg, var(--crust-soft), var(--crust) 40%, var(--jam-soft));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-}
-
-/* Gradient accent text */
-.gradient-accent {
-  background: linear-gradient(135deg, var(--crust-soft) 0%, var(--crust) 50%, var(--crust-deep) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-[data-theme="light"] .gradient-accent {
-  background: linear-gradient(135deg, var(--crust) 0%, var(--crust-deep) 50%, #78350F 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Dotted notepaper background */
-.notepaper {
-  background-image:
-    radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 1.5px);
-  background-size: 22px 22px;
-}
-
 /* Doodle underline */
 .doodle-underline {
   display: inline-block;
@@ -329,54 +290,6 @@ input, textarea, select {
   opacity: 0.85;
 }
 
-/* Hover doodle underline */
-.hover-doodle {
-  background-image: linear-gradient(transparent calc(100% - 2px), var(--crust) 0);
-  background-size: 0 100%;
-  background-repeat: no-repeat;
-  transition: background-size 0.4s var(--ease-out);
-}
-.hover-doodle:hover { background-size: 100% 100%; }
-
-/* Tap/press animation */
-.tap-pop:active { animation: tap 0.25s var(--ease-bounce); }
-
-
-/* "Fresh" badge ribbon */
-.fresh-ribbon {
-  position: absolute;
-  top: 14px; left: -6px;
-  background: var(--jam);
-  color: #fff5e5;
-  font-family: var(--font-script), var(--font-caveat), cursive;
-  font-size: 15px;
-  padding: 3px 12px 3px 10px;
-  transform: rotate(-6deg);
-  box-shadow: 0 4px 10px -4px rgba(0,0,0,0.4);
-  z-index: 2;
-}
-.fresh-ribbon::after {
-  content: '';
-  position: absolute; left: 0; bottom: -5px;
-  border: 3px solid transparent;
-  border-top-color: var(--crust-deep);
-  border-right-color: var(--crust-deep);
-}
-
-/* Floating flour motes */
-.flour-mote {
-  position: fixed;
-  bottom: -10px;
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: var(--ink-mute);
-  opacity: 0;
-  z-index: 0;
-  pointer-events: none;
-  animation: flour-drift 22s linear infinite;
-  filter: blur(0.5px);
-}
-[data-theme="light"] .flour-mote { background: rgba(150,100,40,0.5); }
 
 /* Sidebar */
 .proof-sidebar > * { flex-shrink: 0; }
@@ -411,25 +324,12 @@ input, textarea, select {
   20% { opacity: 0.55; }
   100% { transform: translate(var(--sx, 6px), -30px) scale(1.6); opacity: 0; }
 }
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 var(--crust); }
-  50% { box-shadow: 0 0 0 12px transparent; }
-}
+
 @keyframes breathe {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.04); }
 }
-@keyframes sway {
-  0%, 100% { transform: rotate(-3deg); }
-  50% { transform: rotate(3deg); }
-}
-@keyframes spin-slow {
-  to { transform: rotate(360deg); }
-}
-@keyframes squish {
-  0%, 100% { transform: scale(1, 1); }
-  50% { transform: scale(1.06, 0.94); }
-}
+
 @keyframes blink {
   0%, 92%, 100% { transform: scaleY(1); }
   96% { transform: scaleY(0.1); }
@@ -438,35 +338,6 @@ input, textarea, select {
   0% { transform: translateY(-40vh) rotate(0deg); opacity: 0; }
   10% { opacity: 1; }
   100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-}
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-@keyframes flour-drift {
-  0%   { transform: translate(0, 0) rotate(0deg); opacity: 0; }
-  10%  { opacity: 0.5; }
-  90%  { opacity: 0.4; }
-  100% { transform: translate(40vw, -110vh) rotate(540deg); opacity: 0; }
-}
-@keyframes doodle {
-  0%, 100% { stroke-dashoffset: 0; }
-  50%      { stroke-dashoffset: -10; }
-}
-@keyframes tap {
-  0% { transform: scale(1); }
-  50% { transform: scale(0.94); }
-  100% { transform: scale(1); }
-}
-
-@keyframes wiggle-in {
-  0%   { transform: scale(0.8) rotate(-4deg); opacity: 0; }
-  60%  { transform: scale(1.05) rotate(2deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0); opacity: 1; }
-}
-@keyframes hat-tilt {
-  0%, 100% { transform: rotate(-8deg); }
-  50%      { transform: rotate(8deg); }
 }
 @keyframes gentle-pulse {
   0%, 100% { opacity: 1; }
@@ -479,18 +350,8 @@ input, textarea, select {
 /* Animation utility classes */
 .anim-rise { animation: rise 0.5s var(--ease-bounce) both; }
 .anim-float { animation: float-slow 6s ease-in-out infinite; }
-.anim-sway { animation: sway 4s ease-in-out infinite; transform-origin: bottom center; }
 .anim-breathe { animation: breathe 3s ease-in-out infinite; }
-.anim-spin-slow { animation: spin-slow 30s linear infinite; }
-.anim-wiggle-in { animation: wiggle-in 0.5s var(--ease-bounce) both; }
-.hat-tilt { animation: hat-tilt 4s ease-in-out infinite; transform-origin: bottom center; }
 .animate-gentle-pulse { animation: gentle-pulse 2s ease-in-out infinite; }
-.animate-shimmer {
-  background: linear-gradient(90deg, transparent 0%, var(--accent-surface) 50%, transparent 100%);
-  background-size: 200% 100%;
-  animation: shimmer 3s ease-in-out infinite;
-}
-.animate-float { animation: float 6s ease-in-out infinite; }
 
 /* ─── Focus & Selection ─── */
 button, a { outline: none; }
