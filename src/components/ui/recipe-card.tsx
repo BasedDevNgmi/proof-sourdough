@@ -4,29 +4,14 @@ import { useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Clock, Droplets, Gauge, ArrowUpRight, BookOpen } from "lucide-react";
+import { Clock, Droplets, BookOpen } from "lucide-react";
 import type { Recipe } from "@/data/recipes";
 import { books } from "@/data/recipes";
 
-const difficultyColor = {
-  beginner: "var(--color-emerald)",
-  intermediate: "var(--color-amber)",
-  advanced: "var(--color-rose)",
-};
-
 const difficultyStyles = {
-  beginner: { color: "#34d399", background: "rgba(16, 185, 129, 0.1)" },
-  intermediate: { color: "#fbbf24", background: "rgba(245, 158, 11, 0.1)" },
-  advanced: { color: "#fb7185", background: "rgba(244, 63, 94, 0.1)" },
-};
-
-const categoryEmoji: Record<string, string> = {
-  "free-form-loaves": "\u{1F35E}",
-  "pan-loaves": "\u{1F35E}",
-  "pizzas-flatbreads": "\u{1F355}",
-  "buns-rolls-more": "\u{1F950}",
-  sweets: "\u{1F9C1}",
-  tutorial: "\u{1F4D6}",
+  beginner: { color: "#34d399", background: "rgba(16, 185, 129, 0.85)" },
+  intermediate: { color: "#fbbf24", background: "rgba(245, 158, 11, 0.85)" },
+  advanced: { color: "#fb7185", background: "rgba(244, 63, 94, 0.85)" },
 };
 
 export function RecipeCard({
@@ -57,26 +42,30 @@ export function RecipeCard({
     el.style.transition = "transform 0.4s ease-out";
   }, []);
 
+  const book = books.find((b) => b.id === recipe.bookId);
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
       transition={{
-        duration: 0.35,
-        delay: Math.min(index * 0.04, 0.3),
+        duration: 0.3,
+        delay: Math.min(index * 0.03, 0.25),
         ease: [0.25, 0.1, 0.25, 1],
       }}
+      layout
     >
       <Link
         ref={cardRef}
         href={`/recipes/${recipe.id}`}
-        className="group block rounded-2xl overflow-hidden transition-all duration-300 card-glow"
+        className="group block rounded-2xl overflow-hidden transition-all duration-300"
         style={{ background: "var(--card)", border: "1px solid var(--border-subtle)" }}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
-        {recipe.image && (
-          <div className="relative h-36 overflow-hidden">
+        {recipe.image ? (
+          <div className="relative h-44 overflow-hidden">
             <Image
               src={recipe.image}
               alt={recipe.title}
@@ -84,59 +73,62 @@ export function RecipeCard({
               sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
               className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, var(--card) 0%, transparent 50%)" }} />
+            <span
+              className="absolute top-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider backdrop-blur-sm"
+              style={{
+                background: difficultyStyles[recipe.difficulty].background,
+                color: "#fff",
+              }}
+            >
+              {recipe.difficulty}
+            </span>
+          </div>
+        ) : (
+          <div
+            className="relative h-28 flex items-center justify-center"
+            style={{ background: "var(--accent-surface)" }}
+          >
+            <span className="text-4xl">🍞</span>
+            <span
+              className="absolute top-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider"
+              style={{
+                background: difficultyStyles[recipe.difficulty].background,
+                color: "#fff",
+              }}
+            >
+              {recipe.difficulty}
+            </span>
           </div>
         )}
-        <div className="p-4">
-          <div className="flex items-start gap-3.5">
-            {!recipe.image && (
-              <div
-                className="text-2xl mt-0.5 w-10 h-10 flex items-center justify-center rounded-xl shrink-0 transition-colors"
-                style={{ background: "var(--accent-surface)" }}
-              >
-                {categoryEmoji[recipe.category] || "\u{1F35E}"}
-              </div>
+        <div className="px-4 pt-3 pb-3.5">
+          <h3
+            className="font-medium text-[15px] leading-snug truncate group-hover:text-[var(--accent)] transition-colors duration-200"
+            style={{ color: "var(--text)" }}
+          >
+            {recipe.title}
+          </h3>
+          {recipe.subtitle && (
+            <p className="text-xs mt-0.5 truncate" style={{ color: "var(--text-muted)" }}>
+              {recipe.subtitle}
+            </p>
+          )}
+          <div className="flex items-center gap-3 mt-2.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
+            <span className="flex items-center gap-1">
+              <Clock size={11} />
+              {recipe.totalTime}
+            </span>
+            {recipe.hydration && (
+              <span className="flex items-center gap-1">
+                <Droplets size={11} />
+                {recipe.hydration}
+              </span>
             )}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="font-medium truncate transition-colors" style={{ color: "var(--text)" }}>
-                  {recipe.title}
-                </h3>
-                <ArrowUpRight size={14} className="shrink-0 mt-1 transition-colors" style={{ color: "var(--text-ghost)" }} />
-              </div>
-              {recipe.subtitle && (
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{recipe.subtitle}</p>
-              )}
-              <p className="text-xs mt-1.5 line-clamp-2 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                {recipe.description}
-              </p>
-              <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-3 text-[11px]" style={{ color: "var(--text-muted)" }}>
-                <span className="flex items-center gap-1">
-                  <Clock size={12} />
-                  {recipe.totalTime}
-                </span>
-                {recipe.hydration && (
-                  <span className="flex items-center gap-1">
-                    <Droplets size={12} />
-                    {recipe.hydration}
-                  </span>
-                )}
-                <span
-                  className="flex items-center gap-1 px-1.5 py-0.5 rounded-md"
-                  style={difficultyStyles[recipe.difficulty]}
-                >
-                  <Gauge size={12} />
-                  {recipe.difficulty}
-                </span>
-                <span className="flex items-center gap-1 text-[10px]" style={{ color: "var(--text-faint)" }}>
-                  <BookOpen size={10} />
-                  {(() => {
-                    const book = books.find(b => b.id === recipe.bookId);
-                    return book ? `${book.author}` : "";
-                  })()}
-                </span>
-              </div>
-            </div>
+            {book && (
+              <span className="flex items-center gap-1 ml-auto text-[10px]" style={{ color: "var(--text-faint)" }}>
+                <BookOpen size={10} />
+                {book.author.split(" ").pop()}
+              </span>
+            )}
           </div>
         </div>
       </Link>
