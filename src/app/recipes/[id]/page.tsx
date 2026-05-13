@@ -2,31 +2,17 @@
 
 import { use, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { motion } from "framer-motion";
-import {
-  ArrowLeft,
-  Clock,
-  Droplets,
-  Gauge,
-  ChefHat,
-  Scale,
-  Timer,
-  Lightbulb,
-  History,
-} from "lucide-react";
 import { getRecipeById, books } from "@/data/recipes";
 import { supabase, type BakeSession } from "@/lib/supabase";
 import { trackEvent } from "@/lib/analytics";
 import { Badge } from "@/components/ui/badge";
+import { Pill } from "@/components/ui/pill";
+import { Icon } from "@/components/illustrations/icons";
+import { BreadIllustration } from "@/components/illustrations/bread-illustration";
+import { Steam } from "@/components/illustrations/steam";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
-
-const difficultyVariant = {
-  beginner: "emerald" as const,
-  intermediate: "amber" as const,
-  advanced: "rose" as const,
-};
 
 export default function RecipeDetailPage({
   params,
@@ -93,7 +79,7 @@ export default function RecipeDetailPage({
   if (!recipe) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p style={{ color: "var(--text-muted)" }}>Recipe not found</p>
+        <p style={{ color: "var(--ink-mute)" }}>Recipe not found</p>
       </div>
     );
   }
@@ -112,197 +98,146 @@ export default function RecipeDetailPage({
     return `${scaled}${match[2] ? match[2] : ""}`;
   }
 
-  const hasImage = !!recipe.image;
-
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
-      {/* Hero Image Header or Text-only Header */}
-      {hasImage ? (
-        <div className="relative h-64 lg:h-80 w-full overflow-hidden">
-          <Image
-            src={recipe.image!}
-            alt={recipe.title}
-            fill
-            className="object-cover"
-            priority
-          />
-          {/* Gradient overlay fading to background */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(to top, var(--bg) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 100%)",
-            }}
-          />
-          {/* Back button over image */}
-          <div className="absolute top-0 left-0 right-0 max-w-4xl mx-auto px-6 pt-14 lg:pt-10">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="flex items-center gap-1.5 text-white/80 text-sm active:text-white/60 hover:text-white transition-colors"
-            >
-              <ArrowLeft size={16} /> Back
-            </button>
+    <div className="anim-rise proof-page" style={{ maxWidth: 1100 }}>
+      {/* Back */}
+      <button
+        type="button"
+        onClick={() => router.back()}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          padding: "8px 12px", background: "transparent", border: "1px solid var(--border)",
+          borderRadius: 999, color: "var(--ink-soft)", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
+          marginBottom: 20,
+        }}
+      >
+        <Icon.back width={14} height={14} />
+        All recipes
+      </button>
+
+      {/* Hero grid: text left, illustration right */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "center", marginBottom: 40 }}>
+        <div>
+          <div className="label" style={{ marginBottom: 10 }}>
+            {recipe.category.replace(/-/g, " ")}
+            {(() => { const book = books.find(b => b.id === recipe.bookId); return book ? ` · ${book.title}` : ""; })()}
           </div>
-          {/* Title overlaid at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 max-w-4xl mx-auto px-6 pb-6">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Badge variant={difficultyVariant[recipe.difficulty]}>
-                {recipe.difficulty}
-              </Badge>
-              <h1
-                className="font-[family-name:var(--font-playfair)] text-3xl lg:text-5xl font-semibold tracking-tight mt-2 leading-tight"
-                style={{ color: "#f5f5f4" }}
-              >
-                {recipe.title}
-              </h1>
-              {recipe.subtitle && (
-                <p
-                  className="text-sm mt-1.5 tracking-wide"
-                  style={{ color: "rgba(245,245,244,0.6)" }}
-                >
-                  {recipe.subtitle}
-                </p>
-              )}
-            </motion.div>
-          </div>
-        </div>
-      ) : (
-        <div className="max-w-4xl mx-auto px-6 pt-14 lg:pt-10">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="flex items-center gap-1.5 text-sm mb-6 transition-colors"
-            style={{ color: "var(--text-muted)" }}
-          >
-            <ArrowLeft size={16} /> Back
-          </button>
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Badge variant={difficultyVariant[recipe.difficulty]}>
-              {recipe.difficulty}
-            </Badge>
-            <h1
-              className="font-[family-name:var(--font-playfair)] text-3xl lg:text-5xl font-semibold tracking-tight mt-3 leading-tight"
-              style={{ color: "var(--text)" }}
-            >
-              {recipe.title}
-            </h1>
-            {recipe.subtitle && (
-              <p
-                className="text-sm mt-1.5 tracking-wide"
-                style={{ color: "var(--text-muted)" }}
-              >
-                {recipe.subtitle}
-              </p>
+          <h1 className="display" style={{ fontSize: 56, margin: 0, marginBottom: 12, lineHeight: 0.95 }}>{recipe.title}</h1>
+          {recipe.subtitle && (
+            <div style={{ fontSize: 14, color: "var(--ink-mute)", marginBottom: 8 }}>{recipe.subtitle}</div>
+          )}
+          <div style={{ fontSize: 16, color: "var(--ink-soft)", lineHeight: 1.5, marginBottom: 14 }}>{recipe.description}</div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 28, flexWrap: "wrap" }}>
+            <div style={{ padding: "8px 16px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12 }}>
+              <div className="display" style={{ fontSize: 22, lineHeight: 1 }}>{recipe.totalTime}</div>
+              <div className="label" style={{ fontSize: 10, marginTop: 2 }}>total</div>
+            </div>
+            {recipe.hydration && (
+              <div style={{ padding: "8px 16px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12 }}>
+                <div className="display" style={{ fontSize: 22, lineHeight: 1 }}>{recipe.hydration}</div>
+                <div className="label" style={{ fontSize: 10, marginTop: 2 }}>hydration</div>
+              </div>
             )}
-          </motion.div>
-        </div>
-      )}
-
-      <div className="max-w-4xl mx-auto">
-        {/* Description + Meta section */}
-        <div className={`px-6 ${hasImage ? "pt-6" : "pt-5"} pb-2`}>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.15 }}
-          >
-            <p
-              className="text-sm leading-relaxed max-w-2xl"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {recipe.description}
-            </p>
-
-            {/* Meta */}
-            <div className="flex flex-wrap gap-4 mt-5 text-xs" style={{ color: "var(--text-muted)" }}>
-              <span className="flex items-center gap-1.5">
-                <Clock size={13} /> {recipe.totalTime}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Timer size={13} /> {recipe.activeTime} active
-              </span>
-              {recipe.hydration && (
-                <span className="flex items-center gap-1.5">
-                  <Droplets size={13} /> {recipe.hydration}
-                </span>
-              )}
-              <span className="flex items-center gap-1.5">
-                <Scale size={13} /> {recipe.yield}
-              </span>
-            </div>
-
-            {/* Book source */}
-            {(() => {
-              const book = books.find(b => b.id === recipe.bookId);
-              return book ? (
-                <div className="flex items-center gap-2 mt-4 text-xs" style={{ color: "var(--text-muted)" }}>
-                  <div className="w-6 h-8 rounded-sm flex items-center justify-center" style={{ background: book.coverColor }}>
-                    <span className="text-[7px] text-white/80 font-bold">{book.title.charAt(0)}</span>
-                  </div>
-                  <div>
-                    <p className="font-medium" style={{ color: "var(--text-secondary)" }}>
-                      {book.title}{book.subtitle ? `: ${book.subtitle}` : ""}
-                    </p>
-                    <p className="text-[11px]" style={{ color: "var(--text-faint)" }}>by {book.author}</p>
-                  </div>
-                </div>
-              ) : null;
-            })()}
-
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              {recipe.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="text-[10px] tracking-wide uppercase px-2.5 py-1 rounded-md"
-                  style={{
-                    color: "var(--text-faint)",
-                    background: "var(--bg-subtle)",
-                    border: "1px solid var(--border-subtle)",
-                  }}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Start Bake CTA */}
-        <div className="px-6 py-6">
+            <Pill tone={recipe.difficulty === "beginner" ? "beginner" : recipe.difficulty === "advanced" ? "advanced" : "intermediate"} style={{ fontSize: 12, padding: "6px 12px" }}>
+              {recipe.difficulty}
+            </Pill>
+          </div>
           <Link
             href={`/bake/${recipe.id}`}
-            className="flex items-center justify-center gap-2 w-full md:w-auto md:px-14 font-semibold text-sm py-3.5 rounded-xl transition-colors"
             style={{
-              background: "var(--accent)",
-              color: "var(--bg)",
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "14px 26px", background: "var(--crust)", border: "none", color: "#1c1611",
+              borderRadius: 12, fontWeight: 700, fontFamily: "inherit", fontSize: 15,
+              textDecoration: "none",
+              boxShadow: "0 8px 24px -8px rgba(232,155,60,0.5)",
+              transition: "transform 0.2s var(--ease-bounce)",
             }}
           >
-            <ChefHat size={18} />
-            Start Baking
+            <Icon.chef width={18} height={18} /> Start this bake
           </Link>
         </div>
 
-        {/* Divider */}
-        <div className="px-6">
-          <div style={{ borderBottom: "1px solid var(--border-subtle)" }} />
+        {/* Illustration container */}
+        <div style={{
+          position: "relative", aspectRatio: "1 / 1",
+          background: "radial-gradient(circle at 50% 30%, var(--surface-2), var(--surface))",
+          borderRadius: "var(--radius-xl)", border: "1px solid var(--border)",
+          display: "grid", placeItems: "center", overflow: "hidden",
+        }}>
+          <div style={{
+            position: "absolute", inset: 0,
+            background: `radial-gradient(circle at 20% 30%, var(--crust-soft) 1.5px, transparent 2.5px),
+                         radial-gradient(circle at 60% 70%, var(--leaf-soft) 1px, transparent 2px),
+                         radial-gradient(circle at 80% 20%, var(--jam-soft) 1px, transparent 2px)`,
+            backgroundSize: "60px 60px", opacity: 0.3,
+          }} />
+          <div style={{ position: "absolute", top: 40, left: "50%", transform: "translateX(-50%)", width: 60, height: 60 }}>
+            <Steam count={6} />
+          </div>
+          <div className="anim-float">
+            <BreadIllustration seed={recipe.id} size={300} />
+          </div>
         </div>
+      </div>
 
-        {/* Tabs */}
-        <div className="px-6 pt-6 mb-6">
-          <div
-            className="flex gap-1 rounded-xl p-1 max-w-sm"
-            style={{ background: "var(--bg-subtle)" }}
+      {/* Tags */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {recipe.tags.map((tag) => (
+          <span
+            key={tag}
+            className="text-[10px] tracking-wide uppercase px-2.5 py-1 rounded-md"
+            style={{
+              color: "var(--ink-faint)",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+            }}
           >
+            {tag}
+          </span>
+        ))}
+      </div>
+
+      {/* Meta row */}
+      <div className="flex flex-wrap gap-4 mb-6 text-xs" style={{ color: "var(--ink-mute)" }}>
+        <span className="flex items-center gap-1.5">
+          <Icon.clock width={13} height={13} /> {recipe.totalTime}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Icon.clock width={13} height={13} /> {recipe.activeTime} active
+        </span>
+        {recipe.hydration && (
+          <span className="flex items-center gap-1.5">💧 {recipe.hydration}</span>
+        )}
+        <span className="flex items-center gap-1.5">{recipe.yield}</span>
+      </div>
+
+      {/* Book source */}
+      {(() => {
+        const book = books.find(b => b.id === recipe.bookId);
+        return book ? (
+          <div className="flex items-center gap-2 mb-6 text-xs" style={{ color: "var(--ink-mute)" }}>
+            <div className="w-6 h-8 rounded-sm flex items-center justify-center" style={{ background: book.coverColor }}>
+              <span className="text-[7px] text-white/80 font-bold">{book.title.charAt(0)}</span>
+            </div>
+            <div>
+              <p className="font-medium" style={{ color: "var(--ink-soft)" }}>
+                {book.title}{book.subtitle ? `: ${book.subtitle}` : ""}
+              </p>
+              <p className="text-[11px]" style={{ color: "var(--ink-faint)" }}>by {book.author}</p>
+            </div>
+          </div>
+        ) : null;
+      })()}
+
+      {/* Divider */}
+      <div style={{ borderBottom: "1px solid var(--border)", marginBottom: 24 }} />
+
+      {/* Tabs */}
+      <div className="mb-6">
+        <div
+          className="flex gap-1 rounded-xl p-1 max-w-sm"
+          style={{ background: "var(--surface)" }}
+        >
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -311,13 +246,13 @@ export default function RecipeDetailPage({
                 className="flex-1 py-2.5 text-xs font-medium rounded-lg transition-all duration-200"
                 style={{
                   background:
-                    activeTab === tab.id ? "var(--card)" : "transparent",
+                    activeTab === tab.id ? "var(--surface-2)" : "transparent",
                   color:
                     activeTab === tab.id
-                      ? "var(--text)"
-                      : "var(--text-muted)",
+                      ? "var(--ink)"
+                      : "var(--ink-mute)",
                   boxShadow:
-                    activeTab === tab.id ? "var(--shadow-card)" : "none",
+                    activeTab === tab.id ? "var(--shadow-sm)" : "none",
                 }}
               >
                 {tab.label}
@@ -326,8 +261,8 @@ export default function RecipeDetailPage({
           </div>
         </div>
 
-        {/* Tab Content */}
-        <div className="px-6 pb-12">
+      {/* Tab Content */}
+      <div className="pb-12">
           {activeTab === "overview" && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -338,7 +273,7 @@ export default function RecipeDetailPage({
               <div className="flex items-center gap-3 mb-6">
                 <span
                   className="text-xs uppercase tracking-wider font-medium"
-                  style={{ color: "var(--text-muted)" }}
+                  style={{ color: "var(--ink-mute)" }}
                 >
                   Scale
                 </span>
@@ -352,16 +287,16 @@ export default function RecipeDetailPage({
                       style={{
                         background:
                           multiplier === m
-                            ? "var(--accent)"
-                            : "var(--bg-subtle)",
+                            ? "var(--crust)"
+                            : "var(--surface)",
                         color:
                           multiplier === m
                             ? "var(--bg)"
-                            : "var(--text-secondary)",
+                            : "var(--ink-soft)",
                         border:
                           multiplier === m
                             ? "none"
-                            : "1px solid var(--border-subtle)",
+                            : "1px solid var(--border)",
                       }}
                     >
                       {m}x
@@ -378,7 +313,7 @@ export default function RecipeDetailPage({
                     <div className="mb-8">
                       <h3
                         className="text-[11px] font-medium uppercase tracking-widest mb-4"
-                        style={{ color: "var(--text-muted)" }}
+                        style={{ color: "var(--ink-mute)" }}
                       >
                         Timeline
                       </h3>
@@ -388,15 +323,15 @@ export default function RecipeDetailPage({
                             key={i}
                             className="flex items-start gap-4 rounded-xl p-4"
                             style={{
-                              background: "var(--card)",
-                              border: "1px solid var(--border-subtle)",
+                              background: "var(--surface)",
+                              border: "1px solid var(--border)",
                             }}
                           >
                             <div
                               className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium mt-0.5 shrink-0"
                               style={{
-                                background: "var(--bg-subtle)",
-                                color: "var(--text-faint)",
+                                background: "var(--surface)",
+                                color: "var(--ink-faint)",
                               }}
                             >
                               {i + 1}
@@ -404,19 +339,19 @@ export default function RecipeDetailPage({
                             <div className="flex-1 min-w-0">
                               <p
                                 className="text-sm font-medium"
-                                style={{ color: "var(--text)" }}
+                                style={{ color: "var(--ink)" }}
                               >
                                 {step.name}
                               </p>
                               <p
                                 className="text-[11px] mt-0.5"
-                                style={{ color: "var(--text-muted)" }}
+                                style={{ color: "var(--ink-mute)" }}
                               >
                                 {step.duration}
                               </p>
                               <p
                                 className="text-xs mt-1.5 leading-relaxed"
-                                style={{ color: "var(--text-secondary)" }}
+                                style={{ color: "var(--ink-soft)" }}
                               >
                                 {step.description}
                               </p>
@@ -434,18 +369,18 @@ export default function RecipeDetailPage({
                     <div className="mb-8">
                       <h3
                         className="text-[11px] font-medium uppercase tracking-widest mb-4 flex items-center gap-2"
-                        style={{ color: "var(--text-muted)" }}
+                        style={{ color: "var(--ink-mute)" }}
                       >
                         Levain
                         {allCheckedInGroup("levain", recipe.ingredients.levain) && (
-                          <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--accent)" }}>Ready!</span>
+                          <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--crust)" }}>Ready!</span>
                         )}
                       </h3>
                       <div
                         className="rounded-xl overflow-hidden"
                         style={{
-                          background: "var(--card)",
-                          border: "1px solid var(--border-subtle)",
+                          background: "var(--surface)",
+                          border: "1px solid var(--border)",
                         }}
                       >
                         {recipe.ingredients.levain.map((ing, i) => {
@@ -459,14 +394,14 @@ export default function RecipeDetailPage({
                             style={{
                               borderBottom:
                                 i < recipe.ingredients.levain!.length - 1
-                                  ? "1px solid var(--border-subtle)"
+                                  ? "1px solid var(--border)"
                                   : "none",
                               opacity: on ? 0.4 : 1,
                             }}
                           >
                             <span
                               className="text-sm"
-                              style={{ color: "var(--text-secondary)", textDecoration: on ? "line-through" : "none" }}
+                              style={{ color: "var(--ink-soft)", textDecoration: on ? "line-through" : "none" }}
                             >
                               {ing.name}
                             </span>
@@ -474,14 +409,14 @@ export default function RecipeDetailPage({
                               {ing.bakerPercent && (
                                 <span
                                   className="text-[10px] tracking-wide"
-                                  style={{ color: "var(--text-ghost)" }}
+                                  style={{ color: "var(--ink-faint)" }}
                                 >
                                   {ing.bakerPercent}
                                 </span>
                               )}
                               <span
                                 className="text-sm font-medium tabular-nums"
-                                style={{ color: "var(--text)", textDecoration: on ? "line-through" : "none" }}
+                                style={{ color: "var(--ink)", textDecoration: on ? "line-through" : "none" }}
                               >
                                 {scaleWeight(ing.weight)}
                               </span>
@@ -497,18 +432,18 @@ export default function RecipeDetailPage({
                   <div className="mb-8">
                     <h3
                       className="text-[11px] font-medium uppercase tracking-widest mb-4 flex items-center gap-2"
-                      style={{ color: "var(--text-muted)" }}
+                      style={{ color: "var(--ink-mute)" }}
                     >
                       Main Dough
                       {allCheckedInGroup("main", recipe.ingredients.main) && (
-                        <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--accent)" }}>Ready!</span>
+                        <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--crust)" }}>Ready!</span>
                       )}
                     </h3>
                     <div
                       className="rounded-xl overflow-hidden"
                       style={{
-                        background: "var(--card)",
-                        border: "1px solid var(--border-subtle)",
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
                       }}
                     >
                       {recipe.ingredients.main.map((ing, i) => {
@@ -522,7 +457,7 @@ export default function RecipeDetailPage({
                           style={{
                             borderBottom:
                               i < recipe.ingredients.main.length - 1
-                                ? "1px solid var(--border-subtle)"
+                                ? "1px solid var(--border)"
                                 : "none",
                             opacity: on ? 0.4 : 1,
                           }}
@@ -530,14 +465,14 @@ export default function RecipeDetailPage({
                           <div className="flex-1 min-w-0">
                             <span
                               className="text-sm"
-                              style={{ color: "var(--text-secondary)", textDecoration: on ? "line-through" : "none" }}
+                              style={{ color: "var(--ink-soft)", textDecoration: on ? "line-through" : "none" }}
                             >
                               {ing.name}
                             </span>
                             {ing.note && (
                               <span
                                 className="text-[10px] ml-2"
-                                style={{ color: "var(--text-ghost)" }}
+                                style={{ color: "var(--ink-faint)" }}
                               >
                                 {ing.note}
                               </span>
@@ -547,14 +482,14 @@ export default function RecipeDetailPage({
                             {ing.bakerPercent && (
                               <span
                                 className="text-[10px] tracking-wide"
-                                style={{ color: "var(--text-ghost)" }}
+                                style={{ color: "var(--ink-faint)" }}
                               >
                                 {ing.bakerPercent}
                               </span>
                             )}
                             <span
                               className="text-sm font-medium tabular-nums"
-                              style={{ color: "var(--text)", textDecoration: on ? "line-through" : "none" }}
+                              style={{ color: "var(--ink)", textDecoration: on ? "line-through" : "none" }}
                             >
                               {scaleWeight(ing.weight)}
                             </span>
@@ -571,18 +506,18 @@ export default function RecipeDetailPage({
                       <div className="mb-8">
                         <h3
                           className="text-[11px] font-medium uppercase tracking-widest mb-4 flex items-center gap-2"
-                          style={{ color: "var(--text-muted)" }}
+                          style={{ color: "var(--ink-mute)" }}
                         >
                           Additions
                           {allCheckedInGroup("additions", recipe.ingredients.additions) && (
-                            <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--accent)" }}>Ready!</span>
+                            <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--crust)" }}>Ready!</span>
                           )}
                         </h3>
                         <div
                           className="rounded-xl overflow-hidden"
                           style={{
-                            background: "var(--card)",
-                            border: "1px solid var(--border-subtle)",
+                            background: "var(--surface)",
+                            border: "1px solid var(--border)",
                           }}
                         >
                           {recipe.ingredients.additions.map((ing, i) => {
@@ -596,20 +531,20 @@ export default function RecipeDetailPage({
                               style={{
                                 borderBottom:
                                   i < recipe.ingredients.additions!.length - 1
-                                    ? "1px solid var(--border-subtle)"
+                                    ? "1px solid var(--border)"
                                     : "none",
                                 opacity: on ? 0.4 : 1,
                               }}
                             >
                               <span
                                 className="text-sm"
-                                style={{ color: "var(--text-secondary)", textDecoration: on ? "line-through" : "none" }}
+                                style={{ color: "var(--ink-soft)", textDecoration: on ? "line-through" : "none" }}
                               >
                                 {ing.name}
                               </span>
                               <span
                                 className="text-sm font-medium tabular-nums"
-                                style={{ color: "var(--text)", textDecoration: on ? "line-through" : "none" }}
+                                style={{ color: "var(--ink)", textDecoration: on ? "line-through" : "none" }}
                               >
                                 {scaleWeight(ing.weight)}
                               </span>
@@ -626,18 +561,18 @@ export default function RecipeDetailPage({
                       <div className="mb-8">
                         <h3
                           className="text-[11px] font-medium uppercase tracking-widest mb-4 flex items-center gap-2"
-                          style={{ color: "var(--text-muted)" }}
+                          style={{ color: "var(--ink-mute)" }}
                         >
                           Filling
                           {allCheckedInGroup("filling", recipe.ingredients.filling) && (
-                            <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--accent)" }}>Ready!</span>
+                            <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--crust)" }}>Ready!</span>
                           )}
                         </h3>
                         <div
                           className="rounded-xl overflow-hidden"
                           style={{
-                            background: "var(--card)",
-                            border: "1px solid var(--border-subtle)",
+                            background: "var(--surface)",
+                            border: "1px solid var(--border)",
                           }}
                         >
                           {recipe.ingredients.filling.map((ing, i) => {
@@ -651,20 +586,20 @@ export default function RecipeDetailPage({
                               style={{
                                 borderBottom:
                                   i < recipe.ingredients.filling!.length - 1
-                                    ? "1px solid var(--border-subtle)"
+                                    ? "1px solid var(--border)"
                                     : "none",
                                 opacity: on ? 0.4 : 1,
                               }}
                             >
                               <span
                                 className="text-sm"
-                                style={{ color: "var(--text-secondary)", textDecoration: on ? "line-through" : "none" }}
+                                style={{ color: "var(--ink-soft)", textDecoration: on ? "line-through" : "none" }}
                               >
                                 {ing.name}
                               </span>
                               <span
                                 className="text-sm font-medium tabular-nums"
-                                style={{ color: "var(--text)", textDecoration: on ? "line-through" : "none" }}
+                                style={{ color: "var(--ink)", textDecoration: on ? "line-through" : "none" }}
                               >
                                 {scaleWeight(ing.weight)}
                               </span>
@@ -682,9 +617,9 @@ export default function RecipeDetailPage({
                 <div className="mt-2">
                   <h3
                     className="text-[11px] font-medium uppercase tracking-widest mb-4 flex items-center gap-2"
-                    style={{ color: "var(--text-muted)" }}
+                    style={{ color: "var(--ink-mute)" }}
                   >
-                    <History size={12} /> Your Bake History
+                    <Icon.clock width={12} height={12} /> Your Bake History
                   </h3>
                   <div className="space-y-2.5 max-w-xl">
                     {pastBakes.map((bake) => (
@@ -693,13 +628,13 @@ export default function RecipeDetailPage({
                         href={`/journal/${bake.id}`}
                         className="flex items-center justify-between rounded-xl p-4 transition-colors"
                         style={{
-                          background: "var(--card)",
-                          border: "1px solid var(--border-subtle)",
+                          background: "var(--surface)",
+                          border: "1px solid var(--border)",
                         }}
                       >
                         <p
                           className="text-xs"
-                          style={{ color: "var(--text-secondary)" }}
+                          style={{ color: "var(--ink-soft)" }}
                         >
                           {formatDistanceToNow(new Date(bake.started_at), {
                             addSuffix: true,
@@ -709,7 +644,7 @@ export default function RecipeDetailPage({
                           {bake.overall_rating && (
                             <span
                               className="text-xs"
-                              style={{ color: "var(--accent)" }}
+                              style={{ color: "var(--crust)" }}
                             >
                               {bake.overall_rating}★
                             </span>
@@ -742,16 +677,16 @@ export default function RecipeDetailPage({
                   key={step.step}
                   className="rounded-xl p-5"
                   style={{
-                    background: "var(--card)",
-                    border: "1px solid var(--border-subtle)",
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
                   }}
                 >
                   <div className="flex items-start gap-4">
                     <div
                       className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5"
                       style={{
-                        background: "var(--accent-surface)",
-                        color: "var(--accent)",
+                        background: "rgba(232,155,60,0.12)",
+                        color: "var(--crust)",
                       }}
                     >
                       {step.step}
@@ -759,28 +694,28 @@ export default function RecipeDetailPage({
                     <div className="flex-1">
                       <h4
                         className="text-sm font-medium"
-                        style={{ color: "var(--text)" }}
+                        style={{ color: "var(--ink)" }}
                       >
                         {step.title}
                       </h4>
                       {step.duration && (
                         <p
                           className="text-[11px] mt-1 flex items-center gap-1"
-                          style={{ color: "var(--text-muted)" }}
+                          style={{ color: "var(--ink-mute)" }}
                         >
-                          <Clock size={10} /> {step.duration}
+                          <Icon.clock width={10} height={10} /> {step.duration}
                         </p>
                       )}
                       <p
                         className="text-sm mt-2.5 leading-relaxed"
-                        style={{ color: "var(--text-secondary)" }}
+                        style={{ color: "var(--ink-soft)" }}
                       >
                         {step.instructions}
                       </p>
                       {step.temperature && (
                         <p
                           className="text-xs mt-2.5 flex items-center gap-1"
-                          style={{ color: "var(--accent)" }}
+                          style={{ color: "var(--crust)" }}
                         >
                           {step.temperature}
                         </p>
@@ -789,22 +724,18 @@ export default function RecipeDetailPage({
                         <div
                           className="mt-3 rounded-lg p-3"
                           style={{
-                            background: "var(--bg-subtle)",
+                            background: "var(--surface)",
                             transform: `rotate(${getTipRotation(`step-${step.step}`)}deg)`,
                           }}
                         >
                           <p
                             className="text-base flex items-start gap-2 leading-relaxed"
                             style={{
-                              color: "var(--text-secondary)",
+                              color: "var(--ink-soft)",
                               fontFamily: "var(--font-caveat)",
                             }}
                           >
-                            <Lightbulb
-                              size={12}
-                              className="mt-1 shrink-0"
-                              style={{ color: "var(--accent)" }}
-                            />
+                            <span className="mt-1 shrink-0" style={{ fontSize: 14 }}>💡</span>
                             {step.tip}
                           </p>
                         </div>
@@ -828,20 +759,16 @@ export default function RecipeDetailPage({
                   key={i}
                   className="rounded-xl p-5 flex items-start gap-4"
                   style={{
-                    background: "var(--card)",
-                    border: "1px solid var(--border-subtle)",
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
                     transform: `rotate(${getTipRotation(`tip-${i}`)}deg)`,
                   }}
                 >
-                  <Lightbulb
-                    size={16}
-                    className="mt-1 shrink-0"
-                    style={{ color: "var(--accent)" }}
-                  />
+                  <span className="mt-1 shrink-0" style={{ fontSize: 16 }}>💡</span>
                   <p
                     className="text-base leading-relaxed"
                     style={{
-                      color: "var(--text-secondary)",
+                      color: "var(--ink-soft)",
                       fontFamily: "var(--font-caveat)",
                     }}
                   >
@@ -853,6 +780,5 @@ export default function RecipeDetailPage({
           )}
         </div>
       </div>
-    </div>
-  );
+    );
 }

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark" | "crust";
+type Theme = "light" | "dark";
 
 const ThemeContext = createContext<{
   theme: Theme;
@@ -18,8 +18,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("proof-theme") as Theme | null;
-    if (stored) setTheme(stored);
+    const stored = localStorage.getItem("proof-theme");
+    if (stored === "light") setTheme("light");
+    else setTheme("dark");
     setMounted(true);
   }, []);
 
@@ -29,7 +30,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("proof-theme", theme);
   }, [theme, mounted]);
 
-  const toggle = () => setTheme((t) => (t === "dark" ? "light" : t === "light" ? "crust" : "dark"));
+  const toggle = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 
   return (
     <ThemeContext.Provider value={{ theme, toggle }}>

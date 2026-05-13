@@ -1,8 +1,26 @@
+"use client";
+
 const variants = {
-  default: "bg-stone-800/80 text-stone-300",
-  amber: "bg-amber-500/15 text-amber-400 border border-amber-500/20",
-  emerald: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20",
-  rose: "bg-rose-500/15 text-rose-400 border border-rose-500/20",
+  default: {
+    background: "var(--surface-2)",
+    color: "var(--ink-soft)",
+    border: "1px solid var(--border)",
+  },
+  amber: {
+    background: "rgba(232,155,60,0.12)",
+    color: "var(--crust)",
+    border: "1px solid rgba(232,155,60,0.4)",
+  },
+  emerald: {
+    background: "rgba(107,148,98,0.15)",
+    color: "var(--leaf-soft)",
+    border: "1px solid rgba(107,148,98,0.4)",
+  },
+  rose: {
+    background: "rgba(199,90,58,0.15)",
+    color: "var(--jam-soft)",
+    border: "1px solid rgba(199,90,58,0.4)",
+  },
 };
 
 export function Badge({
@@ -14,7 +32,8 @@ export function Badge({
 }) {
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wider ${variants[variant]}`}
+      className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wider"
+      style={variants[variant]}
     >
       {children}
     </span>

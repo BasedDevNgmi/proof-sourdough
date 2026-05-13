@@ -2,22 +2,80 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
-import { Home, BookOpen, ChefHat, NotebookPen, Sun, Moon, Wheat, LogOut, User } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/components/auth-provider";
+import { ProofLogo } from "@/components/illustrations/proof-logo";
+import { Doughy } from "@/components/illustrations/doughy";
+import { useDoughy } from "@/hooks/use-doughy";
 
-const links = [
-  { href: "/", icon: Home, label: "Home" },
-  { href: "/recipes", icon: BookOpen, label: "Recipes" },
-  { href: "/bake", icon: ChefHat, label: "Bake" },
-  { href: "/journal", icon: NotebookPen, label: "Journal" },
+const navItems = [
+  {
+    href: "/",
+    label: "Home",
+    icon: (p: React.SVGProps<SVGSVGElement>) => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+        <path d="M3 12L12 4l9 8" /><path d="M5 10v10h14V10" />
+      </svg>
+    ),
+  },
+  {
+    href: "/recipes",
+    label: "Recipes",
+    icon: (p: React.SVGProps<SVGSVGElement>) => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+        <path d="M4 5a2 2 0 0 1 2-2h6v18H6a2 2 0 0 1-2-2V5z" /><path d="M20 5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 0 2-2V5z" />
+      </svg>
+    ),
+  },
+  {
+    href: "/bake",
+    label: "Bake",
+    icon: (p: React.SVGProps<SVGSVGElement>) => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+        <path d="M6 14a4 4 0 0 1-2-7.5A4 4 0 0 1 12 5a4 4 0 0 1 8 1.5A4 4 0 0 1 18 14v6H6v-6z" /><path d="M9 20v-3M15 20v-3M12 20v-3" />
+      </svg>
+    ),
+  },
+  {
+    href: "/journal",
+    label: "Journal",
+    icon: (p: React.SVGProps<SVGSVGElement>) => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+        <path d="M4 4h12l4 4v12H4z" /><path d="M16 4v4h4" /><path d="M8 12h8M8 16h6" />
+      </svg>
+    ),
+  },
 ];
+
+function SunIcon(p: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5" />
+    </svg>
+  );
+}
+
+function MoonIcon(p: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z" />
+    </svg>
+  );
+}
+
+function SignoutIcon(p: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5M21 12H9" />
+    </svg>
+  );
+}
 
 export function BottomNav() {
   const pathname = usePathname();
   const { theme, toggle } = useTheme();
   const { user, signOut } = useAuth();
+  const { happiness, mood, feed } = useDoughy();
 
   if (pathname.startsWith("/bake/") && pathname.split("/").length > 2) {
     return null;
@@ -28,92 +86,250 @@ export function BottomNav() {
   return (
     <>
       {/* Desktop sidebar */}
-      <nav className="hidden lg:flex fixed top-0 left-0 bottom-0 w-64 z-50 flex-col border-r" style={{ borderColor: "var(--border-subtle)", background: "var(--nav-bg)", backdropFilter: "blur(12px)" }}>
-        <div className="px-6 pt-10 pb-8">
-          <h1 className="font-[family-name:var(--font-playfair)] text-2xl font-semibold tracking-tight" style={{ color: "var(--text)" }}>
-            Proof
-          </h1>
-          <p className="text-[11px] mt-1 tracking-wide" style={{ color: "var(--text-ghost)" }}>Sourdough companion</p>
+      <aside
+        className="proof-sidebar hidden lg:flex fixed top-0 left-0 bottom-0 z-50 flex-col"
+        style={{
+          width: 260,
+          borderRight: "1px solid var(--border)",
+          background: "var(--bg-warm)",
+          padding: "24px 18px",
+          gap: 24,
+          overflowY: "auto",
+          overflowX: "hidden",
+        }}
+      >
+        {/* Brand */}
+        <div className="sidebar-brand" style={{ display: "flex", alignItems: "center", gap: 12, padding: "4px 8px" }}>
+          <ProofLogo size={42} />
+          <div className="sidebar-brand-text">
+            <div className="display" style={{ fontSize: 28, lineHeight: 1, marginBottom: 2 }}>Proof</div>
+            <div style={{ fontSize: 11, color: "var(--ink-mute)", fontStyle: "italic" }}>your dough&apos;s diary</div>
+          </div>
         </div>
-        <div className="flex-1 px-3 space-y-0.5">
-          {links.map(({ href, icon: Icon, label }) => {
-            const isActive =
-              href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+        {/* Nav */}
+        <nav style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {navItems.map(({ href, icon: NavIcon, label }) => {
+            const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
             return (
               <Link
                 key={href}
                 href={href}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group border"
+                className="flex items-center gap-3 transition-all duration-200"
                 style={{
-                  background: isActive ? "var(--accent-surface)" : "transparent",
-                  color: isActive ? "var(--accent)" : "var(--text-muted)",
-                  borderColor: isActive ? "var(--accent-surface)" : "transparent",
+                  padding: "11px 14px",
+                  background: isActive ? "var(--surface-3)" : "transparent",
+                  border: isActive ? "1px solid var(--border-strong)" : "1px solid transparent",
+                  color: isActive ? "var(--crust)" : "var(--ink-soft)",
+                  borderRadius: "var(--radius)",
+                  fontSize: 14,
+                  fontWeight: isActive ? 600 : 500,
+                  textDecoration: "none",
+                  position: "relative",
                 }}
+                onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "var(--surface-2)"; }}
+                onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
               >
-                <Icon size={18} strokeWidth={isActive ? 2.2 : 1.6} />
-                <span className="text-sm font-medium">{label}</span>
+                <NavIcon width={18} height={18} />
+                {label}
+                {isActive && (
+                  <span style={{
+                    marginLeft: "auto",
+                    width: 6, height: 6, borderRadius: "50%",
+                    background: "var(--crust)",
+                    boxShadow: "0 0 8px var(--crust)",
+                  }} />
+                )}
               </Link>
             );
           })}
-        </div>
-        <div className="px-4 pb-3 space-y-0.5">
+        </nav>
+
+        {/* Doughy card */}
+        <button
+          type="button"
+          className="sidebar-doughy-card"
+          onClick={feed}
+          title="Click to feed Doughy"
+          style={{
+            background: "linear-gradient(180deg, var(--surface-2), var(--surface))",
+            borderRadius: "var(--radius-lg)",
+            border: "1px dashed var(--border-strong)",
+            padding: 14,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 6,
+            cursor: "pointer",
+            fontFamily: "inherit",
+            color: "inherit",
+            transition: "transform 0.2s var(--ease-bounce), border-color 0.2s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.borderColor = "var(--crust)"; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.borderColor = "var(--border-strong)"; }}
+          onMouseDown={e => { e.currentTarget.style.transform = "scale(0.97)"; }}
+          onMouseUp={e => { e.currentTarget.style.transform = "scale(1.02)"; }}
+        >
+          <div style={{ position: "relative" }}>
+            <Doughy happiness={happiness} mood={mood} size={72} />
+          </div>
+          <div className="sidebar-doughy-meta" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0 }}>
+            <span className="display" style={{ fontSize: 20, color: "var(--ink)", lineHeight: 1 }}>Doughy</span>
+            <span style={{ fontSize: 10, color: "var(--ink-mute)", fontStyle: "italic", marginTop: 2, whiteSpace: "nowrap" }}>your starter</span>
+          </div>
+          <div className="sidebar-doughy-bar" style={{ width: "100%", display: "flex", flexDirection: "column", gap: 4, marginTop: 2 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--ink-mute)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+              <span>fed</span>
+              <span>{happiness}%</span>
+            </div>
+            <div style={{ height: 5, background: "var(--surface-3)", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{
+                height: "100%",
+                width: `${happiness}%`,
+                background: happiness > 60 ? "linear-gradient(90deg, var(--leaf), var(--leaf-soft))" : happiness > 30 ? "linear-gradient(90deg, var(--butter), var(--crust))" : "linear-gradient(90deg, var(--jam), var(--jam-soft))",
+                transition: "width 0.6s var(--ease-out)",
+                borderRadius: 4,
+              }} />
+            </div>
+          </div>
+          <div className="sidebar-doughy-quip" style={{ fontFamily: "var(--font-script), var(--font-caveat), cursive", fontSize: 14, color: "var(--ink-soft)", textAlign: "center", lineHeight: 1.2, marginTop: 4 }}>
+            {happiness > 80 ? '"Bubbling and proud!"' : happiness > 60 ? '"Feeling peppy."' : happiness > 30 ? '"Could use a snack..."' : '"...feed me, please."'}
+          </div>
+        </button>
+
+        {/* Bottom controls */}
+        <div className="sidebar-bottom" style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
           <button
             type="button"
             onClick={toggle}
-            className="flex items-center gap-2.5 w-full px-4 py-2.5 rounded-xl transition-all duration-200"
-            style={{ color: "var(--text-muted)" }}
+            className="flex items-center gap-2.5 w-full transition-all duration-200"
+            style={{
+              padding: "10px 12px",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius)",
+              color: "var(--ink-soft)",
+              fontFamily: "inherit",
+              fontSize: 13,
+              cursor: "pointer",
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
           >
-            {theme === "dark" ? <Sun size={16} /> : theme === "light" ? <Wheat size={16} /> : <Moon size={16} />}
-            <span className="text-xs font-medium">{theme === "dark" ? "Light mode" : theme === "light" ? "Crust mode" : "Dark mode"}</span>
+            {theme === "dark" ? <SunIcon width={16} height={16} /> : <MoonIcon width={16} height={16} />}
+            {theme === "dark" ? "Light mode" : "Dark mode"}
           </button>
           <button
             type="button"
             onClick={signOut}
-            className="flex items-center gap-2.5 w-full px-4 py-2.5 rounded-xl transition-all duration-200"
-            style={{ color: "var(--text-muted)" }}
+            className="flex items-center gap-2.5 w-full"
+            style={{
+              padding: "10px 12px",
+              background: "transparent",
+              border: "none",
+              color: "var(--ink-mute)",
+              fontFamily: "inherit",
+              fontSize: 13,
+              cursor: "pointer",
+              textAlign: "left",
+            }}
           >
-            <LogOut size={16} />
-            <span className="text-xs font-medium">Sign out</span>
+            <SignoutIcon width={16} height={16} />
+            Sign out
           </button>
-        </div>
-        <div className="px-6 py-5 border-t" style={{ borderColor: "var(--border-subtle)" }}>
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold" style={{ background: "var(--accent-surface)", color: "var(--accent)" }}>
+          <div className="sidebar-bottom-meta" style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "10px 4px",
+            marginTop: 6,
+            borderTop: "1px solid var(--border)",
+            paddingTop: 14,
+          }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 10,
+              background: "linear-gradient(135deg, var(--crust), var(--jam))",
+              display: "grid", placeItems: "center",
+              color: "var(--bg)", fontWeight: 700, fontSize: 13,
+            }}>
               {displayName.charAt(0).toUpperCase()}
             </div>
-            <div className="min-w-0">
-              <p className="text-xs font-medium truncate" style={{ color: "var(--text)" }}>{displayName}</p>
-              <p className="text-[10px] truncate" style={{ color: "var(--text-ghost)" }}>{user?.email}</p>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 500 }}>{displayName}</div>
+              <div style={{ fontSize: 10, color: "var(--ink-mute)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user?.email}</div>
             </div>
           </div>
         </div>
-      </nav>
+      </aside>
+
+      {/* Mobile topbar */}
+      <div className="mobile-topbar lg:hidden">
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <ProofLogo size={36} />
+          <div>
+            <div className="display" style={{ fontSize: 24, lineHeight: 1 }}>Proof</div>
+            <div style={{ fontSize: 10, color: "var(--ink-mute)", fontStyle: "italic" }}>your dough&apos;s diary</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            type="button"
+            onClick={feed}
+            aria-label="Feed Doughy"
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              background: "var(--surface)",
+              border: "1px dashed var(--border-strong)",
+              borderRadius: 999, padding: "4px 10px 4px 4px",
+              cursor: "pointer", fontFamily: "inherit",
+              color: "var(--ink-soft)",
+            }}
+          >
+            <Doughy happiness={happiness} mood={mood} size={28} />
+            <span style={{ fontSize: 11, fontWeight: 600 }}>{happiness}%</span>
+          </button>
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label="Toggle theme"
+            style={{
+              width: 38, height: 38, borderRadius: "50%",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              color: "var(--ink-soft)",
+              display: "grid", placeItems: "center", cursor: "pointer",
+            }}
+          >
+            {theme === "dark" ? <SunIcon width={16} height={16} /> : <MoonIcon width={16} height={16} />}
+          </button>
+        </div>
+      </div>
 
       {/* Mobile bottom nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass border-t mb-safe" style={{ borderColor: "var(--border-subtle)" }}>
-        <div className="flex items-center justify-around px-2 py-2 max-w-lg mx-auto">
-          {links.map(({ href, icon: Icon, label }) => {
-            const isActive =
-              href === "/" ? pathname === "/" : pathname.startsWith(href);
+      <nav
+        className="proof-sidebar lg:hidden fixed bottom-0 left-0 right-0 z-50"
+        style={{
+          borderTop: "1px solid var(--border)",
+          background: "var(--bg-warm)",
+          boxShadow: "0 -12px 32px -16px rgba(0,0,0,0.25)",
+        }}
+      >
+        <div className="flex items-center justify-around px-2 py-2 max-w-lg mx-auto" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>
+          {navItems.map(({ href, icon: NavIcon, label }) => {
+            const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
             return (
               <Link
                 key={href}
                 href={href}
-                className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200"
-                style={{ color: isActive ? "var(--accent)" : "var(--text-muted)" }}
+                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200"
+                style={{
+                  color: isActive ? "var(--crust)" : "var(--ink-mute)",
+                  background: isActive ? "rgba(232,155,60,0.1)" : "transparent",
+                  textDecoration: "none",
+                }}
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="nav-pill"
-                    className="absolute inset-0 rounded-xl"
-                    style={{ background: "var(--accent-surface)", zIndex: -1 }}
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
-                <Icon size={22} strokeWidth={isActive ? 2.2 : 1.6} />
-                <span className="text-[10px] font-medium tracking-wide">
-                  {label}
-                </span>
+                <NavIcon width={22} height={22} />
+                <span className="text-[10px] font-medium tracking-wide">{label}</span>
               </Link>
             );
           })}
@@ -121,9 +337,9 @@ export function BottomNav() {
             type="button"
             onClick={toggle}
             className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200"
-            style={{ color: "var(--text-muted)" }}
+            style={{ color: "var(--ink-mute)" }}
           >
-            {theme === "dark" ? <Sun size={20} strokeWidth={1.6} /> : theme === "light" ? <Wheat size={20} strokeWidth={1.6} /> : <Moon size={20} strokeWidth={1.6} />}
+            {theme === "dark" ? <SunIcon width={20} height={20} /> : <MoonIcon width={20} height={20} />}
             <span className="text-[10px] font-medium tracking-wide">Theme</span>
           </button>
         </div>

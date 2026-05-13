@@ -2,7 +2,9 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, BookOpen, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Icon } from "@/components/illustrations/icons";
+import { Chip } from "@/components/ui/chip";
+import { BreadIllustration } from "@/components/illustrations/bread-illustration";
 import { recipes, getCategories, books } from "@/data/recipes";
 import { RecipeCard } from "@/components/ui/recipe-card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -114,21 +116,23 @@ export default function RecipesPage() {
         <PageHeader
           title="Recipes"
           subtitle={`${recipes.length} recipes from ${books.length} books`}
+          scriptTag="pick a friend"
         />
 
-        {/* Sticky filter bar */}
+        {/* Filter bar */}
         <div
-          className="sticky top-0 z-30 px-6 lg:px-8 pb-4 pt-2 space-y-3"
-          style={{ background: "var(--bg)", borderBottom: "1px solid transparent" }}
+          className="z-30 px-6 lg:px-8 pb-4 pt-2 space-y-3"
+          style={{ background: "var(--bg)" }}
         >
           {/* Search row */}
           <div className="flex gap-2 items-center">
             <div className="relative flex-1 max-w-xl">
-              <Search
-                size={16}
+              <div
                 className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
-                style={{ color: "var(--text-muted)" }}
-              />
+                style={{ color: "var(--ink-mute)" }}
+              >
+                <Icon.search width={18} height={18} />
+              </div>
               <input
                 type="text"
                 placeholder="What are you in the mood for?"
@@ -136,17 +140,17 @@ export default function RecipesPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full rounded-xl py-2.5 pl-11 pr-11 text-sm transition-all duration-300 focus:outline-none"
                 style={{
-                  background: "var(--bg-subtle)",
-                  border: "1px solid var(--border-subtle)",
-                  color: "var(--text)",
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  color: "var(--ink)",
                 }}
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = "var(--border)";
-                  e.currentTarget.style.background = "var(--card)";
+                  e.currentTarget.style.background = "var(--surface)";
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border-subtle)";
-                  e.currentTarget.style.background = "var(--bg-subtle)";
+                  e.currentTarget.style.borderColor = "var(--border)";
+                  e.currentTarget.style.background = "var(--surface)";
                 }}
               />
               {search && (
@@ -154,9 +158,9 @@ export default function RecipesPage() {
                   type="button"
                   onClick={() => setSearch("")}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded-md"
-                  style={{ color: "var(--text-muted)" }}
+                  style={{ color: "var(--ink-mute)", fontSize: 18, lineHeight: 1, fontWeight: 500 }}
                 >
-                  <X size={16} />
+                  ×
                 </button>
               )}
             </div>
@@ -168,14 +172,18 @@ export default function RecipesPage() {
                 onClick={() => setShowSort(!showSort)}
                 className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all"
                 style={{
-                  background: sort !== "default" ? "var(--accent-surface)" : "var(--bg-subtle)",
-                  border: sort !== "default" ? "1px solid var(--accent)" : "1px solid var(--border-subtle)",
-                  color: sort !== "default" ? "var(--accent)" : "var(--text-secondary)",
+                  background: sort !== "default" ? "rgba(232,155,60,0.12)" : "var(--surface)",
+                  border: sort !== "default" ? "1px solid var(--crust)" : "1px solid var(--border)",
+                  color: sort !== "default" ? "var(--crust)" : "var(--ink-soft)",
                 }}
               >
-                <SlidersHorizontal size={14} />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" width={14} height={14}>
+                  <path d="M4 6h16M4 12h10M4 18h6" />
+                </svg>
                 <span className="hidden sm:inline">{sort === "default" ? "Sort" : sortLabels[sort]}</span>
-                <ChevronDown size={12} />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" width={12} height={12}>
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
               </button>
               {showSort && (
                 <>
@@ -185,7 +193,7 @@ export default function RecipesPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="absolute right-0 top-full mt-1 z-50 rounded-xl py-1 min-w-[160px]"
                     style={{
-                      background: "var(--card)",
+                      background: "var(--surface)",
                       border: "1px solid var(--border)",
                       boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
                     }}
@@ -197,8 +205,8 @@ export default function RecipesPage() {
                         onClick={() => { setSort(key); setShowSort(false); }}
                         className="w-full text-left px-4 py-2 text-xs transition-colors"
                         style={{
-                          color: sort === key ? "var(--accent)" : "var(--text-secondary)",
-                          background: sort === key ? "var(--accent-surface)" : "transparent",
+                          color: sort === key ? "var(--crust)" : "var(--ink-soft)",
+                          background: sort === key ? "rgba(232,155,60,0.12)" : "transparent",
                         }}
                       >
                         {sortLabels[key]}
@@ -213,82 +221,30 @@ export default function RecipesPage() {
           {/* Filter pills — all in one row */}
           <div className="flex gap-2 items-center overflow-x-auto hide-scrollbar pb-0.5">
             {/* Book pills */}
-            {[{ id: "all", title: "All Books", author: "" }, ...books].map((book) => {
-              const isActive = activeBook === book.id;
-              return (
-                <button
-                  key={`book-${book.id}`}
-                  type="button"
-                  onClick={() => setActiveBook(book.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-all duration-200"
-                  style={{
-                    background: isActive ? "var(--text)" : "transparent",
-                    color: isActive ? "var(--bg)" : "var(--text-muted)",
-                    border: isActive ? "1px solid var(--text)" : "1px solid var(--border-subtle)",
-                  }}
-                >
-                  {book.id !== "all" && <BookOpen size={11} className="shrink-0" />}
-                  {book.id === "all" ? "All Books" : book.title}
-                </button>
-              );
-            })}
+            {[{ id: "all", title: "All Books" }, ...books].map((book) => (
+              <Chip key={`book-${book.id}`} active={activeBook === book.id} onClick={() => setActiveBook(book.id)}>
+                {book.id !== "all" && <Icon.book width={12} height={12} />}
+                {book.id === "all" ? "All Books" : book.title}
+              </Chip>
+            ))}
 
-            <div className="w-px h-4 shrink-0" style={{ background: "var(--border-subtle)" }} />
+            <div className="w-px h-4 shrink-0" style={{ background: "var(--border)" }} />
 
             {/* Category pills */}
-            {["all", ...categories.map((c) => c.id)].map((cat) => {
-              const isActive = activeCategory === cat;
-              return (
-                <button
-                  key={`cat-${cat}`}
-                  type="button"
-                  onClick={() => setActiveCategory(cat)}
-                  className="px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-all duration-200"
-                  style={{
-                    background: isActive ? "var(--accent)" : "transparent",
-                    color: isActive ? "var(--bg)" : "var(--text-muted)",
-                    border: isActive ? "1px solid var(--accent)" : "1px solid var(--border-subtle)",
-                  }}
-                >
-                  {categoryLabels[cat] || cat}
-                </button>
-              );
-            })}
+            {["all", ...categories.map((c) => c.id)].map((cat) => (
+              <Chip key={`cat-${cat}`} active={activeCategory === cat} small onClick={() => setActiveCategory(cat)}>
+                {categoryLabels[cat] || cat}
+              </Chip>
+            ))}
 
-            <div className="w-px h-4 shrink-0" style={{ background: "var(--border-subtle)" }} />
+            <div className="w-px h-4 shrink-0" style={{ background: "var(--border)" }} />
 
             {/* Difficulty pills */}
-            {(["all", "beginner", "intermediate", "advanced"] as const).map((diff) => {
-              const isActive = activeDifficulty === diff;
-              const colors: Record<string, string> = {
-                beginner: "#34d399",
-                intermediate: "#fbbf24",
-                advanced: "#fb7185",
-              };
-              return (
-                <button
-                  key={`diff-${diff}`}
-                  type="button"
-                  onClick={() => setActiveDifficulty(diff)}
-                  className="px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-all duration-200 capitalize"
-                  style={{
-                    background: isActive && diff !== "all"
-                      ? colors[diff]
-                      : isActive
-                        ? "var(--text)"
-                        : "transparent",
-                    color: isActive
-                      ? diff === "all" ? "var(--bg)" : "#fff"
-                      : "var(--text-muted)",
-                    border: isActive
-                      ? `1px solid ${diff === "all" ? "var(--text)" : colors[diff]}`
-                      : "1px solid var(--border-subtle)",
-                  }}
-                >
-                  {diff === "all" ? "Any level" : diff}
-                </button>
-              );
-            })}
+            {(["all", "beginner", "intermediate", "advanced"] as const).map((diff) => (
+              <Chip key={`diff-${diff}`} active={activeDifficulty === diff} small onClick={() => setActiveDifficulty(diff)}>
+                {diff === "all" ? "Any level" : diff}
+              </Chip>
+            ))}
 
             {/* Clear all */}
             {activeFilterCount > 0 && (
@@ -296,16 +252,15 @@ export default function RecipesPage() {
                 type="button"
                 onClick={clearAll}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap shrink-0 transition-all duration-200"
-                style={{ color: "var(--accent)" }}
+                style={{ color: "var(--crust)" }}
               >
-                <X size={12} />
-                Clear {activeFilterCount}
+                × Clear {activeFilterCount}
               </button>
             )}
           </div>
 
           {/* Result count — inline */}
-          <p className="text-[11px] tracking-wide uppercase" style={{ color: "var(--text-faint)" }}>
+          <p className="text-[11px] tracking-wide uppercase" style={{ color: "var(--ink-faint)" }}>
             {filtered.length} recipe{filtered.length !== 1 ? "s" : ""}
             {(search || activeFilterCount > 0) && " found"}
           </p>
@@ -322,31 +277,21 @@ export default function RecipesPage() {
           </AnimatePresence>
 
           {filtered.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-              className="text-center py-20"
-            >
-              <motion.div
-                animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                className="mx-auto mb-3 w-fit"
-              >
-                <Search size={32} style={{ color: "var(--text-ghost)" }} />
-              </motion.div>
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                Nothing here. Even sourdough starter needs something to work with.
-              </p>
+            <div className="text-center py-20">
+              <div className="anim-float" style={{ opacity: 0.4, marginBottom: 14 }}>
+                <BreadIllustration seed="empty" size={120} />
+              </div>
+              <div className="display" style={{ fontSize: 28, fontStyle: 'italic', marginBottom: 6 }}>no matches.</div>
+              <div className="script" style={{ fontSize: 18, color: 'var(--crust)', marginBottom: 4 }}>maybe a pizza instead?</div>
               <button
                 type="button"
                 onClick={clearAll}
                 className="text-sm mt-3 font-medium"
-                style={{ color: "var(--accent)" }}
+                style={{ color: "var(--crust)" }}
               >
                 Start fresh
               </button>
-            </motion.div>
+            </div>
           )}
         </div>
       </div>

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { ChefHat, Clock, ArrowRight } from "lucide-react";
+import { Icon } from "@/components/illustrations/icons";
+import { BakeRow } from "@/components/ui/bake-row";
+import { Chip } from "@/components/ui/chip";
 import { supabase, type BakeSession } from "@/lib/supabase";
 import { recipes, getRecipeById } from "@/data/recipes";
 import { PageHeader } from "@/components/ui/page-header";
@@ -34,15 +35,15 @@ export default function BakePage() {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="anim-rise proof-page min-h-screen">
       <div className="max-w-6xl mx-auto">
-        <PageHeader title="Start a Bake" subtitle="Pick your adventure" />
+        <PageHeader title="Start a Bake" subtitle="Pick your adventure" scriptTag="flour is patient. you don't have to be." />
 
         {/* Active Bakes */}
         {activeBakes.length > 0 && (
           <div className="px-5 mb-6">
-            <h2 className="text-xs font-medium uppercase tracking-wider mb-3 flex items-center gap-1.5" style={{ color: "var(--accent)" }}>
-              <div className="w-2 h-2 rounded-full animate-gentle-pulse" style={{ background: "var(--accent)" }} />
+            <h2 className="text-xs font-medium uppercase tracking-wider mb-3 flex items-center gap-1.5" style={{ color: "var(--crust)" }}>
+              <div className="w-2 h-2 rounded-full animate-gentle-pulse" style={{ background: "var(--crust)" }} />
               In Progress
             </h2>
             <div className="space-y-2 max-w-xl">
@@ -53,20 +54,20 @@ export default function BakePage() {
                     key={bake.id}
                     href={`/bake/${bake.recipe_id}?session=${bake.id}`}
                     className="flex items-center justify-between rounded-xl p-3.5 transition-colors"
-                    style={{ background: "var(--accent-surface)", border: "1px solid var(--accent-surface)" }}
+                    style={{ background: "rgba(232,155,60,0.12)", border: "1px solid rgba(232,155,60,0.12)" }}
                   >
                     <div>
-                      <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                      <p className="text-sm font-medium" style={{ color: "var(--ink)" }}>
                         {recipe?.title || bake.recipe_id}
                       </p>
-                      <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                      <p className="text-[11px] mt-0.5" style={{ color: "var(--ink-mute)" }}>
                         Started{" "}
                         {formatDistanceToNow(new Date(bake.started_at), {
                           addSuffix: true,
                         })}
                       </p>
                     </div>
-                    <ArrowRight size={14} style={{ color: "var(--accent)" }} />
+                    <Icon.arrow width={14} height={14} style={{ color: "var(--crust)" }} />
                   </Link>
                 );
               })}
@@ -76,59 +77,24 @@ export default function BakePage() {
 
         {/* Recipe Categories */}
         <div className="px-5 pb-8">
-          {categories.map((cat, catIdx) => {
+          {categories.map((cat) => {
             const catRecipes = recipes.filter((r) => r.category === cat.id);
             if (catRecipes.length === 0) return null;
 
             return (
-              <motion.div
-                key={cat.id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: catIdx * 0.08 }}
-                className="mb-8"
-              >
-                <h2 className="text-sm font-medium mb-3 flex items-center gap-2" style={{ color: "var(--text-secondary)" }}>
-                  <span>{cat.emoji}</span>
-                  {cat.label}
-                  <span className="text-xs" style={{ color: "var(--text-faint)" }}>
-                    ({catRecipes.length})
-                  </span>
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+              <div key={cat.id} className="mb-8">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <span style={{ fontSize: 22 }}>{cat.emoji}</span>
+                  <div className="display" style={{ fontSize: 28, whiteSpace: 'nowrap' }}>{cat.label}</div>
+                  <span style={{ color: 'var(--ink-mute)', fontSize: 14 }}>({catRecipes.length})</span>
+                  <div style={{ flex: 1, height: 1, background: 'var(--border)', marginLeft: 12 }} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
                   {catRecipes.map((recipe) => (
-                    <Link
-                      key={recipe.id}
-                      href={`/bake/${recipe.id}`}
-                      className="flex items-center justify-between rounded-xl p-3 transition-all duration-200 card-glow"
-                      style={{ background: "var(--card)", border: "1px solid var(--border-subtle)" }}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm truncate" style={{ color: "var(--text)" }}>
-                          {recipe.title}
-                        </p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[11px] flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
-                            <Clock size={10} /> {recipe.totalTime}
-                          </span>
-                          <Badge
-                            variant={
-                              recipe.difficulty === "beginner"
-                                ? "emerald"
-                                : recipe.difficulty === "intermediate"
-                                ? "amber"
-                                : "rose"
-                            }
-                          >
-                            {recipe.difficulty}
-                          </Badge>
-                        </div>
-                      </div>
-                      <ChefHat size={16} className="shrink-0" style={{ color: "var(--text-faint)" }} />
-                    </Link>
+                    <BakeRow key={recipe.id} recipe={recipe} href={`/bake/${recipe.id}`} />
                   ))}
                 </div>
-              </motion.div>
+              </div>
             );
           })}
         </div>
