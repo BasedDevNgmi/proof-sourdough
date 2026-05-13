@@ -16,7 +16,7 @@ import {
   X,
   Thermometer,
 } from "lucide-react";
-import confetti from "canvas-confetti";
+
 import { getRecipeById, type Recipe, type Ingredient } from "@/data/recipes";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth-provider";
@@ -117,6 +117,7 @@ export default function BakeSessionPage({
   const [showTempInput, setShowTempInput] = useState(false);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(new Set());
   const [showFinishModal, setShowFinishModal] = useState(false);
+  const [finishStep, setFinishStep] = useState(0);
   const [multiplier, setMultiplier] = useState(1);
   const { beginner, toggle: toggleBeginner } = useBeginnerMode();
 
@@ -124,7 +125,7 @@ export default function BakeSessionPage({
   const [stepPhotos, setStepPhotos] = useState<Record<number, string[]>>({});
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
-  const tipRotations = useRef<Record<string, number>>({});
+
 
   const [overallRating, setOverallRating] = useState(0);
   const [crumbRating, setCrumbRating] = useState(0);
@@ -147,12 +148,7 @@ export default function BakeSessionPage({
   const [saving, setSaving] = useState(false);
   const startingSession = useRef(false);
 
-  function getTipRotation(key: string): number {
-    if (!tipRotations.current[key]) {
-      tipRotations.current[key] = -0.3 - Math.random() * 0.7;
-    }
-    return tipRotations.current[key];
-  }
+
 
   const sessionStorageKey = `proof-bake-${recipeId}`;
 
@@ -290,15 +286,6 @@ export default function BakeSessionPage({
     cleanupSession();
     trackEvent("bake_completed", { recipe_id: recipeId, overall_rating: overallRating });
 
-    // Flour confetti celebration
-    confetti({
-      particleCount: 80,
-      spread: 70,
-      colors: ["#fef3c7", "#f5f5f4", "#d6d3d1", "#f59e0b"],
-    });
-
-    // Delay navigation so animation plays
-    await new Promise((resolve) => setTimeout(resolve, 800));
     router.push(`/journal/${sessionId}`);
   }
 
@@ -751,7 +738,6 @@ export default function BakeSessionPage({
                         style={{
                           background: "var(--accent-muted, rgba(217,119,6,0.05))",
                           border: "1px solid var(--accent-border, rgba(217,119,6,0.1))",
-                          transform: `rotate(${getTipRotation(`bake-step-${currentStep}`)}deg)`,
                         }}
                       >
                         <p
@@ -1146,393 +1132,169 @@ export default function BakeSessionPage({
               className="w-full lg:max-w-2xl lg:rounded-3xl rounded-t-3xl max-h-[85vh] overflow-y-auto"
               style={{ background: "var(--card)" }}
             >
+              {/* Wizard header */}
               <div className="sticky top-0 px-5 pt-4 pb-2 flex items-center justify-between" style={{ background: "var(--card)", borderBottom: "1px solid var(--border-subtle)" }}>
-                <h2 className="font-[family-name:var(--font-playfair)] text-lg font-semibold" style={{ color: "var(--text)" }}>
-                  Finish Bake
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setShowFinishModal(false)}
-                  className="p-1"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  <X size={20} />
-                </button>
+                <div className="flex items-center gap-3">
+                  {finishStep > 0 && (
+                    <button type="button" onClick={() => setFinishStep(finishStep - 1)} className="p-1" style={{ color: "var(--text-muted)" }}>
+                      <ChevronLeft size={18} />
+                    </button>
+                  )}
+                  <h2 className="font-[family-name:var(--font-playfair)] text-lg font-semibold" style={{ color: "var(--text)" }}>
+                    {finishStep === 0 ? "How was it?" : finishStep === 1 ? "Reflect" : finishStep === 2 ? "Environment" : "Details"}
+                  </h2>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] tabular-nums" style={{ color: "var(--text-faint)" }}>
+                    {finishStep + 1} / {beginner ? 3 : 4}
+                  </span>
+                  <button type="button" onClick={() => { setShowFinishModal(false); setFinishStep(0); }} className="p-1" style={{ color: "var(--text-muted)" }}>
+                    <X size={18} />
+                  </button>
+                </div>
               </div>
 
-              <div className="px-5 py-4 space-y-5">
-                {/* Ratings */}
-                <div>
-                  <h3 className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                    Rate Your Bake
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {(beginner
-                      ? [{ label: "How'd it go?", value: overallRating, set: setOverallRating }]
-                      : [
-                          { label: "Overall", value: overallRating, set: setOverallRating },
-                          { label: "Crumb", value: crumbRating, set: setCrumbRating },
-                          { label: "Crust", value: crustRating, set: setCrustRating },
-                          { label: "Flavor", value: flavorRating, set: setFlavorRating },
-                        ]
-                    ).map(({ label, value, set }) => (
-                      <div key={label} className="rounded-xl p-3" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))" }}>
-                        <p className="text-xs mb-1.5" style={{ color: "var(--text-muted)" }}>{label}</p>
-                        <div className="flex gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <motion.button
-                              key={star}
-                              type="button"
-                              onClick={() => {
-                                navigator.vibrate?.(10);
-                                set(star);
-                              }}
-                              whileTap={{ scale: 1.3 }}
-                              transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                              className="text-lg"
-                            >
-                              {star <= value ? "★" : "☆"}
-                            </motion.button>
-                          ))}
+              {/* Step dots */}
+              <div className="flex justify-center gap-1.5 px-5 pt-3 pb-1">
+                {Array.from({ length: beginner ? 3 : 4 }).map((_, i) => (
+                  <div key={i} className="h-1 rounded-full transition-all" style={{ width: i === finishStep ? 20 : 8, background: i <= finishStep ? "var(--accent)" : "var(--card-hover)" }} />
+                ))}
+              </div>
+
+              <div className="px-5 py-5">
+                <AnimatePresence mode="wait">
+                  <motion.div key={finishStep} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.15 }}>
+
+                {/* Step 0: Ratings */}
+                {finishStep === 0 && (
+                  <div className="space-y-4">
+                    <div className={beginner ? "" : "grid grid-cols-2 gap-3"}>
+                      {(beginner
+                        ? [{ label: "How did it go?", value: overallRating, set: setOverallRating }]
+                        : [
+                            { label: "Overall", value: overallRating, set: setOverallRating },
+                            { label: "Crumb", value: crumbRating, set: setCrumbRating },
+                            { label: "Crust", value: crustRating, set: setCrustRating },
+                            { label: "Flavor", value: flavorRating, set: setFlavorRating },
+                          ]
+                      ).map(({ label, value, set }) => (
+                        <div key={label} className="rounded-xl p-4" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))" }}>
+                          <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>{label}</p>
+                          <div className="flex gap-1.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button key={star} type="button" onClick={() => { navigator.vibrate?.(10); set(star); }} className="text-xl transition-transform active:scale-125">
+                                {star <= value ? "★" : "☆"}
+                              </button>
+                            ))}
+                          </div>
                         </div>
+                      ))}
+                    </div>
+                    <button type="button" onClick={() => setFinishStep(1)} className="w-full font-semibold text-sm py-3 rounded-xl transition-colors" style={{ background: "var(--accent)", color: "var(--bg)" }}>
+                      Continue
+                    </button>
+                  </div>
+                )}
+
+                {/* Step 1: Notes */}
+                {finishStep === 1 && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>What went well?</label>
+                      <textarea value={whatWentWell} onChange={(e) => setWhatWentWell(e.target.value)} placeholder="Great oven spring, nice ear..." className="w-full rounded-xl p-3 text-sm resize-none h-20 focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>What to improve?</label>
+                      <textarea value={whatToImprove} onChange={(e) => setWhatToImprove(e.target.value)} placeholder="Shape was a bit loose..." className="w-full rounded-xl p-3 text-sm resize-none h-20 focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Modifications</label>
+                      <textarea value={modifications} onChange={(e) => setModifications(e.target.value)} placeholder="Changed hydration, different flour..." className="w-full rounded-xl p-3 text-sm resize-none h-16 focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Other notes</label>
+                      <textarea value={overallNotes} onChange={(e) => setOverallNotes(e.target.value)} placeholder="Anything else worth remembering..." className="w-full rounded-xl p-3 text-sm resize-none h-16 focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
+                    </div>
+                    <button type="button" onClick={() => setFinishStep(2)} className="w-full font-semibold text-sm py-3 rounded-xl transition-colors" style={{ background: "var(--accent)", color: "var(--bg)" }}>
+                      Continue
+                    </button>
+                  </div>
+                )}
+
+                {/* Step 2: Environment */}
+                {finishStep === 2 && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Flour brand</label>
+                        <input type="text" value={flourBrand} onChange={(e) => setFlourBrand(e.target.value)} maxLength={100} placeholder="King Arthur..." className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
                       </div>
-                    ))}
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Room temp (°C)</label>
+                        <input type="number" value={ambientTemp} min={-10} max={60} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= -10 && Number(v) <= 60)) setAmbientTemp(v); }} placeholder="22" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
+                      </div>
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Dough temp (°C)</label>
+                        <input type="number" value={doughTemp} min={0} max={60} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 60)) setDoughTemp(v); }} placeholder="25" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
+                      </div>
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Humidity (%)</label>
+                        <input type="number" value={humidity} min={0} max={100} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 100)) setHumidity(v); }} placeholder="65" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
+                      </div>
+                    </div>
+                    {beginner ? (
+                      <button type="button" onClick={finishBake} disabled={saving} className="w-full font-semibold text-sm py-3 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50" style={{ background: "var(--accent)", color: "var(--bg)" }}>
+                        <Save size={16} /> {saving ? "Saving..." : "Record this bake"}
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => setFinishStep(3)} className="w-full font-semibold text-sm py-3 rounded-xl transition-colors" style={{ background: "var(--accent)", color: "var(--bg)" }}>
+                        Continue
+                      </button>
+                    )}
                   </div>
-                </div>
+                )}
 
-                {/* Notes */}
-                <div>
-                  <h3 className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                    Notes
-                  </h3>
-                  <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
-                        What went well?
-                      </label>
-                      <textarea
-                        value={whatWentWell}
-                        onChange={(e) => setWhatWentWell(e.target.value)}
-                        placeholder="Great oven spring, nice ear..."
-                        className="w-full rounded-xl p-3 text-sm resize-none h-16 focus:outline-none"
-                        style={{
-                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
-                          border: "1px solid var(--border-subtle)",
-                          color: "var(--text-secondary)",
-                        }}
-                      />
+                {/* Step 3: Details (starter + timing) — advanced only */}
+                {finishStep === 3 && !beginner && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Starter hydration</label>
+                        <input type="text" value={starterHydration} onChange={(e) => setStarterHydration(e.target.value)} maxLength={20} placeholder="100%" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
+                      </div>
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Starter notes</label>
+                        <input type="text" value={starterNotes} onChange={(e) => setStarterNotes(e.target.value)} maxLength={200} placeholder="Peaked at 6hrs..." className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
+                      </div>
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Bulk ferment (hrs)</label>
+                        <input type="number" value={bulkHours} min={0} max={48} step={0.5} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 48)) setBulkHours(v); }} placeholder="4" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
+                      </div>
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Proof time (hrs)</label>
+                        <input type="number" value={proofHours} min={0} max={48} step={0.5} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 48)) setProofHours(v); }} placeholder="12" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
+                      </div>
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Bake time (min)</label>
+                        <input type="number" value={bakeTimeMin} min={0} max={180} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 180)) setBakeTimeMin(v); }} placeholder="45" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
+                      </div>
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Oven temp (°C)</label>
+                        <input type="number" value={bakeTempC} min={0} max={350} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 350)) setBakeTempC(v); }} placeholder="230" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
-                        What to improve?
-                      </label>
-                      <textarea
-                        value={whatToImprove}
-                        onChange={(e) => setWhatToImprove(e.target.value)}
-                        placeholder="Shape was a bit loose, need more tension..."
-                        className="w-full rounded-xl p-3 text-sm resize-none h-16 focus:outline-none"
-                        style={{
-                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
-                          border: "1px solid var(--border-subtle)",
-                          color: "var(--text-secondary)",
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
-                        Modifications from recipe
-                      </label>
-                      <textarea
-                        value={modifications}
-                        onChange={(e) => setModifications(e.target.value)}
-                        placeholder="Used 80% hydration instead of 75%..."
-                        className="w-full rounded-xl p-3 text-sm resize-none h-16 focus:outline-none"
-                        style={{
-                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
-                          border: "1px solid var(--border-subtle)",
-                          color: "var(--text-secondary)",
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
-                        Overall notes
-                      </label>
-                      <textarea
-                        value={overallNotes}
-                        onChange={(e) => setOverallNotes(e.target.value)}
-                        placeholder="Any other observations..."
-                        className="w-full rounded-xl p-3 text-sm resize-none h-16 focus:outline-none"
-                        style={{
-                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
-                          border: "1px solid var(--border-subtle)",
-                          color: "var(--text-secondary)",
-                        }}
-                      />
-                    </div>
+                    <button type="button" onClick={finishBake} disabled={saving} className="w-full font-semibold text-sm py-3 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50" style={{ background: "var(--accent)", color: "var(--bg)" }}>
+                      <Save size={16} /> {saving ? "Saving..." : "Record this bake"}
+                    </button>
                   </div>
-                </div>
+                )}
 
-                {/* Environment */}
-                <div>
-                  <h3 className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                    Environment
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
-                        Flour brand
-                      </label>
-                      <input
-                        type="text"
-                        value={flourBrand}
-                        onChange={(e) => setFlourBrand(e.target.value)}
-                        maxLength={100}
-                        placeholder="King Arthur..."
-                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
-                        style={{
-                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
-                          border: "1px solid var(--border-subtle)",
-                          color: "var(--text-secondary)",
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
-                        Room temp (°C)
-                      </label>
-                      <input
-                        type="number"
-                        value={ambientTemp}
-                        min={-10}
-                        max={60}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === "" || (Number(v) >= -10 && Number(v) <= 60)) {
-                            setAmbientTemp(v);
-                          }
-                        }}
-                        placeholder="22"
-                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
-                        style={{
-                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
-                          border: "1px solid var(--border-subtle)",
-                          color: "var(--text-secondary)",
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
-                        Dough temp (°C)
-                      </label>
-                      <input
-                        type="number"
-                        value={doughTemp}
-                        min={0}
-                        max={60}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === "" || (Number(v) >= 0 && Number(v) <= 60)) setDoughTemp(v);
-                        }}
-                        placeholder="25"
-                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
-                        style={{
-                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
-                          border: "1px solid var(--border-subtle)",
-                          color: "var(--text-secondary)",
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
-                        Humidity (%)
-                      </label>
-                      <input
-                        type="number"
-                        value={humidity}
-                        min={0}
-                        max={100}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === "" || (Number(v) >= 0 && Number(v) <= 100)) setHumidity(v);
-                        }}
-                        placeholder="65"
-                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
-                        style={{
-                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
-                          border: "1px solid var(--border-subtle)",
-                          color: "var(--text-secondary)",
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
+                  </motion.div>
+                </AnimatePresence>
 
-                {/* Starter — hidden in beginner mode */}
-                {!beginner && <div>
-                  <h3 className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                    Starter
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
-                        Hydration
-                      </label>
-                      <input
-                        type="text"
-                        value={starterHydration}
-                        onChange={(e) => setStarterHydration(e.target.value)}
-                        maxLength={20}
-                        placeholder="100%"
-                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
-                        style={{
-                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
-                          border: "1px solid var(--border-subtle)",
-                          color: "var(--text-secondary)",
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
-                        Starter notes
-                      </label>
-                      <input
-                        type="text"
-                        value={starterNotes}
-                        onChange={(e) => setStarterNotes(e.target.value)}
-                        maxLength={200}
-                        placeholder="Peaked at 6hrs, doubled..."
-                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
-                        style={{
-                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
-                          border: "1px solid var(--border-subtle)",
-                          color: "var(--text-secondary)",
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>}
-
-                {/* Timing — hidden in beginner mode */}
-                {!beginner && <div>
-                  <h3 className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                    Timing
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
-                        Bulk ferment (hrs)
-                      </label>
-                      <input
-                        type="number"
-                        value={bulkHours}
-                        min={0}
-                        max={48}
-                        step={0.5}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === "" || (Number(v) >= 0 && Number(v) <= 48)) setBulkHours(v);
-                        }}
-                        placeholder="4"
-                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
-                        style={{
-                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
-                          border: "1px solid var(--border-subtle)",
-                          color: "var(--text-secondary)",
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
-                        Proof time (hrs)
-                      </label>
-                      <input
-                        type="number"
-                        value={proofHours}
-                        min={0}
-                        max={48}
-                        step={0.5}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === "" || (Number(v) >= 0 && Number(v) <= 48)) setProofHours(v);
-                        }}
-                        placeholder="12"
-                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
-                        style={{
-                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
-                          border: "1px solid var(--border-subtle)",
-                          color: "var(--text-secondary)",
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
-                        Bake time (min)
-                      </label>
-                      <input
-                        type="number"
-                        value={bakeTimeMin}
-                        min={0}
-                        max={180}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === "" || (Number(v) >= 0 && Number(v) <= 180)) setBakeTimeMin(v);
-                        }}
-                        placeholder="45"
-                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
-                        style={{
-                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
-                          border: "1px solid var(--border-subtle)",
-                          color: "var(--text-secondary)",
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
-                        Oven temp (°C)
-                      </label>
-                      <input
-                        type="number"
-                        value={bakeTempC}
-                        min={0}
-                        max={350}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === "" || (Number(v) >= 0 && Number(v) <= 350)) setBakeTempC(v);
-                        }}
-                        placeholder="230"
-                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
-                        style={{
-                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
-                          border: "1px solid var(--border-subtle)",
-                          color: "var(--text-secondary)",
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>}
-
-                {/* Actions */}
-                <div className="space-y-2 pb-safe">
-                  <button
-                    type="button"
-                    onClick={finishBake}
-                    disabled={saving}
-                    className="w-full font-semibold text-sm py-3 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-                    style={{ background: "var(--accent)", color: "var(--bg)" }}
-                  >
-                    <Save size={16} />
-                    {saving ? "Saving..." : "Save & Complete"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={abandonBake}
-                    className="w-full text-sm py-2"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    Abandon Bake
-                  </button>
-                </div>
+                <button type="button" onClick={abandonBake} className="w-full text-sm py-2 mt-3" style={{ color: "var(--text-faint)" }}>
+                  Abandon
+                </button>
               </div>
             </motion.div>
           </motion.div>

@@ -6,8 +6,6 @@ import { Plus, X, Droplets, Wheat, Thermometer, Clock, Trash2 } from "lucide-rea
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth-provider";
 import { PageHeader } from "@/components/ui/page-header";
-import { Doughy } from "@/components/illustrations/doughy";
-import { useDoughy } from "@/hooks/use-doughy";
 import { format, formatDistanceToNow } from "date-fns";
 
 interface StarterFeeding {
@@ -27,7 +25,6 @@ interface StarterFeeding {
 
 export default function StarterPage() {
   const { user } = useAuth();
-  const { happiness, mood, feed: feedDoughy } = useDoughy();
   const [feedings, setFeedings] = useState<StarterFeeding[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -85,7 +82,6 @@ export default function StarterPage() {
 
     if (data) {
       setFeedings((prev) => [data, ...prev]);
-      feedDoughy();
     }
 
     setSaving(false);
@@ -116,53 +112,16 @@ export default function StarterPage() {
         <PageHeader
           title="My Starter"
           subtitle="Track feedings, watch patterns emerge."
-          scriptTag="the sourdough diary within the diary."
+          scriptTag="it remembers so you don't have to."
         />
 
-        {/* Doughy status card */}
-        <div
-          className="mx-5 mb-8 rounded-2xl p-5"
-          style={{
-            background: "linear-gradient(135deg, var(--surface-2), var(--surface))",
-            border: "1px dashed var(--border-strong)",
-          }}
-        >
-          <div className="flex items-center gap-5">
-            <button type="button" onClick={feedDoughy} className="shrink-0" style={{ background: "none", border: "none", cursor: "pointer" }}>
-              <Doughy happiness={happiness} mood={mood} size={80} />
-            </button>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-baseline gap-3 mb-1">
-                <span className="display" style={{ fontSize: 24 }}>Doughy</span>
-                <span className="script" style={{ fontSize: 16, color: "var(--crust)" }}>
-                  {happiness > 80 ? "thriving!" : happiness > 60 ? "doing well." : happiness > 30 ? "getting hungry..." : "feed me!"}
-                </span>
-              </div>
-              <div className="flex gap-4 text-xs" style={{ color: "var(--ink-mute)" }}>
-                {lastFed && (
-                  <span>Last fed: {formatDistanceToNow(new Date(lastFed), { addSuffix: true })}</span>
-                )}
-                {avgPeak && <span>Avg peak: {avgPeak}hrs</span>}
-                <span>Feedings logged: {feedings.length}</span>
-              </div>
-              <div className="mt-3" style={{ height: 5, background: "var(--surface-3)", borderRadius: 4, overflow: "hidden" }}>
-                <div
-                  style={{
-                    height: "100%",
-                    width: `${happiness}%`,
-                    background:
-                      happiness > 60
-                        ? "linear-gradient(90deg, var(--leaf), var(--leaf-soft))"
-                        : happiness > 30
-                        ? "linear-gradient(90deg, var(--butter), var(--crust))"
-                        : "linear-gradient(90deg, var(--jam), var(--jam-soft))",
-                    transition: "width 0.6s var(--ease-out)",
-                    borderRadius: 4,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
+        {/* Starter stats */}
+        <div className="mx-5 mb-8 flex flex-wrap gap-4 text-xs" style={{ color: "var(--ink-mute)" }}>
+          {lastFed && (
+            <span>Last fed {formatDistanceToNow(new Date(lastFed), { addSuffix: true })}</span>
+          )}
+          {avgPeak && <span>Avg peak: {avgPeak}hrs</span>}
+          <span>{feedings.length} feedings logged</span>
         </div>
 
         {/* Log Feeding Button */}

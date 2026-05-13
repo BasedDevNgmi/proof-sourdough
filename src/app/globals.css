@@ -273,8 +273,6 @@ input, textarea, select {
   border-color: var(--border-strong);
 }
 
-/* Card wobble on hover */
-.card-wobble:hover { animation: wobble 0.5s ease; }
 
 /* Gradient text */
 .gradient-text {
@@ -343,12 +341,6 @@ input, textarea, select {
 /* Tap/press animation */
 .tap-pop:active { animation: tap 0.25s var(--ease-bounce); }
 
-/* Sticker emoji bounce */
-.sticker {
-  display: inline-block;
-  animation: sticker-bob 3.5s ease-in-out infinite;
-  transform-origin: center;
-}
 
 /* "Fresh" badge ribbon */
 .fresh-ribbon {
@@ -408,11 +400,7 @@ input, textarea, select {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-4px); }
 }
-@keyframes wobble {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(-1.5deg); }
-  75% { transform: rotate(1.5deg); }
-}
+
 @keyframes bubble-up {
   0% { transform: translateY(0) scale(0.5); opacity: 0; }
   20% { opacity: 0.9; }
@@ -470,10 +458,7 @@ input, textarea, select {
   50% { transform: scale(0.94); }
   100% { transform: scale(1); }
 }
-@keyframes sticker-bob {
-  0%, 100% { transform: translateY(0) rotate(-6deg); }
-  50%      { transform: translateY(-4px) rotate(6deg); }
-}
+
 @keyframes wiggle-in {
   0%   { transform: scale(0.8) rotate(-4deg); opacity: 0; }
   60%  { transform: scale(1.05) rotate(2deg); opacity: 1; }

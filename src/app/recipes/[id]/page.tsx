@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect, useRef } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { getRecipeById, books } from "@/data/recipes";
@@ -28,14 +28,6 @@ export default function RecipeDetailPage({
   );
   const [pastBakes, setPastBakes] = useState<BakeSession[]>([]);
   const [multiplier, setMultiplier] = useState(1);
-  const tipRotations = useRef<Record<string, number>>({});
-
-  function getTipRotation(key: string): number {
-    if (!tipRotations.current[key]) {
-      tipRotations.current[key] = -0.3 - Math.random() * 0.7;
-    }
-    return tipRotations.current[key];
-  }
   const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(new Set());
 
   // Load checklist from localStorage
@@ -743,7 +735,6 @@ export default function RecipeDetailPage({
                           className="mt-3 rounded-lg p-3"
                           style={{
                             background: "var(--surface)",
-                            transform: `rotate(${getTipRotation(`step-${step.step}`)}deg)`,
                           }}
                         >
                           <p
@@ -779,7 +770,6 @@ export default function RecipeDetailPage({
                   style={{
                     background: "var(--surface)",
                     border: "1px solid var(--border)",
-                    transform: `rotate(${getTipRotation(`tip-${i}`)}deg)`,
                   }}
                 >
                   <span className="mt-1 shrink-0" style={{ fontSize: 16 }}>💡</span>

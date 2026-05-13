@@ -283,22 +283,6 @@ export function BottomNav() {
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
             type="button"
-            onClick={feed}
-            aria-label="Feed Doughy"
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              background: "var(--surface)",
-              border: "1px dashed var(--border-strong)",
-              borderRadius: 999, padding: "4px 10px 4px 4px",
-              cursor: "pointer", fontFamily: "inherit",
-              color: "var(--ink-soft)",
-            }}
-          >
-            <Doughy happiness={happiness} mood={mood} size={28} />
-            <span style={{ fontSize: 11, fontWeight: 600 }}>{happiness}%</span>
-          </button>
-          <button
-            type="button"
             onClick={toggle}
             aria-label="Toggle theme"
             style={{
