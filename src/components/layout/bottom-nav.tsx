@@ -37,6 +37,15 @@ const navItems = [
     ),
   },
   {
+    href: "/starter",
+    label: "Starter",
+    icon: (p: React.SVGProps<SVGSVGElement>) => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+        <ellipse cx="12" cy="16" rx="8" ry="5" /><path d="M4 16V12c0-2.8 3.6-5 8-5s8 2.2 8 5v4" /><circle cx="9" cy="13" r="1" /><circle cx="15" cy="14" r="0.8" /><circle cx="12" cy="11" r="1.2" />
+      </svg>
+    ),
+  },
+  {
     href: "/journal",
     label: "Journal",
     icon: (p: React.SVGProps<SVGSVGElement>) => (

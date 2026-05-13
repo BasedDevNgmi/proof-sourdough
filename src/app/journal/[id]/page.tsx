@@ -260,10 +260,10 @@ export default function JournalDetailPage({
               </motion.div>
             )}
 
-            {(bake.flour_brand || bake.ambient_temp_f) && (
+            {(bake.flour_brand || bake.ambient_temp_f || bake.dough_temp_f || bake.humidity_percent || bake.starter_hydration || bake.bulk_fermentation_hours || bake.bake_temp_f) && (
               <div>
                 <h3 className="text-xs font-medium uppercase tracking-wider mb-2 mt-5 lg:mt-0" style={{ color: "var(--text-muted)" }}>
-                  Environment
+                  Environment & Data
                 </h3>
                 <div className="rounded-xl p-3 space-y-2" style={{ background: "var(--card)", border: "1px solid var(--border-subtle)" }}>
                   {bake.flour_brand && (
@@ -273,13 +273,60 @@ export default function JournalDetailPage({
                       <span style={{ color: "var(--text)" }}>{bake.flour_brand}</span>
                     </div>
                   )}
-                  {bake.ambient_temp_f && (
+                  {bake.ambient_temp_f != null && (
                     <div className="flex items-center gap-2 text-sm">
                       <Thermometer size={13} style={{ color: "var(--text-faint)" }} />
-                      <span style={{ color: "var(--text-secondary)" }}>Room temp:</span>
-                      <span style={{ color: "var(--text)" }}>
-                        {bake.ambient_temp_f}°C
-                      </span>
+                      <span style={{ color: "var(--text-secondary)" }}>Room:</span>
+                      <span style={{ color: "var(--text)" }}>{bake.ambient_temp_f}°C</span>
+                    </div>
+                  )}
+                  {bake.dough_temp_f != null && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Thermometer size={13} style={{ color: "var(--text-faint)" }} />
+                      <span style={{ color: "var(--text-secondary)" }}>Dough:</span>
+                      <span style={{ color: "var(--text)" }}>{bake.dough_temp_f}°C</span>
+                    </div>
+                  )}
+                  {bake.humidity_percent != null && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Thermometer size={13} style={{ color: "var(--text-faint)" }} />
+                      <span style={{ color: "var(--text-secondary)" }}>Humidity:</span>
+                      <span style={{ color: "var(--text)" }}>{bake.humidity_percent}%</span>
+                    </div>
+                  )}
+                  {bake.starter_hydration && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Wheat size={13} style={{ color: "var(--text-faint)" }} />
+                      <span style={{ color: "var(--text-secondary)" }}>Starter:</span>
+                      <span style={{ color: "var(--text)" }}>{bake.starter_hydration} hydration</span>
+                    </div>
+                  )}
+                  {bake.starter_notes && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Wheat size={13} style={{ color: "var(--text-faint)" }} />
+                      <span style={{ color: "var(--text-secondary)" }}>Starter notes:</span>
+                      <span style={{ color: "var(--text)" }}>{bake.starter_notes}</span>
+                    </div>
+                  )}
+                  {bake.bulk_fermentation_hours != null && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock size={13} style={{ color: "var(--text-faint)" }} />
+                      <span style={{ color: "var(--text-secondary)" }}>Bulk:</span>
+                      <span style={{ color: "var(--text)" }}>{bake.bulk_fermentation_hours}hrs</span>
+                    </div>
+                  )}
+                  {bake.proof_hours != null && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock size={13} style={{ color: "var(--text-faint)" }} />
+                      <span style={{ color: "var(--text-secondary)" }}>Proof:</span>
+                      <span style={{ color: "var(--text)" }}>{bake.proof_hours}hrs</span>
+                    </div>
+                  )}
+                  {bake.bake_time_minutes != null && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock size={13} style={{ color: "var(--text-faint)" }} />
+                      <span style={{ color: "var(--text-secondary)" }}>Bake:</span>
+                      <span style={{ color: "var(--text)" }}>{bake.bake_time_minutes}min at {bake.bake_temp_f || "—"}°C</span>
                     </div>
                   )}
                 </div>

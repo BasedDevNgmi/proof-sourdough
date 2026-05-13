@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
+  Camera,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -24,6 +25,9 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { safeGetJSON, safeSetJSON } from "@/lib/safe-storage";
 import { requestWakeLock, releaseWakeLock, reacquireOnVisibility } from "@/lib/wake-lock";
 import { trackEvent } from "@/lib/analytics";
+import { GlossaryText } from "@/components/ui/glossary-text";
+import { useBeginnerMode } from "@/hooks/use-beginner-mode";
+import { getGuideForStep } from "@/data/dough-guides";
 
 type StepIngredientGroup = { group: string; label: string; items: Ingredient[] };
 
@@ -113,8 +117,13 @@ export default function BakeSessionPage({
   const [showTempInput, setShowTempInput] = useState(false);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(new Set());
   const [showFinishModal, setShowFinishModal] = useState(false);
+  const [multiplier, setMultiplier] = useState(1);
+  const { beginner, toggle: toggleBeginner } = useBeginnerMode();
 
   const [justCompletedStep, setJustCompletedStep] = useState<number | null>(null);
+  const [stepPhotos, setStepPhotos] = useState<Record<number, string[]>>({});
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const tipRotations = useRef<Record<string, number>>({});
 
   const [overallRating, setOverallRating] = useState(0);
@@ -127,6 +136,14 @@ export default function BakeSessionPage({
   const [modifications, setModifications] = useState("");
   const [flourBrand, setFlourBrand] = useState("");
   const [ambientTemp, setAmbientTemp] = useState("");
+  const [doughTemp, setDoughTemp] = useState("");
+  const [humidity, setHumidity] = useState("");
+  const [starterHydration, setStarterHydration] = useState("");
+  const [starterNotes, setStarterNotes] = useState("");
+  const [bulkHours, setBulkHours] = useState("");
+  const [proofHours, setProofHours] = useState("");
+  const [bakeTimeMin, setBakeTimeMin] = useState("");
+  const [bakeTempC, setBakeTempC] = useState("");
   const [saving, setSaving] = useState(false);
   const startingSession = useRef(false);
 
@@ -258,6 +275,14 @@ export default function BakeSessionPage({
         modifications: modifications || null,
         flour_brand: flourBrand || null,
         ambient_temp_f: ambientTemp ? parseFloat(ambientTemp) : null,
+        dough_temp_f: doughTemp ? parseFloat(doughTemp) : null,
+        humidity_percent: humidity ? parseFloat(humidity) : null,
+        starter_hydration: starterHydration || null,
+        starter_notes: starterNotes || null,
+        bulk_fermentation_hours: bulkHours ? parseFloat(bulkHours) : null,
+        proof_hours: proofHours ? parseFloat(proofHours) : null,
+        bake_time_minutes: bakeTimeMin ? parseFloat(bakeTimeMin) : null,
+        bake_temp_f: bakeTempC ? parseFloat(bakeTempC) : null,
       })
       .eq("id", sessionId);
 
@@ -298,6 +323,39 @@ export default function BakeSessionPage({
     router.push("/");
   }
 
+  async function handlePhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !sessionId || !user) return;
+    setUploadingPhoto(true);
+
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${user.id}/${sessionId}/step-${currentStep}-${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("bake-photos")
+      .upload(path, file, { contentType: file.type });
+
+    if (!uploadError) {
+      const { data: urlData } = supabase.storage.from("bake-photos").getPublicUrl(path);
+      const publicUrl = urlData.publicUrl;
+
+      await supabase.from("bake_photos").insert({
+        session_id: sessionId,
+        user_id: user.id,
+        photo_url: publicUrl,
+        stage: recipe?.steps[currentStep]?.title || `Step ${currentStep + 1}`,
+      });
+
+      setStepPhotos((prev) => ({
+        ...prev,
+        [currentStep]: [...(prev[currentStep] || []), publicUrl],
+      }));
+      trackEvent("bake_photo_added", { step: currentStep, recipe_id: recipeId });
+    }
+    setUploadingPhoto(false);
+    if (photoInputRef.current) photoInputRef.current.value = "";
+  }
+
   if (!recipe) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -317,8 +375,16 @@ export default function BakeSessionPage({
     let total = 0;
     if (hourMatch) total += parseInt(hourMatch[1]) * 60;
     if (minMatch) total += parseInt(minMatch[1]);
-    if (total > 0 && total <= 120) return total;
+    if (total > 0) return total;
     return null;
+  }
+
+  function scaleWeight(weight: string): string {
+    if (multiplier === 1) return weight;
+    const match = weight.match(/^(\d+(?:\.\d+)?)\s*(g|ml|oz)?$/i);
+    if (!match) return weight;
+    const scaled = Math.round(parseFloat(match[1]) * multiplier);
+    return `${scaled}${match[2] || ""}`;
   }
 
   const timerMinutes = parseTimerMinutes(step?.duration);
@@ -356,6 +422,43 @@ export default function BakeSessionPage({
                 transition={{ duration: 0.3 }}
               />
             </div>
+            <div className="flex items-center gap-1.5 mt-3">
+              <span className="text-[9px] uppercase tracking-wider font-medium" style={{ color: "var(--text-faint)" }}>Scale</span>
+              {[0.5, 1, 1.5, 2, 3, 4].map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMultiplier(m)}
+                  className="px-1.5 py-0.5 rounded text-[10px] font-medium transition-all"
+                  style={{
+                    background: multiplier === m ? "var(--accent)" : "transparent",
+                    color: multiplier === m ? "var(--bg)" : "var(--text-faint)",
+                  }}
+                >
+                  {m}x
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={toggleBeginner}
+              className="flex items-center gap-1.5 mt-2 text-[10px] transition-colors"
+              style={{ color: beginner ? "var(--accent)" : "var(--text-faint)" }}
+            >
+              <div
+                className="w-6 h-3.5 rounded-full relative transition-colors"
+                style={{ background: beginner ? "var(--accent)" : "var(--card-hover)" }}
+              >
+                <div
+                  className="absolute top-0.5 w-2.5 h-2.5 rounded-full transition-all"
+                  style={{
+                    background: "var(--bg)",
+                    left: beginner ? 12 : 2,
+                  }}
+                />
+              </div>
+              Beginner mode
+            </button>
           </div>
           <nav className="flex-1 px-3 pb-4 space-y-0.5">
             {recipe.steps.map((s, i) => (
@@ -452,7 +555,7 @@ export default function BakeSessionPage({
                                 className="text-[10px] tabular-nums shrink-0"
                                 style={{ color: "var(--text-muted)", opacity: checked ? 0.4 : 1 }}
                               >
-                                {ing.weight}
+                                {scaleWeight(ing.weight)}
                               </span>
                             </button>
                           );
@@ -601,7 +704,7 @@ export default function BakeSessionPage({
                   <div>
                     <div className="rounded-2xl p-4 mb-4" style={{ background: "var(--card)", border: "1px solid var(--border-subtle)" }}>
                       <p className="text-sm lg:text-base lg:leading-7 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                        {step.instructions}
+                        <GlossaryText text={step.instructions} />
                       </p>
                       {step.temperature && (
                         <p className="text-xs mt-3 flex items-center gap-1.5" style={{ color: "var(--accent)", opacity: 0.8 }}>
@@ -609,6 +712,38 @@ export default function BakeSessionPage({
                         </p>
                       )}
                     </div>
+
+                    {beginner && (() => {
+                      const guide = getGuideForStep(step.title, step.instructions);
+                      if (!guide) return null;
+                      return (
+                        <div
+                          className="rounded-xl p-3 mb-4 space-y-2"
+                          style={{
+                            background: "var(--card)",
+                            border: "1px solid var(--accent-border, rgba(217,119,6,0.15))",
+                          }}
+                        >
+                          <p className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "var(--accent)" }}>
+                            What to look for
+                          </p>
+                          <div className="space-y-1.5">
+                            <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                              <span style={{ color: "var(--success, #10b981)", fontWeight: 600 }}>Ready: </span>
+                              {guide.ready}
+                            </p>
+                            <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                              <span style={{ color: "var(--accent)", fontWeight: 600 }}>Not yet: </span>
+                              {guide.notReady}
+                            </p>
+                            <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                              <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>Overdone: </span>
+                              {guide.overDone}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {step.tip && (
                       <div
@@ -694,7 +829,7 @@ export default function BakeSessionPage({
                                         className="text-xs tabular-nums shrink-0"
                                         style={{ color: "var(--text-muted)", opacity: checked ? 0.4 : 1 }}
                                       >
-                                        {ing.weight}
+                                        {scaleWeight(ing.weight)}
                                       </span>
                                     </button>
                                   );
@@ -761,8 +896,23 @@ export default function BakeSessionPage({
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-2 mb-4 flex-wrap">
+                {/* Step Photos */}
+                {stepPhotos[currentStep]?.length > 0 && (
+                  <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+                    {stepPhotos[currentStep].map((url, i) => (
+                      <img
+                        key={i}
+                        src={url}
+                        alt={`Step ${currentStep + 1} photo ${i + 1}`}
+                        className="w-20 h-20 object-cover rounded-xl shrink-0"
+                        style={{ border: "1px solid var(--border-subtle)" }}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Action Buttons — desktop only (mobile uses floating bar) */}
+                <div className="hidden lg:flex gap-2 mb-4 flex-wrap">
                   <button
                     type="button"
                     onClick={() => setShowNoteInput(!showNoteInput)}
@@ -787,7 +937,28 @@ export default function BakeSessionPage({
                   >
                     <Thermometer size={12} /> Temp
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                    style={
+                      stepPhotos[currentStep]?.length
+                        ? { background: "var(--card-hover)", color: "var(--text)" }
+                        : { background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", color: "var(--text-muted)" }
+                    }
+                  >
+                    <Camera size={12} /> {uploadingPhoto ? "..." : "Photo"}
+                  </button>
                 </div>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handlePhotoCapture}
+                  className="hidden"
+                />
               </motion.div>
             </AnimatePresence>
           </div>
@@ -875,6 +1046,86 @@ export default function BakeSessionPage({
         </div>
       </div>
 
+      {/* Mobile floating action bar */}
+      <div
+        className="fixed left-0 right-0 z-40 flex items-center justify-center gap-3 px-4 py-2.5 lg:hidden"
+        style={{
+          bottom: "max(80px, calc(env(safe-area-inset-bottom) + 76px))",
+          background: "var(--bg)",
+          borderTop: "1px solid var(--border-subtle)",
+          borderBottom: "1px solid var(--border-subtle)",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setShowNoteInput(!showNoteInput)}
+          className="flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-colors"
+          style={
+            showNoteInput || stepNotes[currentStep]
+              ? { background: "var(--card-hover)", color: "var(--text)" }
+              : { color: "var(--text-muted)" }
+          }
+        >
+          <MessageSquare size={18} />
+          <span className="text-[9px] font-medium">Note</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowTempInput(!showTempInput)}
+          className="flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-colors"
+          style={
+            showTempInput || stepTemps[currentStep]
+              ? { background: "var(--card-hover)", color: "var(--text)" }
+              : { color: "var(--text-muted)" }
+          }
+        >
+          <Thermometer size={18} />
+          <span className="text-[9px] font-medium">Temp</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => photoInputRef.current?.click()}
+          disabled={uploadingPhoto}
+          className="flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-colors disabled:opacity-50"
+          style={
+            stepPhotos[currentStep]?.length
+              ? { background: "var(--card-hover)", color: "var(--text)" }
+              : { color: "var(--text-muted)" }
+          }
+        >
+          <Camera size={18} />
+          <span className="text-[9px] font-medium">{uploadingPhoto ? "..." : "Photo"}</span>
+        </button>
+        {multiplier === 1 && (
+          <div className="flex items-center gap-1 ml-auto">
+            {[1, 1.5, 2].map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMultiplier(m)}
+                className="px-2 py-1 rounded text-[10px] font-medium"
+                style={{
+                  background: multiplier === m ? "var(--accent)" : "transparent",
+                  color: multiplier === m ? "var(--bg)" : "var(--text-faint)",
+                }}
+              >
+                {m}x
+              </button>
+            ))}
+          </div>
+        )}
+        {multiplier !== 1 && (
+          <button
+            type="button"
+            onClick={() => setMultiplier(1)}
+            className="ml-auto px-2 py-1 rounded text-[10px] font-medium"
+            style={{ background: "var(--accent)", color: "var(--bg)" }}
+          >
+            {multiplier}x
+          </button>
+        )}
+      </div>
+
       {/* Finish Modal */}
       <AnimatePresence>
         {showFinishModal && (
@@ -916,12 +1167,15 @@ export default function BakeSessionPage({
                     Rate Your Bake
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { label: "Overall", value: overallRating, set: setOverallRating },
-                      { label: "Crumb", value: crumbRating, set: setCrumbRating },
-                      { label: "Crust", value: crustRating, set: setCrustRating },
-                      { label: "Flavor", value: flavorRating, set: setFlavorRating },
-                    ].map(({ label, value, set }) => (
+                    {(beginner
+                      ? [{ label: "How'd it go?", value: overallRating, set: setOverallRating }]
+                      : [
+                          { label: "Overall", value: overallRating, set: setOverallRating },
+                          { label: "Crumb", value: crumbRating, set: setCrumbRating },
+                          { label: "Crust", value: crustRating, set: setCrustRating },
+                          { label: "Flavor", value: flavorRating, set: setFlavorRating },
+                        ]
+                    ).map(({ label, value, set }) => (
                       <div key={label} className="rounded-xl p-3" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))" }}>
                         <p className="text-xs mb-1.5" style={{ color: "var(--text-muted)" }}>{label}</p>
                         <div className="flex gap-1">
@@ -1067,8 +1321,196 @@ export default function BakeSessionPage({
                         }}
                       />
                     </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
+                        Dough temp (°C)
+                      </label>
+                      <input
+                        type="number"
+                        value={doughTemp}
+                        min={0}
+                        max={60}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === "" || (Number(v) >= 0 && Number(v) <= 60)) setDoughTemp(v);
+                        }}
+                        placeholder="25"
+                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                        style={{
+                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
+                        Humidity (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={humidity}
+                        min={0}
+                        max={100}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === "" || (Number(v) >= 0 && Number(v) <= 100)) setHumidity(v);
+                        }}
+                        placeholder="65"
+                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                        style={{
+                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
+
+                {/* Starter — hidden in beginner mode */}
+                {!beginner && <div>
+                  <h3 className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
+                    Starter
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
+                        Hydration
+                      </label>
+                      <input
+                        type="text"
+                        value={starterHydration}
+                        onChange={(e) => setStarterHydration(e.target.value)}
+                        maxLength={20}
+                        placeholder="100%"
+                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                        style={{
+                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
+                        Starter notes
+                      </label>
+                      <input
+                        type="text"
+                        value={starterNotes}
+                        onChange={(e) => setStarterNotes(e.target.value)}
+                        maxLength={200}
+                        placeholder="Peaked at 6hrs, doubled..."
+                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                        style={{
+                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>}
+
+                {/* Timing — hidden in beginner mode */}
+                {!beginner && <div>
+                  <h3 className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
+                    Timing
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
+                        Bulk ferment (hrs)
+                      </label>
+                      <input
+                        type="number"
+                        value={bulkHours}
+                        min={0}
+                        max={48}
+                        step={0.5}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === "" || (Number(v) >= 0 && Number(v) <= 48)) setBulkHours(v);
+                        }}
+                        placeholder="4"
+                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                        style={{
+                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
+                        Proof time (hrs)
+                      </label>
+                      <input
+                        type="number"
+                        value={proofHours}
+                        min={0}
+                        max={48}
+                        step={0.5}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === "" || (Number(v) >= 0 && Number(v) <= 48)) setProofHours(v);
+                        }}
+                        placeholder="12"
+                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                        style={{
+                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
+                        Bake time (min)
+                      </label>
+                      <input
+                        type="number"
+                        value={bakeTimeMin}
+                        min={0}
+                        max={180}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === "" || (Number(v) >= 0 && Number(v) <= 180)) setBakeTimeMin(v);
+                        }}
+                        placeholder="45"
+                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                        style={{
+                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
+                        Oven temp (°C)
+                      </label>
+                      <input
+                        type="number"
+                        value={bakeTempC}
+                        min={0}
+                        max={350}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === "" || (Number(v) >= 0 && Number(v) <= 350)) setBakeTempC(v);
+                        }}
+                        placeholder="230"
+                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                        style={{
+                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>}
 
                 {/* Actions */}
                 <div className="space-y-2 pb-safe">

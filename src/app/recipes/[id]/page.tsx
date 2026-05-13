@@ -296,7 +296,7 @@ export default function RecipeDetailPage({
                   Scale
                 </span>
                 <div className="flex gap-1.5">
-                  {[0.5, 1, 1.5, 2].map((m) => (
+                  {[0.5, 1, 1.5, 2, 3, 4].map((m) => (
                     <button
                       key={m}
                       type="button"

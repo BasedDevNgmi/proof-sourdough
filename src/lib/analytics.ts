@@ -5,7 +5,8 @@ type EventName =
   | "recipe_viewed"
   | "bake_started"
   | "bake_step_completed"
-  | "bake_completed";
+  | "bake_completed"
+  | "bake_photo_added";
 
 const enabled = () =>
   typeof window !== "undefined" &&
