@@ -11,6 +11,7 @@ import { Pill } from "@/components/ui/pill";
 import { Icon } from "@/components/illustrations/icons";
 import { BreadIllustration } from "@/components/illustrations/bread-illustration";
 import { Steam } from "@/components/illustrations/steam";
+import { IngredientRow } from "@/components/ui/ingredient-row";
 import { formatDistanceToNow } from "date-fns";
 import Image from "next/image";
 import Link from "next/link";
@@ -135,18 +136,30 @@ export default function RecipeDetailPage({
               {recipe.difficulty}
             </Pill>
           </div>
-          <Link
-            href={`/bake/${recipe.id}`}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "14px 26px", background: "var(--crust)", border: "none", color: "#1c1611",
-              borderRadius: 12, fontWeight: 700, fontFamily: "inherit", fontSize: 15,
-              textDecoration: "none",
-              transition: "transform 0.2s var(--ease-bounce)",
-            }}
-          >
-            <Icon.chef width={18} height={18} /> Start this bake
-          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <Link
+              href={`/bake/${recipe.id}`}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                padding: "14px 26px", background: "var(--crust)", border: "none", color: "#1c1611",
+                borderRadius: 12, fontWeight: 700, fontFamily: "inherit", fontSize: 15,
+                textDecoration: "none",
+                transition: "transform 0.2s var(--ease-bounce)",
+              }}
+            >
+              <Icon.chef width={18} height={18} /> Start this bake
+            </Link>
+            <Link
+              href={`/recipes/${recipe.id}/formula`}
+              style={{
+                fontSize: 13,
+                color: "var(--ink-mute)",
+                textDecoration: "none",
+              }}
+            >
+              View formula
+            </Link>
+          </div>
         </div>
 
         {/* Hero image / illustration */}
@@ -348,7 +361,7 @@ export default function RecipeDetailPage({
                         )}
                       </h3>
                       <div
-                        className="rounded-xl overflow-hidden"
+                        className="rounded-xl overflow-hidden px-4"
                         style={{
                           background: "var(--surface)",
                           border: "1px solid var(--border)",
@@ -356,43 +369,15 @@ export default function RecipeDetailPage({
                       >
                         {recipe.ingredients.levain.map((ing, i) => {
                           const ck = `levain-${i}`;
-                          const on = checkedIngredients.has(ck);
                           return (
-                          <div
-                            key={i}
-                            onClick={() => toggleIngredient(ck)}
-                            className="flex items-center justify-between px-4 py-3 cursor-pointer select-none transition-opacity"
-                            style={{
-                              borderBottom:
-                                i < recipe.ingredients.levain!.length - 1
-                                  ? "1px solid var(--border)"
-                                  : "none",
-                              opacity: on ? 0.4 : 1,
-                            }}
-                          >
-                            <span
-                              className="text-sm"
-                              style={{ color: "var(--ink-soft)", textDecoration: on ? "line-through" : "none" }}
-                            >
-                              {ing.name}
-                            </span>
-                            <div className="flex items-center gap-3">
-                              {ing.bakerPercent && (
-                                <span
-                                  className="text-[10px] tracking-wide"
-                                  style={{ color: "var(--ink-faint)" }}
-                                >
-                                  {ing.bakerPercent}
-                                </span>
-                              )}
-                              <span
-                                className="text-sm font-medium tabular-nums"
-                                style={{ color: "var(--ink)", textDecoration: on ? "line-through" : "none" }}
-                              >
-                                {scaleWeight(ing.weight)}
-                              </span>
-                            </div>
-                          </div>
+                            <IngredientRow
+                              key={i}
+                              name={ing.name}
+                              weight={scaleWeight(ing.weight)}
+                              percentage={ing.bakerPercent}
+                              checked={checkedIngredients.has(ck)}
+                              onToggle={() => toggleIngredient(ck)}
+                            />
                           );
                         })}
                       </div>
@@ -411,7 +396,7 @@ export default function RecipeDetailPage({
                       )}
                     </h3>
                     <div
-                      className="rounded-xl overflow-hidden"
+                      className="rounded-xl overflow-hidden px-4"
                       style={{
                         background: "var(--surface)",
                         border: "1px solid var(--border)",
@@ -419,53 +404,16 @@ export default function RecipeDetailPage({
                     >
                       {recipe.ingredients.main.map((ing, i) => {
                         const ck = `main-${i}`;
-                        const on = checkedIngredients.has(ck);
                         return (
-                        <div
-                          key={i}
-                          onClick={() => toggleIngredient(ck)}
-                          className="flex items-center justify-between px-4 py-3 cursor-pointer select-none transition-opacity"
-                          style={{
-                            borderBottom:
-                              i < recipe.ingredients.main.length - 1
-                                ? "1px solid var(--border)"
-                                : "none",
-                            opacity: on ? 0.4 : 1,
-                          }}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <span
-                              className="text-sm"
-                              style={{ color: "var(--ink-soft)", textDecoration: on ? "line-through" : "none" }}
-                            >
-                              {ing.name}
-                            </span>
-                            {ing.note && (
-                              <span
-                                className="text-[10px] ml-2"
-                                style={{ color: "var(--ink-faint)" }}
-                              >
-                                {ing.note}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3 shrink-0">
-                            {ing.bakerPercent && (
-                              <span
-                                className="text-[10px] tracking-wide"
-                                style={{ color: "var(--ink-faint)" }}
-                              >
-                                {ing.bakerPercent}
-                              </span>
-                            )}
-                            <span
-                              className="text-sm font-medium tabular-nums"
-                              style={{ color: "var(--ink)", textDecoration: on ? "line-through" : "none" }}
-                            >
-                              {scaleWeight(ing.weight)}
-                            </span>
-                          </div>
-                        </div>
+                          <IngredientRow
+                            key={i}
+                            name={ing.name}
+                            weight={scaleWeight(ing.weight)}
+                            percentage={ing.bakerPercent}
+                            note={ing.note}
+                            checked={checkedIngredients.has(ck)}
+                            onToggle={() => toggleIngredient(ck)}
+                          />
                         );
                       })}
                     </div>
@@ -485,7 +433,7 @@ export default function RecipeDetailPage({
                           )}
                         </h3>
                         <div
-                          className="rounded-xl overflow-hidden"
+                          className="rounded-xl overflow-hidden px-4"
                           style={{
                             background: "var(--surface)",
                             border: "1px solid var(--border)",
@@ -493,33 +441,14 @@ export default function RecipeDetailPage({
                         >
                           {recipe.ingredients.additions.map((ing, i) => {
                             const ck = `additions-${i}`;
-                            const on = checkedIngredients.has(ck);
                             return (
-                            <div
-                              key={i}
-                              onClick={() => toggleIngredient(ck)}
-                              className="flex items-center justify-between px-4 py-3 cursor-pointer select-none transition-opacity"
-                              style={{
-                                borderBottom:
-                                  i < recipe.ingredients.additions!.length - 1
-                                    ? "1px solid var(--border)"
-                                    : "none",
-                                opacity: on ? 0.4 : 1,
-                              }}
-                            >
-                              <span
-                                className="text-sm"
-                                style={{ color: "var(--ink-soft)", textDecoration: on ? "line-through" : "none" }}
-                              >
-                                {ing.name}
-                              </span>
-                              <span
-                                className="text-sm font-medium tabular-nums"
-                                style={{ color: "var(--ink)", textDecoration: on ? "line-through" : "none" }}
-                              >
-                                {scaleWeight(ing.weight)}
-                              </span>
-                            </div>
+                              <IngredientRow
+                                key={i}
+                                name={ing.name}
+                                weight={scaleWeight(ing.weight)}
+                                checked={checkedIngredients.has(ck)}
+                                onToggle={() => toggleIngredient(ck)}
+                              />
                             );
                           })}
                         </div>
@@ -540,7 +469,7 @@ export default function RecipeDetailPage({
                           )}
                         </h3>
                         <div
-                          className="rounded-xl overflow-hidden"
+                          className="rounded-xl overflow-hidden px-4"
                           style={{
                             background: "var(--surface)",
                             border: "1px solid var(--border)",
@@ -548,33 +477,14 @@ export default function RecipeDetailPage({
                         >
                           {recipe.ingredients.filling.map((ing, i) => {
                             const ck = `filling-${i}`;
-                            const on = checkedIngredients.has(ck);
                             return (
-                            <div
-                              key={i}
-                              onClick={() => toggleIngredient(ck)}
-                              className="flex items-center justify-between px-4 py-3 cursor-pointer select-none transition-opacity"
-                              style={{
-                                borderBottom:
-                                  i < recipe.ingredients.filling!.length - 1
-                                    ? "1px solid var(--border)"
-                                    : "none",
-                                opacity: on ? 0.4 : 1,
-                              }}
-                            >
-                              <span
-                                className="text-sm"
-                                style={{ color: "var(--ink-soft)", textDecoration: on ? "line-through" : "none" }}
-                              >
-                                {ing.name}
-                              </span>
-                              <span
-                                className="text-sm font-medium tabular-nums"
-                                style={{ color: "var(--ink)", textDecoration: on ? "line-through" : "none" }}
-                              >
-                                {scaleWeight(ing.weight)}
-                              </span>
-                            </div>
+                              <IngredientRow
+                                key={i}
+                                name={ing.name}
+                                weight={scaleWeight(ing.weight)}
+                                checked={checkedIngredients.has(ck)}
+                                onToggle={() => toggleIngredient(ck)}
+                              />
                             );
                           })}
                         </div>

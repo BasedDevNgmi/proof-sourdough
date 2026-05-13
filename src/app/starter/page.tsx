@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth-provider";
 import { PageHeader } from "@/components/ui/page-header";
 import { format, formatDistanceToNow } from "date-fns";
+import { FeedingCalendar } from "@/components/ui/feeding-calendar";
 
 interface StarterFeeding {
   id: string;
@@ -263,6 +264,12 @@ export default function StarterPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Week view feeding calendar */}
+        <div className="px-5 mb-6">
+          <div className="label" style={{ marginBottom: 10 }}>This week</div>
+          <FeedingCalendar feedings={feedings} />
+        </div>
 
         {/* Feeding History */}
         <div className="px-5 pb-8">

@@ -4,12 +4,15 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase, type BakeSession } from "@/lib/supabase";
-import { recipes, getRecipeById } from "@/data/recipes";
+import { recipes, getRecipeById, books } from "@/data/recipes";
 import { formatDistanceToNow } from "date-fns";
+import { Star } from "lucide-react";
 import { Icon } from "@/components/illustrations/icons";
 import { StatTile } from "@/components/ui/stat-tile";
 import { ActionTile } from "@/components/ui/action-tile";
 import { PickCard } from "@/components/ui/pick-card";
+import { BreadIllustration } from "@/components/illustrations/bread-illustration";
+import Image from "next/image";
 
 const BAKING_WISDOMS = [
   "Cold dough shapes easier.",
@@ -41,6 +44,12 @@ function getGreeting(): string {
   if (hour < 12) return "Rise and shine.";
   if (hour < 17) return "Afternoon proof.";
   return "Evening bake session.";
+}
+
+function getWeeklyRecipe() {
+  const now = new Date();
+  const weekIndex = Math.floor((now.getFullYear() * 52 + Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000)))) % recipes.length;
+  return recipes[weekIndex];
 }
 
 export default function HomePage() {
@@ -193,6 +202,60 @@ export default function HomePage() {
         />
       </div>
 
+      {/* ── Bake of the Week ── */}
+      {(() => {
+        const featured = getWeeklyRecipe();
+        const book = books.find(b => b.id === featured.bookId);
+        return (
+          <div style={{ borderTop: "1px solid var(--border)", paddingTop: 32, marginBottom: 48 }}>
+            <div className="label" style={{ marginBottom: 16 }}>Bake of the week</div>
+            <Link
+              href={`/recipes/${featured.id}`}
+              style={{
+                display: "grid",
+                gridTemplateColumns: featured.image ? "1fr 1fr" : "1fr",
+                gap: 32,
+                alignItems: "center",
+                textDecoration: "none",
+                padding: 24,
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius-lg)",
+                transition: "border-color 0.2s",
+              }}
+            >
+              <div>
+                <h2 className="display" style={{ fontSize: 32, margin: 0, marginBottom: 8, color: "var(--ink)" }}>
+                  {featured.title}
+                </h2>
+                <p style={{ fontSize: 14, color: "var(--ink-soft)", lineHeight: 1.6, margin: 0, marginBottom: 16 }}>
+                  {featured.description}
+                </p>
+                <div style={{ display: "flex", gap: 16, fontSize: 12, color: "var(--ink-mute)" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>{featured.totalTime}</span>
+                  {featured.hydration && <span style={{ fontFamily: "var(--font-mono)" }}>{featured.hydration}</span>}
+                  <span>{featured.difficulty}</span>
+                  {book && <span>{book.title}</span>}
+                </div>
+              </div>
+              {featured.image ? (
+                <div style={{ position: "relative", aspectRatio: "4/3", borderRadius: "var(--radius)", overflow: "hidden" }}>
+                  <Image src={featured.image} alt={featured.title} fill sizes="400px" className="object-cover" />
+                </div>
+              ) : (
+                <div style={{
+                  display: "grid", placeItems: "center",
+                  aspectRatio: "4/3", background: "var(--surface-2)",
+                  borderRadius: "var(--radius)",
+                }}>
+                  <BreadIllustration seed={featured.id} size={120} />
+                </div>
+              )}
+            </Link>
+          </div>
+        );
+      })()}
+
       {/* ── Try Something New ── */}
       <div style={{ borderTop: "1px solid var(--border)", paddingTop: 32, marginBottom: 32 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
@@ -255,7 +318,7 @@ export default function HomePage() {
                       <span style={{ fontSize: 14, fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
                         {bake.overall_rating}
                       </span>
-                      <span style={{ fontSize: 10 }}>{"★"}</span>
+                      <Star size={12} fill="var(--crust)" stroke="var(--crust)" />
                     </div>
                   )}
                   {bake.status === "in-progress" && (

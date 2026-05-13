@@ -26,7 +26,8 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { safeGetJSON, safeSetJSON } from "@/lib/safe-storage";
 import { requestWakeLock, releaseWakeLock, reacquireOnVisibility } from "@/lib/wake-lock";
 import { trackEvent } from "@/lib/analytics";
-import { GlossaryText } from "@/components/ui/glossary-text";
+import { InlineIngredients } from "@/components/ui/inline-ingredients";
+import { IngredientRow } from "@/components/ui/ingredient-row";
 import { useBeginnerMode } from "@/hooks/use-beginner-mode";
 import { getGuideForStep } from "@/data/dough-guides";
 
@@ -502,15 +503,17 @@ export default function BakeSessionPage({
                       <p className="text-[9px] font-semibold uppercase tracking-wider mb-1 px-1" style={{ color: "var(--text-muted)" }}>
                         {label}
                       </p>
-                      <div className="space-y-0.5">
+                      <div className="px-1">
                         {items.map((ing) => {
                           const key = `${group}-${ing.name}`;
-                          const checked = checkedIngredients.has(key);
                           return (
-                            <button
+                            <IngredientRow
                               key={key}
-                              type="button"
-                              onClick={() => {
+                              name={ing.name}
+                              weight={scaleWeight(ing.weight)}
+                              percentage={ing.bakerPercent}
+                              checked={checkedIngredients.has(key)}
+                              onToggle={() => {
                                 setCheckedIngredients((prev) => {
                                   const next = new Set(prev);
                                   if (next.has(key)) next.delete(key);
@@ -518,34 +521,7 @@ export default function BakeSessionPage({
                                   return next;
                                 });
                               }}
-                              className="w-full flex items-center gap-2 text-left px-1 py-1 rounded-lg transition-colors hover:bg-[var(--card-hover-subtle)]"
-                            >
-                              <div
-                                className="w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0"
-                                style={{
-                                  borderColor: checked ? "var(--accent)" : "var(--border-subtle)",
-                                  background: checked ? "var(--accent)" : "transparent",
-                                }}
-                              >
-                                {checked && <Check size={8} style={{ color: "var(--bg)" }} />}
-                              </div>
-                              <span
-                                className="text-[11px] flex-1 truncate"
-                                style={{
-                                  color: "var(--text-secondary)",
-                                  opacity: checked ? 0.4 : 1,
-                                  textDecoration: checked ? "line-through" : "none",
-                                }}
-                              >
-                                {ing.name}
-                              </span>
-                              <span
-                                className="text-[10px] tabular-nums shrink-0"
-                                style={{ color: "var(--text-muted)", opacity: checked ? 0.4 : 1 }}
-                              >
-                                {scaleWeight(ing.weight)}
-                              </span>
-                            </button>
+                            />
                           );
                         })}
                       </div>
@@ -692,7 +668,11 @@ export default function BakeSessionPage({
                   <div>
                     <div className="rounded-2xl p-4 mb-4" style={{ background: "var(--card)", border: "1px solid var(--border-subtle)" }}>
                       <p className="text-sm lg:text-base lg:leading-7 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                        <GlossaryText text={step.instructions} />
+                        <InlineIngredients
+                          text={step.instructions}
+                          ingredients={recipe.ingredients.main.concat(recipe.ingredients.levain || [], recipe.ingredients.additions || [])}
+                          multiplier={multiplier}
+                        />
                       </p>
                       {step.temperature && (
                         <p className="text-xs mt-3 flex items-center gap-1.5" style={{ color: "var(--accent)", opacity: 0.8 }}>
@@ -774,15 +754,17 @@ export default function BakeSessionPage({
                               <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
                                 {label}
                               </p>
-                              <div className="space-y-1.5">
+                              <div>
                                 {items.map((ing) => {
                                   const key = `${group}-${ing.name}`;
-                                  const checked = checkedIngredients.has(key);
                                   return (
-                                    <button
+                                    <IngredientRow
                                       key={key}
-                                      type="button"
-                                      onClick={() => {
+                                      name={ing.name}
+                                      weight={scaleWeight(ing.weight)}
+                                      percentage={ing.bakerPercent}
+                                      checked={checkedIngredients.has(key)}
+                                      onToggle={() => {
                                         setCheckedIngredients((prev) => {
                                           const next = new Set(prev);
                                           if (next.has(key)) next.delete(key);
@@ -790,34 +772,7 @@ export default function BakeSessionPage({
                                           return next;
                                         });
                                       }}
-                                      className="w-full flex items-center gap-2.5 text-left py-1"
-                                    >
-                                      <div
-                                        className="w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors"
-                                        style={{
-                                          borderColor: checked ? "var(--accent)" : "var(--border-subtle)",
-                                          background: checked ? "var(--accent)" : "transparent",
-                                        }}
-                                      >
-                                        {checked && <Check size={10} style={{ color: "var(--bg)" }} />}
-                                      </div>
-                                      <span
-                                        className="text-sm flex-1 transition-opacity"
-                                        style={{
-                                          color: "var(--text-secondary)",
-                                          opacity: checked ? 0.4 : 1,
-                                          textDecoration: checked ? "line-through" : "none",
-                                        }}
-                                      >
-                                        {ing.name}
-                                      </span>
-                                      <span
-                                        className="text-xs tabular-nums shrink-0"
-                                        style={{ color: "var(--text-muted)", opacity: checked ? 0.4 : 1 }}
-                                      >
-                                        {scaleWeight(ing.weight)}
-                                      </span>
-                                    </button>
+                                    />
                                   );
                                 })}
                               </div>
