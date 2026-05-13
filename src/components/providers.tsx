@@ -8,6 +8,7 @@ import { AuthProvider } from "@/components/auth-provider";
 import { AuthGuard } from "@/components/auth-guard";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { Colophon } from "@/components/layout/colophon";
 import { OfflineIndicator } from "@/components/ui/offline-indicator";
 import { InstallPrompt } from "@/components/ui/install-prompt";
 import { trackEvent } from "@/lib/analytics";
@@ -88,8 +89,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
               children
             ) : (
               <>
-                <main className="flex-1 pb-20 lg:pb-0 lg:pl-[260px]">{children}</main>
                 <BottomNav />
+                <main style={{ minHeight: '60vh', position: 'relative', zIndex: 1 }}>{children}</main>
+                <Colophon />
                 <OfflineIndicator />
                 <InstallPrompt />
                 <KonamiToast />

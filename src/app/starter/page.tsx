@@ -1,11 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Droplets, Wheat, Thermometer, Clock, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth-provider";
-import { PageHeader } from "@/components/ui/page-header";
 import { format, formatDistanceToNow } from "date-fns";
 import { FeedingCalendar } from "@/components/ui/feeding-calendar";
 
@@ -107,248 +104,560 @@ export default function StarterPage() {
         ).toFixed(1)
       : null;
 
+  const starterAge = feedings.length;
+  const lastFedDistance = lastFed
+    ? formatDistanceToNow(new Date(lastFed), { addSuffix: true })
+    : null;
+  const estimatedRipe = avgPeak ? `~${avgPeak} hrs` : "—";
+  const currentHydration =
+    feedings[0]?.hydration || "—";
+
   return (
     <div className="anim-rise proof-page">
-      <div className="max-w-3xl mx-auto">
-        <PageHeader
-          title="My Starter"
-          subtitle="Track feedings, watch patterns emerge."
-        />
+      <div style={{ maxWidth: 780, margin: "0 auto" }}>
+        {/* Header */}
+        <div className="eyebrow" style={{ marginBottom: 20 }}>
+          &sect; Starter &middot; The slow heart of the kitchen
+        </div>
 
-        {/* Starter stats */}
-        <div className="mx-5 mb-8 flex flex-wrap gap-4 text-xs" style={{ color: "var(--ink-mute)" }}>
-          {lastFed && (
-            <span>Last fed {formatDistanceToNow(new Date(lastFed), { addSuffix: true })}</span>
-          )}
-          {avgPeak && <span>Avg peak: {avgPeak}hrs</span>}
-          <span>{feedings.length} feedings logged</span>
+        <h1
+          style={{
+            fontFamily: "var(--serif-display)",
+            fontWeight: 300,
+            fontSize: "clamp(56px, 10vw, 132px)",
+            lineHeight: 1.0,
+            letterSpacing: "-0.02em",
+            margin: 0,
+            marginBottom: 8,
+            color: "var(--ink)",
+          }}
+        >
+          My Starter
+          <br />
+          <span style={{ fontStyle: "italic", fontWeight: 400 }}>
+            &mdash; est. 2024
+          </span>
+        </h1>
+
+        <p
+          style={{
+            fontFamily: "var(--serif-body)",
+            fontSize: 16,
+            color: "var(--muted)",
+            lineHeight: 1.5,
+            marginBottom: 40,
+          }}
+        >
+          {lastFed
+            ? `Last fed ${lastFedDistance}. ${avgPeak ? `Should be ripe in ~${avgPeak} hours.` : ""}`
+            : "No feedings logged yet."}
+        </p>
+
+        {/* Stats Grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            borderTop: "0.5px solid var(--hairline)",
+            borderBottom: "0.5px solid var(--hairline)",
+            marginBottom: 40,
+          }}
+        >
+          {[
+            { value: lastFedDistance || "—", label: "Since last feed" },
+            { value: estimatedRipe, label: "Estimated ripe" },
+            { value: currentHydration, label: "Hydration" },
+            { value: `${starterAge}`, label: "Feedings logged" },
+          ].map((stat, i) => (
+            <div
+              key={stat.label}
+              style={{
+                padding: "20px 16px",
+                borderRight:
+                  i < 3 ? "0.5px solid var(--hairline)" : "none",
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "var(--serif-display)",
+                  fontSize: "clamp(34px, 4vw, 52px)",
+                  fontWeight: 300,
+                  lineHeight: 1.1,
+                  color: "var(--ink)",
+                  marginBottom: 6,
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                {stat.value}
+              </div>
+              <div className="eyebrow">{stat.label}</div>
+            </div>
+          ))}
         </div>
 
         {/* Log Feeding Button */}
-        <div className="px-5 mb-6">
+        <div style={{ marginBottom: 32 }}>
           <button
             type="button"
+            className="btn"
             onClick={() => setShowForm(!showForm)}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors"
-            style={{ background: "var(--crust)", color: "var(--bg)" }}
           >
-            <Plus size={16} /> Log a Feeding
+            Log a feeding &rarr;
           </button>
         </div>
 
         {/* Feeding Form */}
-        <AnimatePresence>
-          {showForm && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="px-5 mb-8 overflow-hidden"
+        {showForm && (
+          <div
+            style={{
+              border: "0.5px solid var(--hairline)",
+              borderRadius: "var(--radius)",
+              background: "var(--card)",
+              padding: 32,
+              marginBottom: 40,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 28,
+              }}
             >
-              <div
-                className="rounded-xl p-5 space-y-4"
-                style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+              <div className="eyebrow">New Feeding</div>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                style={{
+                  fontFamily: "var(--serif-display)",
+                  fontSize: 14,
+                  color: "var(--muted)",
+                  cursor: "pointer",
+                }}
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--ink-mute)" }}>
-                    New Feeding
-                  </span>
-                  <button type="button" onClick={() => setShowForm(false)} style={{ color: "var(--ink-mute)", background: "none", border: "none", cursor: "pointer" }}>
-                    <X size={16} />
-                  </button>
-                </div>
+                Close
+              </button>
+            </div>
 
-                {/* Ratio inputs */}
-                <div>
-                  <label className="text-xs mb-2 block" style={{ color: "var(--ink-mute)" }}>
-                    Ratio (grams)
-                  </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <span className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: "var(--ink-faint)" }}>Starter</span>
-                      <input
-                        type="number"
-                        value={starterGrams}
-                        onChange={(e) => setStarterGrams(e.target.value)}
-                        className="w-full rounded-xl px-3 py-2.5 text-sm text-center focus:outline-none"
-                        style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--ink)" }}
-                      />
-                    </div>
-                    <div>
-                      <span className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: "var(--ink-faint)" }}>Flour</span>
-                      <input
-                        type="number"
-                        value={flourGrams}
-                        onChange={(e) => setFlourGrams(e.target.value)}
-                        className="w-full rounded-xl px-3 py-2.5 text-sm text-center focus:outline-none"
-                        style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--ink)" }}
-                      />
-                    </div>
-                    <div>
-                      <span className="text-[10px] uppercase tracking-wider block mb-1" style={{ color: "var(--ink-faint)" }}>Water</span>
-                      <input
-                        type="number"
-                        value={waterGrams}
-                        onChange={(e) => setWaterGrams(e.target.value)}
-                        className="w-full rounded-xl px-3 py-2.5 text-sm text-center focus:outline-none"
-                        style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--ink)" }}
-                      />
-                    </div>
-                  </div>
-                  <div className="text-center mt-2">
-                    <span style={{ fontSize: 14, color: "var(--ink-soft)" }}>
-                      {calcHydration()} hydration
-                    </span>
-                  </div>
+            {/* Ratio inputs */}
+            <div className="eyebrow" style={{ marginBottom: 10 }}>
+              Ratio (grams)
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr",
+                gap: 20,
+                marginBottom: 12,
+              }}
+            >
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 6 }}>
+                  Starter
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs mb-1 block" style={{ color: "var(--ink-mute)" }}>Flour type</label>
-                    <input
-                      type="text"
-                      value={flourType}
-                      onChange={(e) => setFlourType(e.target.value)}
-                      placeholder="All-purpose"
-                      className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
-                      style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--ink)" }}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs mb-1 block" style={{ color: "var(--ink-mute)" }}>Room temp (°C)</label>
-                    <input
-                      type="number"
-                      value={roomTemp}
-                      onChange={(e) => setRoomTemp(e.target.value)}
-                      placeholder="22"
-                      className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
-                      style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--ink)" }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs mb-1 block" style={{ color: "var(--ink-mute)" }}>Time to peak (hours)</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={peakHours}
-                    onChange={(e) => setPeakHours(e.target.value)}
-                    placeholder="5.5"
-                    className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
-                    style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--ink)" }}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs mb-1 block" style={{ color: "var(--ink-mute)" }}>Notes</label>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Doubled nicely, sweet aroma, good bubble structure..."
-                    className="w-full rounded-xl p-3 text-sm resize-none h-16 focus:outline-none"
-                    style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--ink)" }}
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={logFeeding}
-                  disabled={saving}
-                  className="w-full font-semibold text-sm py-3 rounded-xl transition-colors disabled:opacity-50"
-                  style={{ background: "var(--crust)", color: "var(--bg)" }}
-                >
-                  {saving ? "Saving..." : "Log Feeding"}
-                </button>
+                <input
+                  type="number"
+                  value={starterGrams}
+                  onChange={(e) => setStarterGrams(e.target.value)}
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 18,
+                    textAlign: "center",
+                    borderBottom: "0.5px solid var(--hairline-2)",
+                    background: "transparent",
+                    color: "var(--ink)",
+                    padding: "10px 4px",
+                    width: "100%",
+                    border: "none",
+                    borderBottomStyle: "solid",
+                    borderBottomWidth: "0.5px",
+                    borderBottomColor: "var(--hairline-2)",
+                    outline: "none",
+                  }}
+                />
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 6 }}>
+                  Flour
+                </div>
+                <input
+                  type="number"
+                  value={flourGrams}
+                  onChange={(e) => setFlourGrams(e.target.value)}
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 18,
+                    textAlign: "center",
+                    background: "transparent",
+                    color: "var(--ink)",
+                    padding: "10px 4px",
+                    width: "100%",
+                    border: "none",
+                    borderBottomStyle: "solid",
+                    borderBottomWidth: "0.5px",
+                    borderBottomColor: "var(--hairline-2)",
+                    outline: "none",
+                  }}
+                />
+              </div>
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 6 }}>
+                  Water
+                </div>
+                <input
+                  type="number"
+                  value={waterGrams}
+                  onChange={(e) => setWaterGrams(e.target.value)}
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 18,
+                    textAlign: "center",
+                    background: "transparent",
+                    color: "var(--ink)",
+                    padding: "10px 4px",
+                    width: "100%",
+                    border: "none",
+                    borderBottomStyle: "solid",
+                    borderBottomWidth: "0.5px",
+                    borderBottomColor: "var(--hairline-2)",
+                    outline: "none",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Hydration calc */}
+            <div
+              style={{
+                textAlign: "center",
+                marginBottom: 28,
+                fontFamily: "var(--mono)",
+                fontSize: 14,
+                color: "var(--muted)",
+              }}
+            >
+              {calcHydration()} hydration
+            </div>
+
+            {/* Flour type + Room temp */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 20,
+                marginBottom: 20,
+              }}
+            >
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 6 }}>
+                  Flour type
+                </div>
+                <input
+                  type="text"
+                  value={flourType}
+                  onChange={(e) => setFlourType(e.target.value)}
+                  placeholder="All-purpose"
+                  style={{
+                    fontFamily: "var(--serif-body)",
+                    fontSize: 15,
+                    background: "transparent",
+                    color: "var(--ink)",
+                    padding: "10px 4px",
+                    width: "100%",
+                    border: "none",
+                    borderBottomStyle: "solid",
+                    borderBottomWidth: "0.5px",
+                    borderBottomColor: "var(--hairline-2)",
+                    outline: "none",
+                  }}
+                />
+              </div>
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 6 }}>
+                  Room temp (&deg;C)
+                </div>
+                <input
+                  type="number"
+                  value={roomTemp}
+                  onChange={(e) => setRoomTemp(e.target.value)}
+                  placeholder="22"
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 15,
+                    background: "transparent",
+                    color: "var(--ink)",
+                    padding: "10px 4px",
+                    width: "100%",
+                    border: "none",
+                    borderBottomStyle: "solid",
+                    borderBottomWidth: "0.5px",
+                    borderBottomColor: "var(--hairline-2)",
+                    outline: "none",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Peak hours + Notes */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 20,
+                marginBottom: 28,
+              }}
+            >
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 6 }}>
+                  Peak hours
+                </div>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={peakHours}
+                  onChange={(e) => setPeakHours(e.target.value)}
+                  placeholder="5.5"
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 15,
+                    background: "transparent",
+                    color: "var(--ink)",
+                    padding: "10px 4px",
+                    width: "100%",
+                    border: "none",
+                    borderBottomStyle: "solid",
+                    borderBottomWidth: "0.5px",
+                    borderBottomColor: "var(--hairline-2)",
+                    outline: "none",
+                  }}
+                />
+              </div>
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 6 }}>
+                  Notes
+                </div>
+                <input
+                  type="text"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Doubled nicely, sweet aroma..."
+                  style={{
+                    fontFamily: "var(--serif-body)",
+                    fontSize: 15,
+                    fontStyle: "italic",
+                    background: "transparent",
+                    color: "var(--ink)",
+                    padding: "10px 4px",
+                    width: "100%",
+                    border: "none",
+                    borderBottomStyle: "solid",
+                    borderBottomWidth: "0.5px",
+                    borderBottomColor: "var(--hairline-2)",
+                    outline: "none",
+                  }}
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="btn"
+              onClick={logFeeding}
+              disabled={saving}
+              style={{ opacity: saving ? 0.5 : 1 }}
+            >
+              {saving ? "Saving..." : "Log Feeding"}
+            </button>
+          </div>
+        )}
 
         {/* Week view feeding calendar */}
-        <div className="px-5 mb-6">
-          <div className="label" style={{ marginBottom: 10 }}>This week</div>
+        <div style={{ marginBottom: 40 }}>
+          <div className="eyebrow" style={{ marginBottom: 14 }}>
+            This week
+          </div>
           <FeedingCalendar feedings={feedings} />
         </div>
 
         {/* Feeding History */}
-        <div className="px-5 pb-8">
-          <div className="label" style={{ marginBottom: 16 }}>Feeding History</div>
+        <div style={{ paddingBottom: 60 }}>
+          <div className="eyebrow" style={{ marginBottom: 20 }}>
+            Feeding History
+          </div>
 
           {loading ? (
-            <div className="flex justify-center py-16">
-              <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: "var(--border)", borderTopColor: "var(--crust)" }} />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                padding: "60px 0",
+              }}
+            >
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  border: "2px solid var(--hairline)",
+                  borderTopColor: "var(--accent)",
+                  borderRadius: "50%",
+                  animation: "pulse 1s linear infinite",
+                }}
+              />
             </div>
           ) : feedings.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
-              <div className="display" style={{ fontSize: 24, marginBottom: 8 }}>No feedings yet.</div>
-              <div style={{ fontSize: 14, color: "var(--ink-mute)" }}>log your first feeding above.</div>
+              <div
+                style={{
+                  fontFamily: "var(--serif-display)",
+                  fontWeight: 300,
+                  fontSize: 28,
+                  fontStyle: "italic",
+                  marginBottom: 8,
+                  color: "var(--ink)",
+                }}
+              >
+                No feedings yet.
+              </div>
+              <div
+                style={{
+                  fontSize: 14,
+                  color: "var(--muted)",
+                  fontStyle: "italic",
+                }}
+              >
+                log your first feeding above.
+              </div>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div>
               {feedings.map((f) => (
-                <motion.div
+                <div
                   key={f.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl p-4"
-                  style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+                  style={{
+                    borderBottom: "0.5px solid var(--hairline)",
+                    padding: "20px 0",
+                  }}
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <span className="text-sm font-medium" style={{ color: "var(--ink)" }}>
-                        {format(new Date(f.fed_at), "EEE, MMM d · h:mm a")}
+                  {/* Date row */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      justifyContent: "space-between",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+                      <span
+                        style={{
+                          fontFamily: "var(--serif-display)",
+                          fontSize: 18,
+                          fontWeight: 400,
+                          color: "var(--ink)",
+                        }}
+                      >
+                        {format(new Date(f.fed_at), "EEE, MMM d")}
                       </span>
-                      <span className="text-xs ml-2" style={{ color: "var(--ink-faint)" }}>
-                        {formatDistanceToNow(new Date(f.fed_at), { addSuffix: true })}
+                      <span
+                        style={{
+                          fontFamily: "var(--mono)",
+                          fontSize: 12,
+                          color: "var(--muted)",
+                        }}
+                      >
+                        {formatDistanceToNow(new Date(f.fed_at), {
+                          addSuffix: true,
+                        })}
                       </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => deleteFeeding(f.id)}
-                      className="p-1 transition-colors"
-                      style={{ color: "var(--ink-faint)", background: "none", border: "none", cursor: "pointer" }}
+                      style={{
+                        fontFamily: "var(--mono)",
+                        fontSize: 11,
+                        color: "var(--muted-2)",
+                        cursor: "pointer",
+                        letterSpacing: "0.05em",
+                      }}
                     >
-                      <Trash2 size={13} />
+                      delete
                     </button>
                   </div>
 
-                  <div className="flex flex-wrap gap-3 text-xs" style={{ color: "var(--ink-soft)" }}>
-                    {f.starter_grams != null && f.flour_grams != null && f.water_grams != null && (
-                      <span className="flex items-center gap-1">
-                        <Wheat size={11} />
-                        {f.starter_grams}:{f.flour_grams}:{f.water_grams}g
-                      </span>
-                    )}
+                  {/* Details row */}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 16,
+                      alignItems: "baseline",
+                    }}
+                  >
+                    {f.starter_grams != null &&
+                      f.flour_grams != null &&
+                      f.water_grams != null && (
+                        <span
+                          style={{
+                            fontFamily: "var(--mono)",
+                            fontSize: 13,
+                            color: "var(--ink-2)",
+                          }}
+                        >
+                          {f.starter_grams}:{f.flour_grams}:{f.water_grams}g
+                        </span>
+                      )}
                     {f.hydration && (
-                      <span className="flex items-center gap-1">
-                        <Droplets size={11} />
+                      <span className="eyebrow" style={{ fontSize: 11 }}>
                         {f.hydration}
                       </span>
                     )}
                     {f.flour_type && (
-                      <span>{f.flour_type}</span>
+                      <span className="eyebrow" style={{ fontSize: 11 }}>
+                        {f.flour_type}
+                      </span>
                     )}
                     {f.room_temp_c != null && (
-                      <span className="flex items-center gap-1">
-                        <Thermometer size={11} />
-                        {f.room_temp_c}°C
+                      <span
+                        style={{
+                          fontFamily: "var(--mono)",
+                          fontSize: 12,
+                          color: "var(--muted)",
+                        }}
+                      >
+                        {f.room_temp_c}&deg;C
                       </span>
                     )}
                     {f.peak_hours != null && (
-                      <span className="flex items-center gap-1">
-                        <Clock size={11} />
+                      <span
+                        style={{
+                          fontFamily: "var(--mono)",
+                          fontSize: 12,
+                          color: "var(--muted)",
+                        }}
+                      >
                         peaked at {f.peak_hours}hrs
                       </span>
                     )}
                   </div>
 
+                  {/* Notes */}
                   {f.notes && (
-                    <p className="mt-2" style={{ fontSize: 14, color: "var(--ink-soft)" }}>
-                      &quot;{f.notes}&quot;
+                    <p
+                      style={{
+                        fontFamily: "var(--serif-display)",
+                        fontStyle: "italic",
+                        fontSize: 15,
+                        color: "var(--ink-2)",
+                        marginTop: 8,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      &ldquo;{f.notes}&rdquo;
                     </p>
                   )}
-                </motion.div>
+                </div>
               ))}
             </div>
           )}

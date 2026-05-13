@@ -2,13 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Icon } from "@/components/illustrations/icons";
-import { BakeRow } from "@/components/ui/bake-row";
-import { Chip } from "@/components/ui/chip";
 import { supabase, type BakeSession } from "@/lib/supabase";
 import { recipes, getRecipeById } from "@/data/recipes";
-import { PageHeader } from "@/components/ui/page-header";
-import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 
 export default function BakePage() {
@@ -35,65 +30,210 @@ export default function BakePage() {
   ];
 
   return (
-    <div className="anim-rise proof-page min-h-screen">
-      <div className="max-w-6xl mx-auto">
-        <PageHeader title="Start a Bake" subtitle="Pick your adventure" />
+    <div className="anim-rise proof-page" style={{ minHeight: '100vh' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto' }}>
+
+        {/* Header */}
+        <div className="eyebrow" style={{ marginBottom: 14 }}>
+          &sect; Bake &middot; Pick your adventure
+        </div>
+        <h1
+          className="display"
+          style={{
+            fontSize: 'clamp(48px, 8vw, 120px)',
+            fontWeight: 300,
+            margin: 0,
+            marginBottom: 10,
+            lineHeight: 1.02,
+          }}
+        >
+          Start a{' '}
+          <span className="italic">Bake</span>
+        </h1>
+        <p
+          style={{
+            fontFamily: 'var(--serif-body)',
+            fontSize: 'clamp(16px, 2vw, 20px)',
+            color: 'var(--ink-2)',
+            maxWidth: 480,
+            lineHeight: 1.55,
+            marginBottom: 48,
+          }}
+        >
+          Choose a formula, follow the steps, and log every detail along the way.
+        </p>
 
         {/* Active Bakes */}
         {activeBakes.length > 0 && (
-          <div className="px-5 mb-6">
-            <h2 className="text-xs font-medium uppercase tracking-wider mb-3 flex items-center gap-1.5" style={{ color: "var(--crust)" }}>
-              <div className="w-2 h-2 rounded-full animate-gentle-pulse" style={{ background: "var(--crust)" }} />
-              In Progress
-            </h2>
-            <div className="space-y-2 max-w-xl">
+          <section style={{ marginBottom: 56 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+              <div
+                className="animate-gentle-pulse"
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: 'var(--accent)',
+                  flexShrink: 0,
+                }}
+              />
+              <span className="eyebrow" style={{ color: 'var(--accent)' }}>In Progress</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               {activeBakes.map((bake) => {
                 const recipe = getRecipeById(bake.recipe_id);
                 return (
                   <Link
                     key={bake.id}
                     href={`/bake/${bake.recipe_id}?session=${bake.id}`}
-                    className="flex items-center justify-between rounded-xl p-3.5 transition-colors"
-                    style={{ background: "var(--accent-surface)", border: "1px solid var(--border)" }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '16px 0',
+                      borderBottom: '.5px solid var(--hairline)',
+                      textDecoration: 'none',
+                      color: 'inherit',
+                      transition: 'padding-left .2s ease',
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.paddingLeft = '8px'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.paddingLeft = '0'; }}
                   >
                     <div>
-                      <p className="text-sm font-medium" style={{ color: "var(--ink)" }}>
+                      <p
+                        style={{
+                          fontFamily: 'var(--serif-display)',
+                          fontSize: 18,
+                          fontWeight: 400,
+                          color: 'var(--ink)',
+                          margin: 0,
+                        }}
+                      >
                         {recipe?.title || bake.recipe_id}
                       </p>
-                      <p className="text-[11px] mt-0.5" style={{ color: "var(--ink-mute)" }}>
+                      <p
+                        className="italic"
+                        style={{
+                          fontSize: 13,
+                          color: 'var(--muted)',
+                          margin: 0,
+                          marginTop: 2,
+                        }}
+                      >
                         Started{" "}
                         {formatDistanceToNow(new Date(bake.started_at), {
                           addSuffix: true,
                         })}
                       </p>
                     </div>
-                    <Icon.arrow width={14} height={14} style={{ color: "var(--crust)" }} />
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10 6l6 6-6 6" />
+                    </svg>
                   </Link>
                 );
               })}
             </div>
-          </div>
+          </section>
         )}
 
         {/* Recipe Categories */}
-        <div className="px-5 pb-8">
-          {categories.map((cat) => {
+        <div style={{ paddingBottom: 64 }}>
+          {categories.map((cat, catIdx) => {
             const catRecipes = recipes.filter((r) => r.category === cat.id);
             if (catRecipes.length === 0) return null;
 
             return (
-              <div key={cat.id} className="mb-8">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                  <div className="display" style={{ fontSize: 28, whiteSpace: 'nowrap' }}>{cat.label}</div>
-                  <span style={{ color: 'var(--ink-mute)', fontSize: 14 }}>({catRecipes.length})</span>
-                  <div style={{ flex: 1, height: 1, background: 'var(--border)', marginLeft: 12 }} />
+              <section key={cat.id} style={{ marginBottom: 48 }}>
+                {/* Category eyebrow + hairline */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+                  <span className="eyebrow" style={{ whiteSpace: 'nowrap' }}>
+                    &sect; {catIdx + 1} &middot; {cat.label}
+                  </span>
+                  <div style={{ flex: 1, height: '.5px', background: 'var(--hairline)' }} />
+                  <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>
+                    {catRecipes.length}
+                  </span>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+
+                {/* Recipe grid */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                    gap: 0,
+                  }}
+                >
                   {catRecipes.map((recipe) => (
-                    <BakeRow key={recipe.id} recipe={recipe} href={`/bake/${recipe.id}`} />
+                    <Link
+                      key={recipe.id}
+                      href={`/bake/${recipe.id}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                        padding: '14px 12px 14px 0',
+                        borderBottom: '.5px solid var(--hairline)',
+                        textDecoration: 'none',
+                        color: 'inherit',
+                        transition: 'padding-left .2s ease, border-color .2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.paddingLeft = '8px';
+                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent)';
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.paddingLeft = '0';
+                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--hairline)';
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontFamily: 'var(--serif-display)',
+                            fontSize: 17,
+                            fontWeight: 400,
+                            color: 'var(--ink)',
+                            marginBottom: 3,
+                          }}
+                        >
+                          {recipe.title}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                          <span className="mono" style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '.06em' }}>
+                            {recipe.category.replace(/-/g, ' ').toUpperCase()}
+                          </span>
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              padding: '2px 8px',
+                              borderRadius: 999,
+                              border: '.5px solid var(--hairline)',
+                              fontFamily: 'var(--mono)',
+                              fontSize: 9,
+                              letterSpacing: '.06em',
+                              textTransform: 'uppercase',
+                              color: recipe.difficulty === 'beginner'
+                                ? 'var(--sage)'
+                                : recipe.difficulty === 'intermediate'
+                                ? 'var(--accent)'
+                                : 'var(--rose)',
+                            }}
+                          >
+                            {recipe.difficulty}
+                          </span>
+                          <span className="mono" style={{ fontSize: 10, color: 'var(--muted-2)' }}>
+                            {recipe.totalTime}
+                          </span>
+                        </div>
+                      </div>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                        <path d="M10 6l6 6-6 6" />
+                      </svg>
+                    </Link>
                   ))}
                 </div>
-              </div>
+              </section>
             );
           })}
         </div>

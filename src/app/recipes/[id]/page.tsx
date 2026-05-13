@@ -2,19 +2,12 @@
 
 import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import Link from "next/link";
+import Image from "next/image";
 import { getRecipeById, books } from "@/data/recipes";
 import { supabase, type BakeSession } from "@/lib/supabase";
 import { trackEvent } from "@/lib/analytics";
-import { Badge } from "@/components/ui/badge";
-import { Pill } from "@/components/ui/pill";
-import { Icon } from "@/components/illustrations/icons";
-import { BreadIllustration } from "@/components/illustrations/bread-illustration";
-import { Steam } from "@/components/illustrations/steam";
-import { IngredientRow } from "@/components/ui/ingredient-row";
 import { formatDistanceToNow } from "date-fns";
-import Image from "next/image";
-import Link from "next/link";
 
 export default function RecipeDetailPage({
   params,
@@ -24,9 +17,7 @@ export default function RecipeDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const recipe = getRecipeById(id);
-  const [activeTab, setActiveTab] = useState<"overview" | "steps" | "tips">(
-    "overview"
-  );
+  const [activeTab, setActiveTab] = useState<"overview" | "steps" | "tips" | "notes">("overview");
   const [pastBakes, setPastBakes] = useState<BakeSession[]>([]);
   const [multiplier, setMultiplier] = useState(1);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(new Set());
@@ -72,16 +63,20 @@ export default function RecipeDetailPage({
 
   if (!recipe) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p style={{ color: "var(--ink-mute)" }}>Recipe not found</p>
+      <div style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
+        <p style={{ fontFamily: "var(--serif-display)", fontStyle: "italic", fontSize: 24, color: "var(--muted)" }}>
+          Formula not found.
+        </p>
       </div>
     );
   }
 
+  const book = books.find((b) => b.id === recipe.bookId);
   const tabs = [
     { id: "overview" as const, label: "Overview" },
     { id: "steps" as const, label: "Steps" },
     { id: "tips" as const, label: "Tips" },
+    { id: "notes" as const, label: "Notes" },
   ];
 
   function scaleWeight(weight: string): string {
@@ -92,572 +87,684 @@ export default function RecipeDetailPage({
     return `${scaled}${match[2] ? match[2] : ""}`;
   }
 
+  // Split title so last word is italic
+  const titleWords = recipe.title.split(" ");
+  const titleMain = titleWords.slice(0, -1).join(" ");
+  const titleLast = titleWords[titleWords.length - 1];
+
+  // Hydration number for diagram
+  const hydNum = recipe.hydration ? parseInt(recipe.hydration.replace("%", "")) || 75 : 75;
+
   return (
     <div className="anim-rise proof-page" style={{ maxWidth: 1100 }}>
-      {/* Back */}
-      <button
-        type="button"
-        onClick={() => router.back()}
+      {/* Back Link */}
+      <Link
+        href="/recipes"
+        className="btn-link"
+        style={{ display: "inline-block", marginBottom: 28 }}
+      >
+        &larr; All formulas
+      </Link>
+
+      {/* Hero Section */}
+      <div
+        className="recipe-hero-grid"
         style={{
-          display: "inline-flex", alignItems: "center", gap: 6,
-          padding: "8px 12px", background: "transparent", border: "1px solid var(--border)",
-          borderRadius: 999, color: "var(--ink-soft)", cursor: "pointer", fontFamily: "inherit", fontSize: 13,
-          marginBottom: 20,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 48,
+          alignItems: "start",
+          marginBottom: 48,
         }}
       >
-        <Icon.back width={14} height={14} />
-        All recipes
-      </button>
-
-      {/* Hero grid: text left, illustration right */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "center", marginBottom: 40 }}>
+        {/* Left: text */}
         <div>
-          <div className="label" style={{ marginBottom: 10 }}>
-            {recipe.category.replace(/-/g, " ")}
-            {(() => { const book = books.find(b => b.id === recipe.bookId); return book ? ` · ${book.title}` : ""; })()}
+          <div className="eyebrow" style={{ marginBottom: 14 }}>
+            &sect; Formula &middot; {recipe.category.replace(/-/g, " ")} {book ? ` · ${book.title}` : ""}
           </div>
-          <h1 className="display" style={{ fontSize: 56, margin: 0, marginBottom: 12, lineHeight: 0.95 }}>{recipe.title}</h1>
-          {recipe.subtitle && (
-            <div style={{ fontSize: 14, color: "var(--ink-mute)", marginBottom: 8 }}>{recipe.subtitle}</div>
-          )}
-          <div style={{ fontSize: 16, color: "var(--ink-soft)", lineHeight: 1.5, marginBottom: 14 }}>{recipe.description}</div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 28, flexWrap: "wrap" }}>
-            <div style={{ padding: "8px 16px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12 }}>
-              <div className="display" style={{ fontSize: 22, lineHeight: 1 }}>{recipe.totalTime}</div>
-              <div className="label" style={{ fontSize: 10, marginTop: 2 }}>total</div>
-            </div>
-            {recipe.hydration && (
-              <div style={{ padding: "8px 16px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12 }}>
-                <div className="display" style={{ fontSize: 22, lineHeight: 1 }}>{recipe.hydration}</div>
-                <div className="label" style={{ fontSize: 10, marginTop: 2 }}>hydration</div>
-              </div>
-            )}
-            <Pill tone={recipe.difficulty === "beginner" ? "beginner" : recipe.difficulty === "advanced" ? "advanced" : "intermediate"} style={{ fontSize: 12, padding: "6px 12px" }}>
-              {recipe.difficulty}
-            </Pill>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <Link
-              href={`/bake/${recipe.id}`}
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 8,
-                padding: "14px 26px", background: "var(--crust)", border: "none", color: "#1c1611",
-                borderRadius: 12, fontWeight: 700, fontFamily: "inherit", fontSize: 15,
-                textDecoration: "none",
-                transition: "transform 0.2s var(--ease-bounce)",
-              }}
-            >
-              <Icon.chef width={18} height={18} /> Start this bake
-            </Link>
-            <Link
-              href={`/recipes/${recipe.id}/formula`}
-              style={{
-                fontSize: 13,
-                color: "var(--ink-mute)",
-                textDecoration: "none",
-              }}
-            >
-              View formula
-            </Link>
-          </div>
-        </div>
 
-        {/* Hero image / illustration */}
-        {recipe.image ? (
-          <div style={{
-            position: "relative", aspectRatio: "1 / 1",
-            borderRadius: "var(--radius-xl)", border: "1px solid var(--border)",
-            overflow: "hidden",
-          }}>
-            <Image
-              src={recipe.image}
-              alt={recipe.title}
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-              priority
-            />
-          </div>
-        ) : (
-          <div style={{
-            position: "relative", aspectRatio: "1 / 1",
-            background: "var(--surface)",
-            borderRadius: "var(--radius-xl)", border: "1px solid var(--border)",
-            display: "grid", placeItems: "center", overflow: "hidden",
-          }}>
-            <div style={{ position: "absolute", top: 40, left: "50%", transform: "translateX(-50%)", width: 60, height: 60 }}>
-              <Steam count={6} />
-            </div>
-            <div>
-              <BreadIllustration seed={recipe.id} size={300} />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Tags */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {recipe.tags.map((tag) => (
-          <span
-            key={tag}
-            className="text-[10px] tracking-wide uppercase px-2.5 py-1 rounded-md"
+          <h1
             style={{
-              color: "var(--ink-faint)",
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
+              fontFamily: "var(--serif-display)",
+              fontWeight: 300,
+              fontSize: "clamp(48px, 7vw, 110px)",
+              letterSpacing: "-.02em",
+              lineHeight: 1.0,
+              margin: 0,
+              marginBottom: 16,
             }}
           >
-            {tag}
-          </span>
-        ))}
-      </div>
+            {titleMain ? <>{titleMain} </> : null}
+            <span className="italic">{titleLast}</span>
+          </h1>
 
+          <p style={{ fontSize: 16, lineHeight: 1.55, color: "var(--ink-2)", marginBottom: 20, maxWidth: 560 }}>
+            {recipe.description}
+          </p>
 
-      {/* Divider */}
-      <div style={{ borderBottom: "1px solid var(--border)", marginBottom: 24 }} />
+          {/* Pull quote */}
+          {recipe.subtitle && (
+            <blockquote
+              style={{
+                margin: "0 0 24px 0",
+                padding: "12px 0 12px 20px",
+                borderLeft: "2px solid var(--accent)",
+                fontFamily: "var(--serif-display)",
+                fontStyle: "italic",
+                fontSize: 18,
+                color: "var(--ink-2)",
+                lineHeight: 1.4,
+              }}
+            >
+              {recipe.subtitle}
+            </blockquote>
+          )}
 
-      {/* Tabs */}
-      <div className="mb-6">
-        <div
-          className="flex gap-1 rounded-xl p-1 max-w-sm"
-          style={{ background: "var(--surface)" }}
-        >
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className="flex-1 py-2.5 text-xs font-medium rounded-lg transition-all duration-200"
+          {/* Spec Row */}
+          <div
+            style={{
+              display: "flex",
+              gap: 0,
+              marginBottom: 28,
+              flexWrap: "wrap",
+            }}
+          >
+            {[
+              { label: "Time", value: recipe.totalTime },
+              { label: "Hydration", value: recipe.hydration || "—" },
+              { label: "Yield", value: recipe.yield },
+              { label: "Level", value: recipe.difficulty },
+            ].map((spec, i) => (
+              <div
+                key={spec.label}
                 style={{
-                  background:
-                    activeTab === tab.id ? "var(--surface-2)" : "transparent",
-                  color:
-                    activeTab === tab.id
-                      ? "var(--ink)"
-                      : "var(--ink-mute)",
-                  boxShadow:
-                    activeTab === tab.id ? "var(--shadow-sm)" : "none",
+                  padding: "12px 20px",
+                  borderTop: ".5px solid var(--hairline)",
+                  borderBottom: ".5px solid var(--hairline)",
+                  borderRight: i < 3 ? ".5px solid var(--hairline)" : "none",
                 }}
               >
-                {tab.label}
-              </button>
+                <div
+                  style={{
+                    fontFamily: "var(--serif-display)",
+                    fontSize: 20,
+                    fontWeight: 400,
+                    lineHeight: 1.2,
+                    marginBottom: 2,
+                  }}
+                >
+                  {spec.value}
+                </div>
+                <div className="eyebrow" style={{ fontSize: 9 }}>{spec.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* CTAs */}
+          <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 24 }}>
+            <Link href={`/bake/${recipe.id}`} className="btn" style={{ textDecoration: "none" }}>
+              Begin this bake
+            </Link>
+            <button type="button" className="btn-link">
+              Save to shelf
+            </button>
+          </div>
+
+          {/* Tags */}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {recipe.tags.map((tag) => (
+              <span
+                key={tag}
+                className="mono"
+                style={{
+                  fontSize: 9.5,
+                  textTransform: "uppercase",
+                  letterSpacing: ".06em",
+                  padding: "4px 12px",
+                  borderRadius: 999,
+                  border: ".5px solid var(--hairline)",
+                  color: "var(--muted)",
+                }}
+              >
+                {tag}
+              </span>
             ))}
           </div>
         </div>
 
-      {/* Tab Content */}
-      <div className="pb-12">
-          {activeTab === "overview" && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.25 }}
-            >
-              {/* Scale Selector */}
-              <div className="flex items-center gap-3 mb-6">
-                <span
-                  className="text-xs uppercase tracking-wider font-medium"
-                  style={{ color: "var(--ink-mute)" }}
-                >
-                  Scale
-                </span>
-                <div className="flex gap-1.5">
-                  {[0.5, 1, 1.5, 2, 3, 4].map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setMultiplier(m)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                      style={{
-                        background:
-                          multiplier === m
-                            ? "var(--crust)"
-                            : "var(--surface)",
-                        color:
-                          multiplier === m
-                            ? "var(--bg)"
-                            : "var(--ink-soft)",
-                        border:
-                          multiplier === m
-                            ? "none"
-                            : "1px solid var(--border)",
-                      }}
-                    >
-                      {m}x
-                    </button>
-                  ))}
-                </div>
+        {/* Right: image */}
+        <div>
+          {recipe.image ? (
+            <figure style={{ margin: 0 }}>
+              <div
+                className="img-frame"
+                style={{
+                  aspectRatio: "4 / 5",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                <Image
+                  src={recipe.image}
+                  alt={recipe.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  style={{ objectFit: "cover" }}
+                  priority
+                />
               </div>
-
-              {/* Ingredients in side-by-side grid on desktop */}
-              <div className="lg:grid lg:grid-cols-2 lg:gap-10">
-                <div>
-                  {/* Timeline */}
-                  {recipe.timeline.length > 0 && (
-                    <div className="mb-8">
-                      <h3
-                        className="text-[11px] font-medium uppercase tracking-widest mb-4"
-                        style={{ color: "var(--ink-mute)" }}
-                      >
-                        Timeline
-                      </h3>
-                      <div className="space-y-2.5">
-                        {recipe.timeline.map((step, i) => (
-                          <div
-                            key={i}
-                            className="flex items-start gap-4 rounded-xl p-4"
-                            style={{
-                              background: "var(--surface)",
-                              border: "1px solid var(--border)",
-                            }}
-                          >
-                            <div
-                              className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium mt-0.5 shrink-0"
-                              style={{
-                                background: "var(--surface)",
-                                color: "var(--ink-faint)",
-                              }}
-                            >
-                              {i + 1}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p
-                                className="text-sm font-medium"
-                                style={{ color: "var(--ink)" }}
-                              >
-                                {step.name}
-                              </p>
-                              <p
-                                className="text-[11px] mt-0.5"
-                                style={{ color: "var(--ink-mute)" }}
-                              >
-                                {step.duration}
-                              </p>
-                              <p
-                                className="text-xs mt-1.5 leading-relaxed"
-                                style={{ color: "var(--ink-soft)" }}
-                              >
-                                {step.description}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  {/* Levain Ingredients */}
-                  {recipe.ingredients.levain && recipe.ingredients.levain.length > 0 && (
-                    <div className="mb-8">
-                      <h3
-                        className="text-[11px] font-medium uppercase tracking-widest mb-4 flex items-center gap-2"
-                        style={{ color: "var(--ink-mute)" }}
-                      >
-                        Levain
-                        {allCheckedInGroup("levain", recipe.ingredients.levain) && (
-                          <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--crust)" }}>Ready!</span>
-                        )}
-                      </h3>
-                      <div
-                        className="rounded-xl overflow-hidden px-4"
-                        style={{
-                          background: "var(--surface)",
-                          border: "1px solid var(--border)",
-                        }}
-                      >
-                        {recipe.ingredients.levain.map((ing, i) => {
-                          const ck = `levain-${i}`;
-                          return (
-                            <IngredientRow
-                              key={i}
-                              name={ing.name}
-                              weight={scaleWeight(ing.weight)}
-                              percentage={ing.bakerPercent}
-                              checked={checkedIngredients.has(ck)}
-                              onToggle={() => toggleIngredient(ck)}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Main Ingredients */}
-                  <div className="mb-8">
-                    <h3
-                      className="text-[11px] font-medium uppercase tracking-widest mb-4 flex items-center gap-2"
-                      style={{ color: "var(--ink-mute)" }}
-                    >
-                      Main Dough
-                      {allCheckedInGroup("main", recipe.ingredients.main) && (
-                        <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--crust)" }}>Ready!</span>
-                      )}
-                    </h3>
-                    <div
-                      className="rounded-xl overflow-hidden px-4"
-                      style={{
-                        background: "var(--surface)",
-                        border: "1px solid var(--border)",
-                      }}
-                    >
-                      {recipe.ingredients.main.map((ing, i) => {
-                        const ck = `main-${i}`;
-                        return (
-                          <IngredientRow
-                            key={i}
-                            name={ing.name}
-                            weight={scaleWeight(ing.weight)}
-                            percentage={ing.bakerPercent}
-                            note={ing.note}
-                            checked={checkedIngredients.has(ck)}
-                            onToggle={() => toggleIngredient(ck)}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Additions */}
-                  {recipe.ingredients.additions &&
-                    recipe.ingredients.additions.length > 0 && (
-                      <div className="mb-8">
-                        <h3
-                          className="text-[11px] font-medium uppercase tracking-widest mb-4 flex items-center gap-2"
-                          style={{ color: "var(--ink-mute)" }}
-                        >
-                          Additions
-                          {allCheckedInGroup("additions", recipe.ingredients.additions) && (
-                            <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--crust)" }}>Ready!</span>
-                          )}
-                        </h3>
-                        <div
-                          className="rounded-xl overflow-hidden px-4"
-                          style={{
-                            background: "var(--surface)",
-                            border: "1px solid var(--border)",
-                          }}
-                        >
-                          {recipe.ingredients.additions.map((ing, i) => {
-                            const ck = `additions-${i}`;
-                            return (
-                              <IngredientRow
-                                key={i}
-                                name={ing.name}
-                                weight={scaleWeight(ing.weight)}
-                                checked={checkedIngredients.has(ck)}
-                                onToggle={() => toggleIngredient(ck)}
-                              />
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                  {/* Filling */}
-                  {recipe.ingredients.filling &&
-                    recipe.ingredients.filling.length > 0 && (
-                      <div className="mb-8">
-                        <h3
-                          className="text-[11px] font-medium uppercase tracking-widest mb-4 flex items-center gap-2"
-                          style={{ color: "var(--ink-mute)" }}
-                        >
-                          Filling
-                          {allCheckedInGroup("filling", recipe.ingredients.filling) && (
-                            <span className="text-[10px] font-normal normal-case tracking-normal" style={{ color: "var(--crust)" }}>Ready!</span>
-                          )}
-                        </h3>
-                        <div
-                          className="rounded-xl overflow-hidden px-4"
-                          style={{
-                            background: "var(--surface)",
-                            border: "1px solid var(--border)",
-                          }}
-                        >
-                          {recipe.ingredients.filling.map((ing, i) => {
-                            const ck = `filling-${i}`;
-                            return (
-                              <IngredientRow
-                                key={i}
-                                name={ing.name}
-                                weight={scaleWeight(ing.weight)}
-                                checked={checkedIngredients.has(ck)}
-                                onToggle={() => toggleIngredient(ck)}
-                              />
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                </div>
-              </div>
-
-              {/* Past Bakes */}
-              {pastBakes.length > 0 && (
-                <div className="mt-2">
-                  <h3
-                    className="text-[11px] font-medium uppercase tracking-widest mb-4 flex items-center gap-2"
-                    style={{ color: "var(--ink-mute)" }}
-                  >
-                    <Icon.clock width={12} height={12} /> Your Bake History
-                  </h3>
-                  <div className="space-y-2.5 max-w-xl">
-                    {pastBakes.map((bake) => (
-                      <Link
-                        key={bake.id}
-                        href={`/journal/${bake.id}`}
-                        className="flex items-center justify-between rounded-xl p-4 transition-colors"
-                        style={{
-                          background: "var(--surface)",
-                          border: "1px solid var(--border)",
-                        }}
-                      >
-                        <p
-                          className="text-xs"
-                          style={{ color: "var(--ink-soft)" }}
-                        >
-                          {formatDistanceToNow(new Date(bake.started_at), {
-                            addSuffix: true,
-                          })}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          {bake.overall_rating && (
-                            <span
-                              className="text-xs"
-                              style={{ color: "var(--crust)" }}
-                            >
-                              {bake.overall_rating}★
-                            </span>
-                          )}
-                          <Badge
-                            variant={
-                              bake.status === "completed" ? "emerald" : "amber"
-                            }
-                          >
-                            {bake.status}
-                          </Badge>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {activeTab === "steps" && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-3.5 max-w-3xl"
+              <figcaption
+                className="eyebrow"
+                style={{ marginTop: 10, textAlign: "right" }}
+              >
+                {recipe.title}
+              </figcaption>
+            </figure>
+          ) : (
+            <div
+              className="img-frame"
+              style={{
+                aspectRatio: "4 / 5",
+                display: "grid",
+                placeItems: "center",
+                background: "linear-gradient(135deg, var(--card-2), var(--paper-2))",
+              }}
             >
-              {recipe.steps.map((step) => (
-                <div
-                  key={step.step}
-                  className="rounded-xl p-5"
-                  style={{
-                    background: "var(--surface)",
-                    border: "1px solid var(--border)",
-                  }}
-                >
-                  <div className="flex items-start gap-4">
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5"
-                      style={{
-                        background: "var(--accent-surface)",
-                        color: "var(--crust)",
-                      }}
-                    >
-                      {step.step}
-                    </div>
-                    <div className="flex-1">
-                      <h4
-                        className="text-sm font-medium"
-                        style={{ color: "var(--ink)" }}
-                      >
-                        {step.title}
-                      </h4>
-                      {step.duration && (
-                        <p
-                          className="text-[11px] mt-1 flex items-center gap-1"
-                          style={{ color: "var(--ink-mute)" }}
-                        >
-                          <Icon.clock width={10} height={10} /> {step.duration}
-                        </p>
-                      )}
-                      <p
-                        className="text-sm mt-2.5 leading-relaxed"
-                        style={{ color: "var(--ink-soft)" }}
-                      >
-                        {step.instructions}
-                      </p>
-                      {step.temperature && (
-                        <p
-                          className="text-xs mt-2.5 flex items-center gap-1"
-                          style={{ color: "var(--crust)" }}
-                        >
-                          {step.temperature}
-                        </p>
-                      )}
-                      {step.tip && (
-                        <div
-                          className="mt-3 rounded-lg p-3"
-                          style={{
-                            background: "var(--surface)",
-                          }}
-                        >
-                          <p
-                            className="text-sm flex items-start gap-2 leading-relaxed"
-                            style={{
-                              color: "var(--ink-soft)",
-                              fontStyle: "italic",
-                            }}
-                          >
-                            <Icon.sparkle width={14} height={14} className="mt-1 shrink-0" style={{ color: "var(--crust)" }} />
-                            {step.tip}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </motion.div>
-          )}
-
-          {activeTab === "tips" && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-3.5 max-w-3xl"
-            >
-              {recipe.tips.map((tip, i) => (
-                <div
-                  key={i}
-                  className="rounded-xl p-5 flex items-start gap-4"
-                  style={{
-                    background: "var(--surface)",
-                    border: "1px solid var(--border)",
-                  }}
-                >
-                  <Icon.sparkle width={16} height={16} className="mt-1 shrink-0" style={{ color: "var(--crust)" }} />
-                  <p
-                    className="text-sm leading-relaxed"
-                    style={{
-                      color: "var(--ink-soft)",
-                      fontStyle: "italic",
-                    }}
-                  >
-                    {tip}
-                  </p>
-                </div>
-              ))}
-            </motion.div>
+              <span
+                style={{
+                  fontFamily: "var(--serif-display)",
+                  fontSize: 120,
+                  fontWeight: 300,
+                  color: "var(--muted-2)",
+                  opacity: 0.3,
+                }}
+              >
+                {recipe.title.charAt(0)}
+              </span>
+            </div>
           )}
         </div>
       </div>
-    );
+
+      {/* Tabs + Scale */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16, marginBottom: 32 }}>
+        {/* Tab bar */}
+        <div className="tabs">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className={`tab${activeTab === tab.id ? " is-active" : ""}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Scale selector */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span className="eyebrow" style={{ marginRight: 4 }}>Scale</span>
+          {[0.5, 1, 1.5, 2, 3].map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMultiplier(m)}
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: 12,
+                padding: "6px 12px",
+                borderRadius: 999,
+                background: multiplier === m ? "var(--ink)" : "transparent",
+                color: multiplier === m ? "var(--paper)" : "var(--muted)",
+                border: multiplier === m ? "none" : ".5px solid var(--hairline)",
+                cursor: "pointer",
+                transition: "all .2s ease",
+              }}
+            >
+              {m}&times;
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div style={{ paddingBottom: 64 }}>
+        {/* ── Overview ── */}
+        {activeTab === "overview" && (
+          <div>
+            <div
+              className="recipe-overview-grid"
+              style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }}
+            >
+              {/* Left: Timeline */}
+              <div>
+                {recipe.timeline.length > 0 && (
+                  <div style={{ marginBottom: 40 }}>
+                    <div className="eyebrow" style={{ marginBottom: 20 }}>Timeline</div>
+                    <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                      {recipe.timeline.map((step, i) => (
+                        <li
+                          key={i}
+                          style={{
+                            display: "flex",
+                            gap: 16,
+                            marginBottom: 20,
+                            paddingBottom: 20,
+                            borderBottom: i < recipe.timeline.length - 1 ? ".5px solid var(--hairline)" : "none",
+                          }}
+                        >
+                          <span
+                            className="mono"
+                            style={{
+                              fontSize: 12,
+                              color: "var(--muted)",
+                              flexShrink: 0,
+                              width: 28,
+                              paddingTop: 2,
+                            }}
+                          >
+                            {String(i + 1).padStart(2, "0")}
+                          </span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div
+                              style={{
+                                fontFamily: "var(--serif-display)",
+                                fontSize: 18,
+                                fontWeight: 400,
+                                marginBottom: 4,
+                              }}
+                            >
+                              {step.name}
+                            </div>
+                            <div
+                              className="mono"
+                              style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}
+                            >
+                              {step.duration}
+                            </div>
+                            <div className="eyebrow" style={{ marginBottom: 4, fontSize: 9 }}>When</div>
+                            <p style={{ fontSize: 14, color: "var(--ink-2)", lineHeight: 1.5 }}>
+                              {step.description}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Formula Tables */}
+              <div>
+                {/* Levain */}
+                {recipe.ingredients.levain && recipe.ingredients.levain.length > 0 && (
+                  <FormulaTable
+                    title="Levain"
+                    group="levain"
+                    items={recipe.ingredients.levain}
+                    scaleWeight={scaleWeight}
+                    checked={checkedIngredients}
+                    onToggle={toggleIngredient}
+                    allDone={allCheckedInGroup("levain", recipe.ingredients.levain)}
+                  />
+                )}
+
+                {/* Main Dough */}
+                <FormulaTable
+                  title="Main Dough"
+                  group="main"
+                  items={recipe.ingredients.main}
+                  scaleWeight={scaleWeight}
+                  checked={checkedIngredients}
+                  onToggle={toggleIngredient}
+                  allDone={allCheckedInGroup("main", recipe.ingredients.main)}
+                />
+
+                {/* Additions */}
+                {recipe.ingredients.additions && recipe.ingredients.additions.length > 0 && (
+                  <FormulaTable
+                    title="Additions"
+                    group="additions"
+                    items={recipe.ingredients.additions}
+                    scaleWeight={scaleWeight}
+                    checked={checkedIngredients}
+                    onToggle={toggleIngredient}
+                    allDone={allCheckedInGroup("additions", recipe.ingredients.additions)}
+                  />
+                )}
+
+                {/* Filling */}
+                {recipe.ingredients.filling && recipe.ingredients.filling.length > 0 && (
+                  <FormulaTable
+                    title="Filling"
+                    group="filling"
+                    items={recipe.ingredients.filling}
+                    scaleWeight={scaleWeight}
+                    checked={checkedIngredients}
+                    onToggle={toggleIngredient}
+                    allDone={allCheckedInGroup("filling", recipe.ingredients.filling)}
+                  />
+                )}
+
+                {/* Topping */}
+                {recipe.ingredients.topping && recipe.ingredients.topping.length > 0 && (
+                  <FormulaTable
+                    title="Topping"
+                    group="topping"
+                    items={recipe.ingredients.topping}
+                    scaleWeight={scaleWeight}
+                    checked={checkedIngredients}
+                    onToggle={toggleIngredient}
+                    allDone={allCheckedInGroup("topping", recipe.ingredients.topping)}
+                  />
+                )}
+
+                {/* Hydration Diagram */}
+                {recipe.hydration && (
+                  <div style={{ marginTop: 32 }}>
+                    <div className="eyebrow" style={{ marginBottom: 16 }}>Hydration Diagram</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <HydrationBar label="Flour" pct={100} color="var(--ink-2)" />
+                      <HydrationBar label="Water" pct={hydNum} color="var(--accent)" />
+                      <HydrationBar label="Salt" pct={2} color="var(--muted)" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Past Bakes */}
+            {pastBakes.length > 0 && (
+              <div style={{ marginTop: 48 }}>
+                <div className="eyebrow" style={{ marginBottom: 16 }}>Your Bake History</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 600 }}>
+                  {pastBakes.map((bake) => (
+                    <Link
+                      key={bake.id}
+                      href={`/journal/${bake.id}`}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "12px 16px",
+                        borderBottom: ".5px solid var(--hairline)",
+                        textDecoration: "none",
+                        color: "inherit",
+                        transition: "background .2s ease",
+                      }}
+                    >
+                      <span style={{ fontSize: 14, color: "var(--ink-2)" }}>
+                        {formatDistanceToNow(new Date(bake.started_at), { addSuffix: true })}
+                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        {bake.overall_rating && (
+                          <span className="mono" style={{ fontSize: 12, color: "var(--accent)" }}>
+                            {bake.overall_rating}/5
+                          </span>
+                        )}
+                        <span
+                          className="mono"
+                          style={{
+                            fontSize: 10,
+                            textTransform: "uppercase",
+                            color: bake.status === "completed" ? "var(--sage)" : "var(--accent)",
+                          }}
+                        >
+                          {bake.status}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Steps ── */}
+        {activeTab === "steps" && (
+          <div style={{ maxWidth: 720 }}>
+            {recipe.steps.map((step) => (
+              <div
+                key={step.step}
+                style={{
+                  marginBottom: 36,
+                  paddingBottom: 36,
+                  borderBottom: ".5px solid var(--hairline)",
+                }}
+              >
+                {/* Step header */}
+                <div className="eyebrow" style={{ marginBottom: 10, display: "flex", gap: 12, alignItems: "baseline" }}>
+                  <span>Step {step.step}</span>
+                  {step.duration && (
+                    <>
+                      <span style={{ color: "var(--hairline)" }}>&middot;</span>
+                      <span className="mono" style={{ fontSize: 10, letterSpacing: ".04em" }}>{step.duration}</span>
+                    </>
+                  )}
+                  {step.temperature && (
+                    <>
+                      <span style={{ color: "var(--hairline)" }}>&middot;</span>
+                      <span className="mono" style={{ fontSize: 10, letterSpacing: ".04em" }}>{step.temperature}</span>
+                    </>
+                  )}
+                </div>
+
+                {/* Title */}
+                <h3
+                  style={{
+                    fontFamily: "var(--serif-display)",
+                    fontSize: 24,
+                    fontWeight: 400,
+                    margin: "0 0 10px 0",
+                  }}
+                >
+                  {step.title}
+                </h3>
+
+                {/* Instructions */}
+                <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--ink-2)", marginBottom: step.tip ? 16 : 0 }}>
+                  {step.instructions}
+                </p>
+
+                {/* Tip */}
+                {step.tip && (
+                  <blockquote
+                    style={{
+                      margin: 0,
+                      padding: "12px 0 12px 18px",
+                      borderLeft: "2px solid var(--accent)",
+                      fontFamily: "var(--serif-body)",
+                      fontStyle: "italic",
+                      fontSize: 14,
+                      color: "var(--ink-2)",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {step.tip}
+                  </blockquote>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Tips ── */}
+        {activeTab === "tips" && (
+          <div style={{ maxWidth: 720 }}>
+            {recipe.tips.map((tip, i) => (
+              <article
+                key={i}
+                style={{
+                  marginBottom: 28,
+                  paddingBottom: 28,
+                  borderBottom: i < recipe.tips.length - 1 ? ".5px solid var(--hairline)" : "none",
+                }}
+              >
+                <div className="eyebrow" style={{ marginBottom: 8 }}>
+                  &sect; {i + 1}
+                </div>
+                <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--ink-2)" }}>
+                  {tip}
+                </p>
+              </article>
+            ))}
+            {recipe.tips.length === 0 && (
+              <p
+                style={{
+                  fontFamily: "var(--serif-display)",
+                  fontStyle: "italic",
+                  fontSize: 20,
+                  color: "var(--muted)",
+                  padding: "40px 0",
+                }}
+              >
+                No tips recorded for this formula.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ── Notes ── */}
+        {activeTab === "notes" && (
+          <div style={{ maxWidth: 720 }}>
+            <p
+              style={{
+                fontFamily: "var(--serif-display)",
+                fontStyle: "italic",
+                fontSize: 20,
+                color: "var(--muted)",
+                padding: "40px 0",
+              }}
+            >
+              No notes yet for this formula.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Inline sub-components ── */
+
+function FormulaTable({
+  title,
+  group,
+  items,
+  scaleWeight,
+  checked,
+  onToggle,
+  allDone,
+}: {
+  title: string;
+  group: string;
+  items: { name: string; weight: string; bakerPercent?: string; note?: string }[];
+  scaleWeight: (w: string) => string;
+  checked: Set<string>;
+  onToggle: (key: string) => void;
+  allDone: boolean;
+}) {
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <div
+        className="eyebrow"
+        style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}
+      >
+        <span>{title}</span>
+        {allDone && (
+          <span style={{ color: "var(--sage)", fontStyle: "italic", textTransform: "none", letterSpacing: 0, fontFamily: "var(--serif-display)", fontSize: 13 }}>
+            Ready
+          </span>
+        )}
+      </div>
+      <div>
+        {items.map((ing, i) => {
+          const ck = `${group}-${i}`;
+          const isChecked = checked.has(ck);
+          return (
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "10px 0",
+                borderBottom: ".5px dotted var(--hairline)",
+                opacity: isChecked ? 0.5 : 1,
+                transition: "opacity .2s ease",
+              }}
+            >
+              {/* Checkbox */}
+              <button
+                type="button"
+                onClick={() => onToggle(ck)}
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 2,
+                  border: "1px solid var(--ink)",
+                  background: isChecked ? "var(--ink)" : "transparent",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  display: "grid",
+                  placeItems: "center",
+                  padding: 0,
+                  transition: "background .15s ease",
+                }}
+              >
+                {isChecked && (
+                  <svg width={10} height={10} viewBox="0 0 12 12" fill="none" stroke="var(--paper)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="2,6 5,9 10,3" />
+                  </svg>
+                )}
+              </button>
+
+              {/* Name */}
+              <span style={{ flex: 1, fontSize: 14.5, minWidth: 0 }}>
+                {ing.name}
+              </span>
+
+              {/* Baker's percent */}
+              {ing.bakerPercent && (
+                <span className="mono" style={{ fontSize: 12, color: "var(--muted)", flexShrink: 0 }}>
+                  {ing.bakerPercent}
+                </span>
+              )}
+
+              {/* Weight */}
+              <span className="mono" style={{ fontSize: 13, color: "var(--ink)", flexShrink: 0, minWidth: 48, textAlign: "right" }}>
+                {scaleWeight(ing.weight)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function HydrationBar({ label, pct, color }: { label: string; pct: number; color: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <span className="mono" style={{ fontSize: 11, color: "var(--muted)", width: 44, textAlign: "right", flexShrink: 0 }}>
+        {label}
+      </span>
+      <div style={{ flex: 1, height: 8, background: "var(--hairline)", borderRadius: 1, overflow: "hidden" }}>
+        <div
+          style={{
+            width: `${pct}%`,
+            height: "100%",
+            background: color,
+            borderRadius: 1,
+            transition: "width .4s ease",
+          }}
+        />
+      </div>
+      <span className="mono" style={{ fontSize: 11, color: "var(--muted)", width: 36, flexShrink: 0 }}>
+        {pct}%
+      </span>
+    </div>
+  );
 }

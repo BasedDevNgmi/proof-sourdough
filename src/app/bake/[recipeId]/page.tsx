@@ -2,35 +2,127 @@
 
 import { use, useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  ArrowLeft,
-  Camera,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Lightbulb,
-  MessageSquare,
-  Save,
-  Star,
-  X,
-  Thermometer,
-} from "lucide-react";
 
 import { getRecipeById, type Recipe, type Ingredient } from "@/data/recipes";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth-provider";
-import { Timer } from "@/components/ui/timer";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { safeGetJSON, safeSetJSON } from "@/lib/safe-storage";
 import { requestWakeLock, releaseWakeLock, reacquireOnVisibility } from "@/lib/wake-lock";
 import { trackEvent } from "@/lib/analytics";
-import { InlineIngredients } from "@/components/ui/inline-ingredients";
-import { IngredientRow } from "@/components/ui/ingredient-row";
 import { useBeginnerMode } from "@/hooks/use-beginner-mode";
 import { getGuideForStep } from "@/data/dough-guides";
 
+/* ── Inline SVG icons ── */
+function IcoBack() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 6l-6 6 6 6" />
+    </svg>
+  );
+}
+function IcoNext() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 6l6 6-6 6" />
+    </svg>
+  );
+}
+function IcoCheck({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12l4 4 10-10" />
+    </svg>
+  );
+}
+function IcoPlay() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="6 4 20 12 6 20" fill="currentColor" />
+    </svg>
+  );
+}
+function IcoPause() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <rect x="6" y="4" width="4" height="16" rx="1" />
+      <rect x="14" y="4" width="4" height="16" rx="1" />
+    </svg>
+  );
+}
+function IcoReset() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <path d="M3 4v5h5" />
+    </svg>
+  );
+}
+function IcoNote() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 4h11l3 3v13H5z" />
+      <path d="M16 4v3h3" />
+    </svg>
+  );
+}
+function IcoTemp() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 3v11a4 4 0 1 1-4 0V3a2 2 0 1 1 4 0z" />
+    </svg>
+  );
+}
+function IcoPhoto() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="6" width="18" height="14" rx="1" />
+      <circle cx="9" cy="12" r="2" />
+      <path d="M21 16l-5-5-9 9" />
+    </svg>
+  );
+}
+
+/* ── RingTimer ── */
+function RingTimer({ total, remaining, running, hasTimer }: { total: number; remaining: number; running: boolean; hasTimer: boolean }) {
+  const r = 72;
+  const c = 2 * Math.PI * r;
+  const pct = hasTimer ? remaining / total : 1;
+  const mm = Math.floor(remaining / 60);
+  const ss = remaining % 60;
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <svg width="180" height="180" viewBox="0 0 180 180">
+        <circle cx="90" cy="90" r={r} stroke="var(--hairline)" strokeWidth="1" fill="none" />
+        <circle cx="90" cy="90" r={r} stroke="var(--accent)" strokeWidth="1.5" fill="none"
+          strokeDasharray={c} strokeDashoffset={c * (1 - pct)}
+          strokeLinecap="round" transform="rotate(-90 90 90)"
+          style={{ transition: 'stroke-dashoffset .8s ease' }} />
+        <text x="90" y="92" textAnchor="middle" dominantBaseline="middle"
+          style={{ fontFamily: 'var(--serif-display)', fontWeight: 300, fontSize: 42, letterSpacing: '-.02em', fill: 'var(--ink)' }}>
+          {hasTimer ? `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}` : '∞'}
+        </text>
+        <text x="90" y="118" textAnchor="middle"
+          style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '.22em', textTransform: 'uppercase' as const, fill: 'var(--muted)' }}>
+          {running ? 'Running' : 'Ready'}
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+/* ── parseTimerDuration (seconds) ── */
+function parseTimerDuration(durStr?: string): number {
+  if (!durStr) return 0;
+  const s = durStr.toLowerCase();
+  const m = s.match(/(\d+(?:\.\d+)?)\s*(min|hr|hour|h|m)/);
+  if (!m) return 0;
+  const n = parseFloat(m[1]);
+  if (m[2].startsWith('hr') || m[2].startsWith('hour') || m[2] === 'h') return Math.round(n * 3600);
+  return Math.round(n * 60);
+}
+
+/* ── Helper: ingredient matching ── */
 type StepIngredientGroup = { group: string; label: string; items: Ingredient[] };
 
 function getStepIngredients(recipe: Recipe, stepIndex: number): StepIngredientGroup[] {
@@ -97,6 +189,7 @@ function isIngredientInText(name: string, text: string): boolean {
   return false;
 }
 
+/* ── Main page component ── */
 export default function BakeSessionPage({
   params,
 }: {
@@ -128,7 +221,6 @@ export default function BakeSessionPage({
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-
   const [overallRating, setOverallRating] = useState(0);
   const [crumbRating, setCrumbRating] = useState(0);
   const [crustRating, setCrustRating] = useState(0);
@@ -150,7 +242,33 @@ export default function BakeSessionPage({
   const [saving, setSaving] = useState(false);
   const startingSession = useRef(false);
 
+  /* ── Timer state ── */
+  const timerTotal = parseTimerDuration(recipe?.steps[currentStep]?.duration);
+  const hasTimer = timerTotal > 0;
+  const [timerRemaining, setTimerRemaining] = useState(timerTotal);
+  const [timerRunning, setTimerRunning] = useState(false);
 
+  // Reset timer when step changes
+  useEffect(() => {
+    const t = parseTimerDuration(recipe?.steps[currentStep]?.duration);
+    setTimerRemaining(t);
+    setTimerRunning(false);
+  }, [currentStep, recipe]);
+
+  // Timer interval
+  useEffect(() => {
+    if (!timerRunning || timerRemaining <= 0) return;
+    const iv = setInterval(() => {
+      setTimerRemaining((r) => {
+        if (r <= 1) {
+          setTimerRunning(false);
+          return 0;
+        }
+        return r - 1;
+      });
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [timerRunning, timerRemaining]);
 
   const sessionStorageKey = `proof-bake-${recipeId}`;
 
@@ -180,7 +298,7 @@ export default function BakeSessionPage({
     });
   }, [sessionId, currentStep, completedSteps, stepNotes, stepTemps, sessionStorageKey]);
 
-  // Wake lock — keep screen on during bake
+  // Wake lock
   useEffect(() => {
     requestWakeLock();
     const cleanup = reacquireOnVisibility();
@@ -293,7 +411,6 @@ export default function BakeSessionPage({
 
   function cleanupSession() {
     localStorage.removeItem(sessionStorageKey);
-    // Clean up any timer storage for this recipe
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key?.startsWith(`proof-timer-${recipeId}-`)) {
@@ -345,29 +462,6 @@ export default function BakeSessionPage({
     if (photoInputRef.current) photoInputRef.current.value = "";
   }
 
-  if (!recipe) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p style={{ color: "var(--text-muted)" }}>Recipe not found</p>
-      </div>
-    );
-  }
-
-  const step = recipe.steps[currentStep];
-  const totalSteps = recipe.steps.length;
-  const progress = completedSteps.size / totalSteps;
-
-  function parseTimerMinutes(duration?: string): number | null {
-    if (!duration) return null;
-    const hourMatch = duration.match(/(\d+)\s*h/i);
-    const minMatch = duration.match(/(\d+)\s*m/i);
-    let total = 0;
-    if (hourMatch) total += parseInt(hourMatch[1]) * 60;
-    if (minMatch) total += parseInt(minMatch[1]);
-    if (total > 0) return total;
-    return null;
-  }
-
   function scaleWeight(weight: string): string {
     if (multiplier === 1) return weight;
     const match = weight.match(/^(\d+(?:\.\d+)?)\s*(g|ml|oz)?$/i);
@@ -376,754 +470,689 @@ export default function BakeSessionPage({
     return `${scaled}${match[2] || ""}`;
   }
 
-  const timerMinutes = parseTimerMinutes(step?.duration);
+  function goStep(idx: number) {
+    setCurrentStep(Math.max(0, Math.min(idx, totalSteps - 1)));
+  }
+
+  if (!recipe) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ fontFamily: 'var(--serif-display)', fontStyle: 'italic', color: 'var(--muted)' }}>Recipe not found</p>
+      </div>
+    );
+  }
+
+  const step = recipe.steps[currentStep];
+  const totalSteps = recipe.steps.length;
+  const progress = completedSteps.size / totalSteps;
+  const stepIngs = getStepIngredients(recipe, currentStep);
+  const guide = beginner ? getGuideForStep(step.title, step.instructions) : null;
 
   return (
     <ErrorBoundary variant="bake">
-    <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
-      <div className="flex-1 flex flex-col lg:flex-row w-full">
+      <div className="anim-rise" style={{ minHeight: '100vh', background: 'var(--paper)' }}>
+        {/* Top bar */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '20px var(--pad-x)',
+          borderBottom: '.5px solid var(--hairline)',
+        }}>
+          <button
+            className="btn-link"
+            onClick={() => router.push("/")}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            <IcoBack /> Back to formula
+          </button>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '.12em' }}>
+            {sessionId ? `SESSION ${sessionId.slice(0, 8).toUpperCase()}` : ''}
+          </div>
+        </div>
 
-        {/* Desktop step sidebar */}
-        <aside
-          className="hidden lg:flex flex-col w-72 shrink-0 border-r overflow-y-auto"
-          style={{ borderColor: "var(--border-subtle)" }}
-        >
-          <div className="px-5 pt-8 pb-4">
-            <button
-              type="button"
-              onClick={() => router.push("/")}
-              className="flex items-center gap-1.5 text-xs mb-4 transition-colors"
-              style={{ color: "var(--text-muted)" }}
-            >
-              <ArrowLeft size={14} /> Back
-            </button>
-            <h2 className="font-[family-name:var(--font-playfair)] text-lg font-semibold" style={{ color: "var(--text)" }}>
-              {recipe.title}
-            </h2>
-            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-              {completedSteps.size} of {totalSteps} steps done
-            </p>
-            <div className="h-1 rounded-full overflow-hidden mt-3" style={{ background: "var(--card-hover)" }}>
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: "var(--accent)" }}
-                animate={{ width: `${progress * 100}%` }}
-                transition={{ duration: 0.3 }}
-              />
+        {/* Title + Progress */}
+        <div style={{ padding: '28px var(--pad-x) 0' }}>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>
+            &sect; Bake &middot; {recipe.bookId.replace(/-/g, ' ')}
+          </div>
+          <h1
+            className="display"
+            style={{
+              fontSize: 'clamp(42px, 6vw, 84px)',
+              fontWeight: 300,
+              margin: 0,
+              marginBottom: 18,
+              lineHeight: 1.02,
+            }}
+          >
+            {(() => {
+              const words = recipe.title.split(' ');
+              if (words.length <= 1) return <span className="italic">{recipe.title}</span>;
+              return (
+                <>
+                  {words.slice(0, -1).join(' ')}{' '}
+                  <span className="italic">{words[words.length - 1]}</span>
+                </>
+              );
+            })()}
+          </h1>
+
+          {/* Progress bar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
+            <span className="mono" style={{ fontSize: 10, letterSpacing: '.18em', color: 'var(--muted)' }}>
+              {String(completedSteps.size).padStart(2, '0')} OF {String(totalSteps).padStart(2, '0')} STEPS DONE
+            </span>
+          </div>
+          <div style={{ height: 1, background: 'var(--hairline)', position: 'relative', marginBottom: 32 }}>
+            <div style={{
+              position: 'absolute', left: 0, top: 0, height: '100%',
+              width: `${progress * 100}%`,
+              background: 'var(--accent)',
+              transition: 'width .5s ease',
+            }} />
+          </div>
+        </div>
+
+        {/* 3-column bake grid */}
+        <div className="bake-grid" style={{ padding: '0 var(--pad-x)', paddingBottom: 64 }}>
+
+          {/* ── Left: Step List ── */}
+          <aside className="bake-steps" style={{ paddingTop: 4 }}>
+            <div className="eyebrow" style={{ marginBottom: 16 }}>Phases</div>
+            <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {recipe.steps.map((s, i) => {
+                const isDone = completedSteps.has(i);
+                const isCurrent = i === currentStep;
+                return (
+                  <li key={i}>
+                    <button
+                      type="button"
+                      onClick={() => goStep(i)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 12,
+                        width: '100%',
+                        padding: '10px 0',
+                        textAlign: 'left',
+                        borderBottom: '.5px solid var(--hairline)',
+                        cursor: 'pointer',
+                        background: 'none',
+                        border: 'none',
+                        borderBottomStyle: 'solid',
+                        borderBottomWidth: '.5px',
+                        borderBottomColor: 'var(--hairline)',
+                      }}
+                    >
+                      <span
+                        className="mono"
+                        style={{
+                          fontSize: 11,
+                          width: 20,
+                          flexShrink: 0,
+                          paddingTop: 2,
+                          color: isDone
+                            ? 'var(--sage)'
+                            : isCurrent
+                            ? 'var(--accent)'
+                            : 'var(--muted-2)',
+                        }}
+                      >
+                        {isDone ? <IcoCheck size={14} /> : String(i + 1).padStart(2, '0')}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontFamily: 'var(--serif-display)',
+                            fontSize: 15,
+                            fontWeight: 400,
+                            fontStyle: isCurrent ? 'italic' : 'normal',
+                            textDecoration: isDone ? 'line-through' : 'none',
+                            color: isCurrent ? 'var(--ink)' : isDone ? 'var(--muted)' : 'var(--ink-2)',
+                            lineHeight: 1.25,
+                          }}
+                        >
+                          {s.title}
+                        </div>
+                        {s.duration && (
+                          <div className="mono" style={{ fontSize: 10, color: 'var(--muted-2)', marginTop: 2 }}>
+                            {s.duration}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+
+            {/* Scale */}
+            <div style={{ marginTop: 20, marginBottom: 12 }}>
+              <div className="eyebrow" style={{ marginBottom: 8 }}>Scale</div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {[0.5, 1, 1.5, 2, 3, 4].map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setMultiplier(m)}
+                    className="mono"
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: 10,
+                      borderRadius: 999,
+                      border: '.5px solid',
+                      borderColor: multiplier === m ? 'var(--accent)' : 'var(--hairline)',
+                      background: multiplier === m ? 'var(--accent)' : 'transparent',
+                      color: multiplier === m ? 'var(--paper)' : 'var(--muted)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {m}x
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 mt-3">
-              <span className="text-[9px] uppercase tracking-wider font-medium" style={{ color: "var(--text-faint)" }}>Scale</span>
-              {[0.5, 1, 1.5, 2, 3, 4].map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setMultiplier(m)}
-                  className="px-1.5 py-0.5 rounded text-[10px] font-medium transition-all"
-                  style={{
-                    background: multiplier === m ? "var(--accent)" : "transparent",
-                    color: multiplier === m ? "var(--bg)" : "var(--text-faint)",
-                  }}
-                >
-                  {m}x
-                </button>
-              ))}
-            </div>
+
+            {/* Beginner mode toggle */}
             <button
               type="button"
               onClick={toggleBeginner}
-              className="flex items-center gap-1.5 mt-2 text-[10px] transition-colors"
-              style={{ color: beginner ? "var(--accent)" : "var(--text-faint)" }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                fontSize: 11, color: beginner ? 'var(--accent)' : 'var(--muted)',
+                marginBottom: 24, cursor: 'pointer',
+                background: 'none', border: 'none',
+              }}
             >
               <div
-                className="w-6 h-3.5 rounded-full relative transition-colors"
-                style={{ background: beginner ? "var(--accent)" : "var(--card-hover)" }}
+                style={{
+                  width: 24, height: 14, borderRadius: 7, position: 'relative',
+                  background: beginner ? 'var(--accent)' : 'var(--hairline)',
+                  transition: 'background .2s ease',
+                }}
               >
                 <div
-                  className="absolute top-0.5 w-2.5 h-2.5 rounded-full transition-all"
                   style={{
-                    background: "var(--bg)",
+                    position: 'absolute', top: 2, width: 10, height: 10, borderRadius: '50%',
+                    background: 'var(--paper)',
                     left: beginner ? 12 : 2,
+                    transition: 'left .2s ease',
                   }}
                 />
               </div>
               Beginner mode
             </button>
-          </div>
-          <nav className="flex-1 px-3 pb-4 space-y-0.5">
-            {recipe.steps.map((s, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setCurrentStep(i)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200"
-                style={{
-                  background: i === currentStep ? "var(--card)" : "transparent",
-                  border: i === currentStep ? "1px solid var(--border-subtle)" : "1px solid transparent",
-                }}
-              >
-                <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0"
-                  style={
-                    completedSteps.has(i)
-                      ? { background: "var(--success, #10b981)", color: "var(--bg)" }
-                      : i === currentStep
-                        ? { background: "var(--accent)", color: "var(--bg)" }
-                        : { background: "var(--card-hover)", color: "var(--text-muted)" }
-                  }
-                >
-                  {completedSteps.has(i) ? <Check size={12} /> : i + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p
-                    className="text-xs font-medium truncate"
-                    style={{ color: i === currentStep ? "var(--text)" : "var(--text-secondary)" }}
-                  >
-                    {s.title}
-                  </p>
-                  {s.duration && (
-                    <p className="text-[10px] mt-0.5" style={{ color: "var(--text-faint)" }}>
-                      {s.duration}
-                    </p>
-                  )}
-                </div>
-              </button>
-            ))}
-          </nav>
-          {(() => {
-            const sidebarIngs = getStepIngredients(recipe, currentStep);
-            if (sidebarIngs.length === 0) return null;
-            return (
-              <div className="px-3 pb-3">
-                <p className="text-[9px] font-semibold uppercase tracking-wider mb-2 px-1 flex items-center gap-1.5" style={{ color: "var(--accent)" }}>
-                  This step
-                </p>
-                <div className="space-y-2.5">
-                  {sidebarIngs.map(({ group, label, items }) => (
-                    <div key={group}>
-                      <p className="text-[9px] font-semibold uppercase tracking-wider mb-1 px-1" style={{ color: "var(--text-muted)" }}>
-                        {label}
-                      </p>
-                      <div className="px-1">
-                        {items.map((ing) => {
-                          const key = `${group}-${ing.name}`;
-                          return (
-                            <IngredientRow
-                              key={key}
-                              name={ing.name}
-                              weight={scaleWeight(ing.weight)}
-                              percentage={ing.bakerPercent}
-                              checked={checkedIngredients.has(key)}
-                              onToggle={() => {
-                                setCheckedIngredients((prev) => {
-                                  const next = new Set(prev);
-                                  if (next.has(key)) next.delete(key);
-                                  else next.add(key);
-                                  return next;
-                                });
-                              }}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
-          <div className="px-5 pb-6 space-y-2">
+
             <button
               type="button"
-              onClick={() => setShowFinishModal(true)}
-              className="w-full text-xs font-semibold py-2.5 rounded-xl transition-colors"
-              style={{ background: "var(--accent)", color: "var(--bg)" }}
-            >
-              Finish Bake
-            </button>
-            <button
-              type="button"
+              className="btn-ghost"
               onClick={abandonBake}
-              className="w-full text-[11px] py-1.5"
-              style={{ color: "var(--text-faint)" }}
+              style={{ width: '100%', justifyContent: 'center', padding: '10px 16px', fontSize: 13 }}
             >
-              Abandon
+              Pause &amp; come back
             </button>
-          </div>
-        </aside>
+            <p className="italic" style={{ fontSize: 13, color: 'var(--muted)', marginTop: 10, textAlign: 'center' }}>
+              The bake will wait for you.
+            </p>
+          </aside>
 
-        {/* Main content */}
-        <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full lg:max-w-none">
-          {/* Mobile top bar */}
-          <div className="flex items-center justify-between px-4 pt-14 pb-3 lg:hidden">
-            <button
-              type="button"
-              onClick={() => router.push("/")}
-              className="transition-colors p-1"
-              style={{ color: "var(--text-muted)" }}
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <div className="text-center">
-              <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{recipe.title}</p>
-              <p className="text-[10px]" style={{ color: "var(--text-faint)" }}>
-                Step {currentStep + 1} of {totalSteps}
-              </p>
+          {/* ── Center: Step Body ── */}
+          <div className="bake-body">
+            {/* Step eyebrow */}
+            <div className="eyebrow" style={{ marginBottom: 12 }}>
+              STEP {currentStep + 1} / {totalSteps}
+              {step.duration ? ` · ${step.duration}` : ''}
+              {step.temperature ? ` · ${step.temperature}` : ''}
             </div>
-            <button
-              type="button"
-              onClick={() => setShowFinishModal(true)}
-              className="text-xs font-medium px-2 py-1"
-              style={{ color: "var(--accent)" }}
-            >
-              Finish
-            </button>
-          </div>
 
-          {/* Mobile progress bar */}
-          <div className="px-4 mb-4 lg:hidden">
-            <div className="h-1 rounded-full overflow-hidden" style={{ background: "var(--card-hover)" }}>
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: "var(--accent)" }}
-                initial={{ width: 0 }}
-                animate={{ width: `${progress * 100}%` }}
-                transition={{ duration: 0.3 }}
-              />
+            {/* Step title */}
+            <h2
+              style={{
+                fontFamily: 'var(--serif-display)',
+                fontSize: 'clamp(32px, 4vw, 52px)',
+                fontWeight: 300,
+                margin: 0,
+                marginBottom: 20,
+                lineHeight: 1.08,
+                letterSpacing: '-.01em',
+              }}
+            >
+              {step.title}
+            </h2>
+
+            {/* Step body text */}
+            <div
+              style={{
+                fontFamily: 'var(--serif-body)',
+                fontSize: 'clamp(17px, 2vw, 21px)',
+                lineHeight: 1.65,
+                color: 'var(--ink-2)',
+                marginBottom: 24,
+              }}
+            >
+              {step.instructions}
             </div>
-          </div>
 
-          {/* Step Content */}
-          <div className="flex-1 px-5 lg:px-10 lg:pt-10">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentStep}
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -30 }}
-                transition={{ duration: 0.2 }}
-                className="flex flex-col h-full"
-              >
-                {/* Step Header */}
-                <div className="mb-4 lg:mb-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="relative w-8 h-8 lg:w-10 lg:h-10">
-                      <AnimatePresence>
-                        {justCompletedStep === currentStep && (
-                          <motion.div
-                            className="absolute inset-0 rounded-full"
-                            style={{ background: "var(--accent)" }}
-                            initial={{ scale: 1, opacity: 0.6 }}
-                            animate={{ scale: 1.8, opacity: 0 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.4, ease: "easeOut" }}
-                          />
-                        )}
-                      </AnimatePresence>
-                      <div
-                        className="w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center text-sm lg:text-base font-semibold relative"
-                        style={
-                          completedSteps.has(currentStep)
-                            ? { background: "var(--success, #10b981)", color: "var(--bg)" }
-                            : { background: "var(--accent-muted, rgba(217,119,6,0.15))", color: "var(--accent)" }
-                        }
-                      >
-                        <AnimatePresence mode="wait">
-                          {completedSteps.has(currentStep) ? (
-                            <motion.span
-                              key="check"
-                              initial={{ opacity: 0, scale: 0.5 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.5 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <Check size={16} style={{ color: justCompletedStep === currentStep ? "var(--accent)" : "var(--bg)" }} />
-                            </motion.span>
-                          ) : (
-                            <motion.span
-                              key="number"
-                              initial={{ opacity: 0, scale: 0.5 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.5 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              {step.step}
-                            </motion.span>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </div>
-                    <h2 className="font-[family-name:var(--font-playfair)] text-xl lg:text-2xl font-semibold" style={{ color: "var(--text)" }}>
-                      {step.title}
-                    </h2>
-                  </div>
-                  {step.duration && (
-                    <p className="text-xs flex items-center gap-1 ml-10 lg:ml-12" style={{ color: "var(--text-muted)" }}>
-                      <Clock size={12} /> {step.duration}
-                    </p>
-                  )}
-                </div>
-
-                {/* Instructions + timer side by side on desktop */}
-                <div className="lg:grid lg:grid-cols-2 lg:gap-8">
-                  <div>
-                    <div className="rounded-2xl p-4 mb-4" style={{ background: "var(--card)", border: "1px solid var(--border-subtle)" }}>
-                      <p className="text-sm lg:text-base lg:leading-7 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                        <InlineIngredients
-                          text={step.instructions}
-                          ingredients={recipe.ingredients.main.concat(recipe.ingredients.levain || [], recipe.ingredients.additions || [])}
-                          multiplier={multiplier}
-                        />
-                      </p>
-                      {step.temperature && (
-                        <p className="text-xs mt-3 flex items-center gap-1.5" style={{ color: "var(--accent)", opacity: 0.8 }}>
-                          <Thermometer size={12} /> Target: {step.temperature}
-                        </p>
-                      )}
-                    </div>
-
-                    {beginner && (() => {
-                      const guide = getGuideForStep(step.title, step.instructions);
-                      if (!guide) return null;
-                      return (
-                        <div
-                          className="rounded-xl p-3 mb-4 space-y-2"
-                          style={{
-                            background: "var(--card)",
-                            border: "1px solid var(--accent-border, rgba(217,119,6,0.15))",
-                          }}
-                        >
-                          <p className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "var(--accent)" }}>
-                            What to look for
-                          </p>
-                          <div className="space-y-1.5">
-                            <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                              <span style={{ color: "var(--success, #10b981)", fontWeight: 600 }}>Ready: </span>
-                              {guide.ready}
-                            </p>
-                            <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                              <span style={{ color: "var(--accent)", fontWeight: 600 }}>Not yet: </span>
-                              {guide.notReady}
-                            </p>
-                            <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                              <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>Overdone: </span>
-                              {guide.overDone}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {step.tip && (
-                      <div
-                        className="rounded-xl p-3 mb-4"
-                        style={{
-                          background: "var(--accent-muted, rgba(217,119,6,0.05))",
-                          border: "1px solid var(--accent-border, rgba(217,119,6,0.1))",
-                        }}
-                      >
-                        <p
-                          className="text-sm flex items-start gap-2"
-                          style={{
-                            color: "var(--text-secondary)",
-                          }}
-                        >
-                          <Lightbulb size={14} className="mt-1 shrink-0" style={{ color: "var(--accent)" }} />
-                          {step.tip}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    {timerMinutes && (
-                      <div className="flex justify-center mb-4 lg:mb-6">
-                        <Timer durationMinutes={timerMinutes} label={step.title} storageKey={`proof-timer-${recipeId}-step-${currentStep}`} />
-                      </div>
-                    )}
-
-                    {(() => {
-                      const stepIngs = getStepIngredients(recipe, currentStep);
-                      if (stepIngs.length === 0) return null;
-                      return (
-                        <div
-                          className="rounded-2xl p-4 space-y-3 mb-4"
-                          style={{ background: "var(--card)", border: "1px solid var(--border-subtle)" }}
-                        >
-                          {stepIngs.map(({ group, label, items }) => (
-                            <div key={group}>
-                              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
-                                {label}
-                              </p>
-                              <div>
-                                {items.map((ing) => {
-                                  const key = `${group}-${ing.name}`;
-                                  return (
-                                    <IngredientRow
-                                      key={key}
-                                      name={ing.name}
-                                      weight={scaleWeight(ing.weight)}
-                                      percentage={ing.bakerPercent}
-                                      checked={checkedIngredients.has(key)}
-                                      onToggle={() => {
-                                        setCheckedIngredients((prev) => {
-                                          const next = new Set(prev);
-                                          if (next.has(key)) next.delete(key);
-                                          else next.add(key);
-                                          return next;
-                                        });
-                                      }}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
-
-                    {showNoteInput && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="mb-4"
-                      >
-                        <textarea
-                          value={stepNotes[currentStep] || ""}
-                          onChange={(e) =>
-                            setStepNotes((prev) => ({ ...prev, [currentStep]: e.target.value }))
-                          }
-                          placeholder="How does the dough look? Any observations..."
-                          className="w-full rounded-xl p-3 text-sm resize-none h-20 focus:outline-none"
-                          style={{
-                            background: "var(--card)",
-                            border: "1px solid var(--border-subtle)",
-                            color: "var(--text-secondary)",
-                          }}
-                        />
-                      </motion.div>
-                    )}
-
-                    {showTempInput && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="mb-4"
-                      >
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            value={stepTemps[currentStep] || ""}
-                            onChange={(e) => {
-                              const v = e.target.value;
-                              if (v === "" || (Number(v) >= 0 && Number(v) <= 500)) {
-                                setStepTemps((prev) => ({ ...prev, [currentStep]: v }));
-                              }
-                            }}
-                            min={0}
-                            max={500}
-                            placeholder="Temp"
-                            className="w-24 rounded-xl px-3 py-2 text-sm focus:outline-none"
-                            style={{
-                              background: "var(--card)",
-                              border: "1px solid var(--border-subtle)",
-                              color: "var(--text-secondary)",
-                            }}
-                          />
-                          <span className="text-xs" style={{ color: "var(--text-muted)" }}>°C</span>
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Step Photos */}
-                {stepPhotos[currentStep]?.length > 0 && (
-                  <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
-                    {stepPhotos[currentStep].map((url, i) => (
-                      <img
-                        key={i}
-                        src={url}
-                        alt={`Step ${currentStep + 1} photo ${i + 1}`}
-                        className="w-20 h-20 object-cover rounded-xl shrink-0"
-                        style={{ border: "1px solid var(--border-subtle)" }}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* Action Buttons — desktop only (mobile uses floating bar) */}
-                <div className="hidden lg:flex gap-2 mb-4 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => setShowNoteInput(!showNoteInput)}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
-                    style={
-                      showNoteInput || stepNotes[currentStep]
-                        ? { background: "var(--card-hover)", color: "var(--text)" }
-                        : { background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", color: "var(--text-muted)" }
-                    }
-                  >
-                    <MessageSquare size={12} /> Note
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowTempInput(!showTempInput)}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
-                    style={
-                      showTempInput || stepTemps[currentStep]
-                        ? { background: "var(--card-hover)", color: "var(--text)" }
-                        : { background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", color: "var(--text-muted)" }
-                    }
-                  >
-                    <Thermometer size={12} /> Temp
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => photoInputRef.current?.click()}
-                    disabled={uploadingPhoto}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
-                    style={
-                      stepPhotos[currentStep]?.length
-                        ? { background: "var(--card-hover)", color: "var(--text)" }
-                        : { background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", color: "var(--text-muted)" }
-                    }
-                  >
-                    <Camera size={12} /> {uploadingPhoto ? "..." : "Photo"}
-                  </button>
-                </div>
-                <input
-                  ref={photoInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handlePhotoCapture}
-                  className="hidden"
-                />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* Bottom Navigation — mobile + desktop inline */}
-          <div className="px-5 lg:px-10 py-4 pb-safe lg:pb-6 flex items-center gap-3 max-w-2xl lg:max-w-none">
-            <button
-              type="button"
-              onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-              disabled={currentStep === 0}
-              className="w-12 h-12 rounded-xl flex items-center justify-center disabled:opacity-30 transition-colors"
-              style={{ background: "var(--card-hover)" }}
-            >
-              <ChevronLeft size={20} style={{ color: "var(--text-secondary)" }} />
-            </button>
-
-            {!completedSteps.has(currentStep) ? (
-              <button
-                type="button"
-                onClick={() => {
-                  markStepComplete(currentStep);
-                  setJustCompletedStep(currentStep);
-                  setTimeout(() => {
-                    setJustCompletedStep(null);
-                    if (currentStep < totalSteps - 1) {
-                      setCurrentStep(currentStep + 1);
-                    }
-                  }, 500);
-                }}
-                className="flex-1 h-12 font-semibold text-sm rounded-xl flex items-center justify-center gap-2 transition-colors lg:max-w-md"
-                style={{ background: "var(--accent)", color: "var(--bg)" }}
-              >
-                <Check size={16} />
-                {currentStep === totalSteps - 1 ? "Complete Last Step" : "Done — Next"}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  if (currentStep < totalSteps - 1) {
-                    setCurrentStep(currentStep + 1);
-                  } else {
-                    setShowFinishModal(true);
-                  }
-                }}
-                className="flex-1 h-12 font-medium text-sm rounded-xl flex items-center justify-center gap-2 transition-colors lg:max-w-md"
-                style={{ background: "var(--card-hover)", color: "var(--text-secondary)" }}
-              >
-                {currentStep === totalSteps - 1 ? "Finish Bake" : "Next Step"}
-                <ChevronRight size={16} />
-              </button>
+            {/* Target callout */}
+            {step.temperature && (
+              <div style={{
+                borderLeft: '2px solid var(--accent)',
+                background: 'var(--accent-soft)',
+                padding: '14px 18px',
+                marginBottom: 20,
+                fontSize: 15,
+                color: 'var(--ink)',
+              }}>
+                <span style={{ fontFamily: 'var(--serif-display)', fontWeight: 400 }}>Target: </span>
+                {step.temperature}
+              </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => setCurrentStep(Math.min(totalSteps - 1, currentStep + 1))}
-              disabled={currentStep === totalSteps - 1}
-              className="w-12 h-12 rounded-xl flex items-center justify-center disabled:opacity-30 transition-colors"
-              style={{ background: "var(--card-hover)" }}
-            >
-              <ChevronRight size={20} style={{ color: "var(--text-secondary)" }} />
-            </button>
-          </div>
+            {/* Beginner guide */}
+            {beginner && guide && (
+              <div style={{
+                background: 'var(--card)',
+                border: '.5px solid var(--hairline)',
+                padding: '18px 20px',
+                marginBottom: 20,
+              }}>
+                <div className="eyebrow" style={{ marginBottom: 10, color: 'var(--accent)' }}>
+                  Note from the baker
+                </div>
+                <div style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--ink-2)' }}>
+                  <p style={{ marginBottom: 6 }}>
+                    <span style={{ color: 'var(--sage)', fontWeight: 600 }}>Ready: </span>
+                    {guide.ready}
+                  </p>
+                  <p style={{ marginBottom: 6 }}>
+                    <span style={{ color: 'var(--accent)', fontWeight: 600 }}>Not yet: </span>
+                    {guide.notReady}
+                  </p>
+                  <p>
+                    <span style={{ color: 'var(--muted)', fontWeight: 600 }}>Overdone: </span>
+                    {guide.overDone}
+                  </p>
+                </div>
+              </div>
+            )}
 
-          {/* Step Dots — mobile only */}
-          <div className="flex justify-center gap-1 pb-4 lg:hidden">
-            {recipe.steps.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setCurrentStep(i)}
-                className={`h-1.5 rounded-full transition-all duration-200 ${
-                  i === currentStep ? "w-4" : "w-1.5"
-                }`}
-                style={{
-                  background: i === currentStep
-                    ? "var(--accent)"
-                    : completedSteps.has(i)
-                    ? "var(--success, #10b981)"
-                    : "var(--text-ghost, var(--text-faint))",
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
+            {/* Tip box */}
+            {step.tip && (
+              <div style={{
+                background: 'var(--card)',
+                border: '.5px solid var(--hairline)',
+                padding: '18px 20px',
+                marginBottom: 20,
+              }}>
+                <div className="eyebrow" style={{ marginBottom: 8 }}>
+                  Note from the baker
+                </div>
+                <p style={{
+                  fontFamily: 'var(--serif-body)',
+                  fontSize: 15,
+                  lineHeight: 1.6,
+                  color: 'var(--ink-2)',
+                  fontStyle: 'italic',
+                  margin: 0,
+                }}>
+                  {step.tip}
+                </p>
+              </div>
+            )}
 
-      {/* Mobile floating action bar */}
-      <div
-        className="fixed left-0 right-0 z-40 flex items-center justify-center gap-3 px-4 py-2.5 lg:hidden"
-        style={{
-          bottom: "max(80px, calc(env(safe-area-inset-bottom) + 76px))",
-          background: "var(--bg)",
-          borderTop: "1px solid var(--border-subtle)",
-          borderBottom: "1px solid var(--border-subtle)",
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setShowNoteInput(!showNoteInput)}
-          className="flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-colors"
-          style={
-            showNoteInput || stepNotes[currentStep]
-              ? { background: "var(--card-hover)", color: "var(--text)" }
-              : { color: "var(--text-muted)" }
-          }
-        >
-          <MessageSquare size={18} />
-          <span className="text-[9px] font-medium">Note</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowTempInput(!showTempInput)}
-          className="flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-colors"
-          style={
-            showTempInput || stepTemps[currentStep]
-              ? { background: "var(--card-hover)", color: "var(--text)" }
-              : { color: "var(--text-muted)" }
-          }
-        >
-          <Thermometer size={18} />
-          <span className="text-[9px] font-medium">Temp</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => photoInputRef.current?.click()}
-          disabled={uploadingPhoto}
-          className="flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-colors disabled:opacity-50"
-          style={
-            stepPhotos[currentStep]?.length
-              ? { background: "var(--card-hover)", color: "var(--text)" }
-              : { color: "var(--text-muted)" }
-          }
-        >
-          <Camera size={18} />
-          <span className="text-[9px] font-medium">{uploadingPhoto ? "..." : "Photo"}</span>
-        </button>
-        {multiplier === 1 && (
-          <div className="flex items-center gap-1 ml-auto">
-            {[1, 1.5, 2].map((m) => (
+            {/* Note input */}
+            {showNoteInput && (
+              <div style={{ marginBottom: 20 }}>
+                <textarea
+                  value={stepNotes[currentStep] || ""}
+                  onChange={(e) =>
+                    setStepNotes((prev) => ({ ...prev, [currentStep]: e.target.value }))
+                  }
+                  placeholder="How does the dough look? Any observations..."
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    background: 'transparent',
+                    border: '.5px solid var(--hairline)',
+                    fontFamily: 'var(--serif-body)',
+                    fontSize: 15,
+                    color: 'var(--ink)',
+                    resize: 'none',
+                    height: 80,
+                    outline: 'none',
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Temp input */}
+            {showTempInput && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+                <input
+                  type="number"
+                  value={stepTemps[currentStep] || ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "" || (Number(v) >= 0 && Number(v) <= 500)) {
+                      setStepTemps((prev) => ({ ...prev, [currentStep]: v }));
+                    }
+                  }}
+                  min={0}
+                  max={500}
+                  placeholder="Temp"
+                  style={{
+                    width: 100,
+                    padding: '8px 4px',
+                    background: 'transparent',
+                    borderBottom: '.5px solid var(--hairline-2)',
+                    fontFamily: 'var(--mono)',
+                    fontSize: 14,
+                    color: 'var(--ink)',
+                    border: 0,
+                    borderBottomStyle: 'solid',
+                    borderBottomWidth: '.5px',
+                    borderBottomColor: 'var(--hairline-2)',
+                    outline: 'none',
+                  }}
+                />
+                <span className="mono" style={{ fontSize: 11, color: 'var(--muted)' }}>&deg;C</span>
+              </div>
+            )}
+
+            {/* Step Photos */}
+            {stepPhotos[currentStep]?.length > 0 && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 20, overflowX: 'auto', paddingBottom: 4 }}>
+                {stepPhotos[currentStep].map((url, i) => (
+                  <img
+                    key={i}
+                    src={url}
+                    alt={`Step ${currentStep + 1} photo ${i + 1}`}
+                    style={{
+                      width: 80, height: 80, objectFit: 'cover', flexShrink: 0,
+                      border: '.5px solid var(--hairline)',
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Quick capture buttons */}
+            <div style={{ display: 'flex', gap: 10, marginBottom: 32, flexWrap: 'wrap' }}>
               <button
-                key={m}
                 type="button"
-                onClick={() => setMultiplier(m)}
-                className="px-2 py-1 rounded text-[10px] font-medium"
+                className="btn-ghost"
+                onClick={() => setShowNoteInput(!showNoteInput)}
                 style={{
-                  background: multiplier === m ? "var(--accent)" : "transparent",
-                  color: multiplier === m ? "var(--bg)" : "var(--text-faint)",
+                  padding: '8px 16px', fontSize: 13, gap: 6,
+                  borderColor: showNoteInput || stepNotes[currentStep] ? 'var(--accent)' : undefined,
+                  color: showNoteInput || stepNotes[currentStep] ? 'var(--accent)' : undefined,
                 }}
               >
-                {m}x
+                <IcoNote /> Add note
               </button>
-            ))}
-          </div>
-        )}
-        {multiplier !== 1 && (
-          <button
-            type="button"
-            onClick={() => setMultiplier(1)}
-            className="ml-auto px-2 py-1 rounded text-[10px] font-medium"
-            style={{ background: "var(--accent)", color: "var(--bg)" }}
-          >
-            {multiplier}x
-          </button>
-        )}
-      </div>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => setShowTempInput(!showTempInput)}
+                style={{
+                  padding: '8px 16px', fontSize: 13, gap: 6,
+                  borderColor: showTempInput || stepTemps[currentStep] ? 'var(--accent)' : undefined,
+                  color: showTempInput || stepTemps[currentStep] ? 'var(--accent)' : undefined,
+                }}
+              >
+                <IcoTemp /> Log temp
+              </button>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => photoInputRef.current?.click()}
+                disabled={uploadingPhoto}
+                style={{
+                  padding: '8px 16px', fontSize: 13, gap: 6,
+                  opacity: uploadingPhoto ? 0.5 : 1,
+                  borderColor: stepPhotos[currentStep]?.length ? 'var(--accent)' : undefined,
+                  color: stepPhotos[currentStep]?.length ? 'var(--accent)' : undefined,
+                }}
+              >
+                <IcoPhoto /> {uploadingPhoto ? '...' : 'Take photo'}
+              </button>
+            </div>
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handlePhotoCapture}
+              style={{ display: 'none' }}
+            />
 
-      {/* Finish Modal */}
-      <AnimatePresence>
+            {/* Bottom nav */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              borderTop: '.5px solid var(--hairline)',
+              paddingTop: 20,
+            }}>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => goStep(currentStep - 1)}
+                disabled={currentStep === 0}
+                style={{
+                  padding: '10px 18px', fontSize: 14, gap: 6,
+                  opacity: currentStep === 0 ? 0.3 : 1,
+                }}
+              >
+                <IcoBack /> Previous
+              </button>
+
+              {!completedSteps.has(currentStep) ? (
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    markStepComplete(currentStep);
+                    setJustCompletedStep(currentStep);
+                    setTimeout(() => {
+                      setJustCompletedStep(null);
+                      if (currentStep < totalSteps - 1) {
+                        setCurrentStep(currentStep + 1);
+                      }
+                    }, 500);
+                  }}
+                  style={{ padding: '12px 24px', fontSize: 15, gap: 8 }}
+                >
+                  <IcoCheck /> {currentStep === totalSteps - 1 ? 'Complete last step' : 'Mark done'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => {
+                    if (currentStep < totalSteps - 1) {
+                      setCurrentStep(currentStep + 1);
+                    } else {
+                      setShowFinishModal(true);
+                    }
+                  }}
+                  style={{ padding: '10px 18px', fontSize: 14, gap: 6 }}
+                >
+                  {currentStep === totalSteps - 1 ? 'Finish bake' : 'Skip'} <IcoNext />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* ── Right: Timer + Ingredients ── */}
+          <aside className="bake-timer" style={{ paddingTop: 4 }}>
+            <div className="eyebrow" style={{ marginBottom: 16 }}>Timer</div>
+
+            <RingTimer
+              total={timerTotal || 1}
+              remaining={hasTimer ? timerRemaining : 0}
+              running={timerRunning}
+              hasTimer={hasTimer}
+            />
+
+            {hasTimer ? (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 16 }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setTimerRunning(!timerRunning)}
+                  style={{ padding: '10px 20px', fontSize: 14, gap: 6 }}
+                >
+                  {timerRunning ? <IcoPause /> : <IcoPlay />}
+                  {timerRunning ? 'Pause' : 'Start'}
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => { setTimerRunning(false); setTimerRemaining(timerTotal); }}
+                  style={{ padding: '10px 14px', fontSize: 13 }}
+                >
+                  <IcoReset /> Reset
+                </button>
+              </div>
+            ) : (
+              <p className="italic" style={{
+                fontSize: 14, color: 'var(--muted)', textAlign: 'center', marginTop: 14,
+              }}>
+                No fixed time. Watch the dough.
+              </p>
+            )}
+
+            {/* Step-specific ingredients */}
+            {stepIngs.length > 0 && (
+              <div style={{ marginTop: 32 }}>
+                <div className="eyebrow" style={{ marginBottom: 12 }}>This step</div>
+                {stepIngs.map(({ group, label, items }) => (
+                  <div key={group} style={{ marginBottom: 16 }}>
+                    <div className="eyebrow" style={{ fontSize: 9, marginBottom: 6, color: 'var(--muted-2)' }}>
+                      {label}
+                    </div>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                      {items.map((row) => {
+                        const key = `${group}-${row.name}`;
+                        return (
+                          <li
+                            key={key}
+                            onClick={() => {
+                              setCheckedIngredients((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(key)) next.delete(key);
+                                else next.add(key);
+                                return next;
+                              });
+                            }}
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: '1fr 48px',
+                              padding: '10px 0',
+                              borderBottom: '.5px dotted var(--hairline)',
+                              alignItems: 'baseline',
+                              gap: 10,
+                              cursor: 'pointer',
+                              textDecoration: checkedIngredients.has(key) ? 'line-through' : 'none',
+                              opacity: checkedIngredients.has(key) ? 0.5 : 1,
+                            }}
+                          >
+                            <span style={{ fontSize: 14, color: 'var(--ink)' }}>{row.name}</span>
+                            <span className="mono num" style={{ fontSize: 13, textAlign: 'right', color: 'var(--ink)' }}>
+                              {scaleWeight(row.weight)}<span style={{ color: 'var(--muted)', fontSize: 10 }}>g</span>
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Finish bake button */}
+            <div style={{ marginTop: 32 }}>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => setShowFinishModal(true)}
+                style={{ width: '100%', justifyContent: 'center', padding: '10px 16px', fontSize: 14 }}
+              >
+                Finish bake
+              </button>
+            </div>
+          </aside>
+        </div>
+
+        {/* ── Finish Modal ── */}
         {showFinishModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 flex items-end lg:items-center lg:justify-center"
+          <div
+            style={{
+              position: 'fixed', inset: 0, zIndex: 50,
+              background: 'rgba(0,0,0,.45)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
             onClick={(e) => {
               if (e.target === e.currentTarget) setShowFinishModal(false);
             }}
           >
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="w-full lg:max-w-2xl lg:rounded-3xl rounded-t-xl max-h-[85vh] overflow-y-auto"
-              style={{ background: "var(--card)" }}
-            >
-              {/* Wizard header */}
-              <div className="sticky top-0 px-5 pt-4 pb-2 flex items-center justify-between" style={{ background: "var(--card)", borderBottom: "1px solid var(--border-subtle)" }}>
-                <div className="flex items-center gap-3">
+            <div style={{
+              width: '100%', maxWidth: 600,
+              maxHeight: '85vh', overflowY: 'auto',
+              background: 'var(--paper)',
+              border: '.5px solid var(--hairline)',
+              padding: 0,
+            }}>
+              {/* Modal header */}
+              <div style={{
+                position: 'sticky', top: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '18px 24px',
+                background: 'var(--paper)',
+                borderBottom: '.5px solid var(--hairline)',
+                zIndex: 2,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   {finishStep > 0 && (
-                    <button type="button" onClick={() => setFinishStep(finishStep - 1)} className="p-1" style={{ color: "var(--text-muted)" }}>
-                      <ChevronLeft size={18} />
+                    <button type="button" onClick={() => setFinishStep(finishStep - 1)} style={{ color: 'var(--muted)', cursor: 'pointer', background: 'none', border: 'none' }}>
+                      <IcoBack />
                     </button>
                   )}
-                  <h2 className="font-[family-name:var(--font-playfair)] text-lg font-semibold" style={{ color: "var(--text)" }}>
-                    {finishStep === 0 ? "How was it?" : finishStep === 1 ? "Reflect" : finishStep === 2 ? "Environment" : "Details"}
+                  <h2 style={{
+                    fontFamily: 'var(--serif-display)', fontSize: 22, fontWeight: 300, margin: 0,
+                  }}>
+                    {finishStep === 0 ? 'How was it?' : finishStep === 1 ? 'Reflect' : finishStep === 2 ? 'Environment' : 'Details'}
                   </h2>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] tabular-nums" style={{ color: "var(--text-faint)" }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <span className="mono" style={{ fontSize: 10, color: 'var(--muted)' }}>
                     {finishStep + 1} / {beginner ? 3 : 4}
                   </span>
-                  <button type="button" onClick={() => { setShowFinishModal(false); setFinishStep(0); }} className="p-1" style={{ color: "var(--text-muted)" }}>
-                    <X size={18} />
+                  <button
+                    type="button"
+                    onClick={() => { setShowFinishModal(false); setFinishStep(0); }}
+                    style={{ color: 'var(--muted)', fontSize: 18, cursor: 'pointer', background: 'none', border: 'none' }}
+                  >
+                    &times;
                   </button>
                 </div>
               </div>
 
               {/* Step dots */}
-              <div className="flex justify-center gap-1.5 px-5 pt-3 pb-1">
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 6, padding: '16px 24px 8px' }}>
                 {Array.from({ length: beginner ? 3 : 4 }).map((_, i) => (
-                  <div key={i} className="h-1 rounded-full transition-all" style={{ width: i === finishStep ? 20 : 8, background: i <= finishStep ? "var(--accent)" : "var(--card-hover)" }} />
+                  <div key={i} style={{
+                    height: 1,
+                    width: i === finishStep ? 24 : 10,
+                    background: i <= finishStep ? 'var(--accent)' : 'var(--hairline)',
+                    transition: 'all .2s ease',
+                  }} />
                 ))}
               </div>
 
-              <div className="px-5 py-5">
-                <AnimatePresence mode="wait">
-                  <motion.div key={finishStep} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.15 }}>
-
+              <div style={{ padding: '20px 24px 28px' }}>
                 {/* Step 0: Ratings */}
                 {finishStep === 0 && (
-                  <div className="space-y-4">
-                    <div className={beginner ? "" : "grid grid-cols-2 gap-3"}>
+                  <div>
+                    <div style={beginner ? {} : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                       {(beginner
                         ? [{ label: "How did it go?", value: overallRating, set: setOverallRating }]
                         : [
@@ -1133,19 +1162,24 @@ export default function BakeSessionPage({
                             { label: "Flavor", value: flavorRating, set: setFlavorRating },
                           ]
                       ).map(({ label, value, set }) => (
-                        <div key={label} className="rounded-xl p-4" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))" }}>
-                          <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>{label}</p>
-                          <div className="flex gap-1.5">
+                        <div key={label} style={{ padding: '14px 0', borderBottom: '.5px solid var(--hairline)' }}>
+                          <div className="eyebrow" style={{ marginBottom: 8 }}>{label}</div>
+                          <div style={{ display: 'flex', gap: 4 }}>
                             {[1, 2, 3, 4, 5].map((star) => (
-                              <button key={star} type="button" onClick={() => { navigator.vibrate?.(10); set(star); }} className="transition-transform active:scale-125">
-                                {star <= value ? <Star size={14} fill="var(--crust)" stroke="var(--crust)" /> : <Star size={14} stroke="var(--border)" fill="none" />}
+                              <button key={star} type="button" onClick={() => { navigator.vibrate?.(10); set(star); }}
+                                style={{
+                                  fontSize: 16, cursor: 'pointer', background: 'none', border: 'none', padding: '2px',
+                                  color: star <= value ? 'var(--accent)' : 'var(--hairline)',
+                                }}
+                              >
+                                {star <= value ? '★' : '☆'}
                               </button>
                             ))}
                           </div>
                         </div>
                       ))}
                     </div>
-                    <button type="button" onClick={() => setFinishStep(1)} className="w-full font-semibold text-sm py-3 rounded-xl transition-colors" style={{ background: "var(--accent)", color: "var(--bg)" }}>
+                    <button type="button" className="btn" onClick={() => setFinishStep(1)} style={{ width: '100%', justifyContent: 'center', marginTop: 24, padding: '14px 24px' }}>
                       Continue
                     </button>
                   </div>
@@ -1153,24 +1187,30 @@ export default function BakeSessionPage({
 
                 {/* Step 1: Notes */}
                 {finishStep === 1 && (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>What went well?</label>
-                      <textarea value={whatWentWell} onChange={(e) => setWhatWentWell(e.target.value)} placeholder="Great oven spring, nice ear..." className="w-full rounded-xl p-3 text-sm resize-none h-20 focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>What to improve?</label>
-                      <textarea value={whatToImprove} onChange={(e) => setWhatToImprove(e.target.value)} placeholder="Shape was a bit loose..." className="w-full rounded-xl p-3 text-sm resize-none h-20 focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Modifications</label>
-                      <textarea value={modifications} onChange={(e) => setModifications(e.target.value)} placeholder="Changed hydration, different flour..." className="w-full rounded-xl p-3 text-sm resize-none h-16 focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
-                    </div>
-                    <div>
-                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Other notes</label>
-                      <textarea value={overallNotes} onChange={(e) => setOverallNotes(e.target.value)} placeholder="Anything else worth remembering..." className="w-full rounded-xl p-3 text-sm resize-none h-16 focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
-                    </div>
-                    <button type="button" onClick={() => setFinishStep(2)} className="w-full font-semibold text-sm py-3 rounded-xl transition-colors" style={{ background: "var(--accent)", color: "var(--bg)" }}>
+                  <div>
+                    {[
+                      { label: "What went well?", value: whatWentWell, set: setWhatWentWell, placeholder: "Great oven spring, nice ear..." },
+                      { label: "What to improve?", value: whatToImprove, set: setWhatToImprove, placeholder: "Shape was a bit loose..." },
+                      { label: "Modifications", value: modifications, set: setModifications, placeholder: "Changed hydration, different flour..." },
+                      { label: "Other notes", value: overallNotes, set: setOverallNotes, placeholder: "Anything else worth remembering..." },
+                    ].map(({ label, value, set, placeholder }) => (
+                      <div key={label} style={{ marginBottom: 16 }}>
+                        <div className="eyebrow" style={{ marginBottom: 6 }}>{label}</div>
+                        <textarea
+                          value={value}
+                          onChange={(e) => set(e.target.value)}
+                          placeholder={placeholder}
+                          style={{
+                            width: '100%', padding: '10px 4px',
+                            background: 'transparent',
+                            border: 0, borderBottom: '.5px solid var(--hairline)',
+                            fontFamily: 'var(--serif-body)', fontSize: 15,
+                            color: 'var(--ink)', resize: 'none', height: 60, outline: 'none',
+                          }}
+                        />
+                      </div>
+                    ))}
+                    <button type="button" className="btn" onClick={() => setFinishStep(2)} style={{ width: '100%', justifyContent: 'center', marginTop: 12, padding: '14px 24px' }}>
                       Continue
                     </button>
                   </div>
@@ -1178,84 +1218,103 @@ export default function BakeSessionPage({
 
                 {/* Step 2: Environment */}
                 {finishStep === 2 && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Flour brand</label>
-                        <input type="text" value={flourBrand} onChange={(e) => setFlourBrand(e.target.value)} maxLength={100} placeholder="King Arthur..." className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
-                      </div>
-                      <div>
-                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Room temp (°C)</label>
-                        <input type="number" value={ambientTemp} min={-10} max={60} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= -10 && Number(v) <= 60)) setAmbientTemp(v); }} placeholder="22" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
-                      </div>
-                      <div>
-                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Dough temp (°C)</label>
-                        <input type="number" value={doughTemp} min={0} max={60} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 60)) setDoughTemp(v); }} placeholder="25" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
-                      </div>
-                      <div>
-                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Humidity (%)</label>
-                        <input type="number" value={humidity} min={0} max={100} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 100)) setHumidity(v); }} placeholder="65" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
-                      </div>
+                  <div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                      {[
+                        { label: "Flour brand", value: flourBrand, set: setFlourBrand, type: "text", placeholder: "King Arthur...", max: 100 },
+                        { label: "Room temp (°C)", value: ambientTemp, set: setAmbientTemp, type: "number", placeholder: "22", min: -10, max: 60 },
+                        { label: "Dough temp (°C)", value: doughTemp, set: setDoughTemp, type: "number", placeholder: "25", min: 0, max: 60 },
+                        { label: "Humidity (%)", value: humidity, set: setHumidity, type: "number", placeholder: "65", min: 0, max: 100 },
+                      ].map(({ label, value, set, type, placeholder, min, max }) => (
+                        <div key={label} style={{ marginBottom: 8 }}>
+                          <div className="eyebrow" style={{ marginBottom: 6 }}>{label}</div>
+                          <input
+                            type={type}
+                            value={value}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              if (type === 'text') { set(v); return; }
+                              if (v === "" || (Number(v) >= (min ?? 0) && Number(v) <= (max ?? 999))) set(v);
+                            }}
+                            maxLength={type === 'text' ? (max ?? undefined) : undefined}
+                            placeholder={placeholder}
+                            style={{
+                              width: '100%', padding: '8px 4px',
+                              background: 'transparent',
+                              border: 0, borderBottom: '.5px solid var(--hairline-2)',
+                              fontFamily: 'var(--mono)', fontSize: 14,
+                              color: 'var(--ink)', outline: 'none',
+                            }}
+                          />
+                        </div>
+                      ))}
                     </div>
                     {beginner ? (
-                      <button type="button" onClick={finishBake} disabled={saving} className="w-full font-semibold text-sm py-3 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50" style={{ background: "var(--accent)", color: "var(--bg)" }}>
-                        <Save size={16} /> {saving ? "Saving..." : "Record this bake"}
+                      <button type="button" className="btn" onClick={finishBake} disabled={saving} style={{ width: '100%', justifyContent: 'center', marginTop: 20, padding: '14px 24px', opacity: saving ? 0.5 : 1 }}>
+                        {saving ? 'Saving...' : 'Record this bake'}
                       </button>
                     ) : (
-                      <button type="button" onClick={() => setFinishStep(3)} className="w-full font-semibold text-sm py-3 rounded-xl transition-colors" style={{ background: "var(--accent)", color: "var(--bg)" }}>
+                      <button type="button" className="btn" onClick={() => setFinishStep(3)} style={{ width: '100%', justifyContent: 'center', marginTop: 20, padding: '14px 24px' }}>
                         Continue
                       </button>
                     )}
                   </div>
                 )}
 
-                {/* Step 3: Details (starter + timing) — advanced only */}
+                {/* Step 3: Details (advanced only) */}
                 {finishStep === 3 && !beginner && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Starter hydration</label>
-                        <input type="text" value={starterHydration} onChange={(e) => setStarterHydration(e.target.value)} maxLength={20} placeholder="100%" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
-                      </div>
-                      <div>
-                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Starter notes</label>
-                        <input type="text" value={starterNotes} onChange={(e) => setStarterNotes(e.target.value)} maxLength={200} placeholder="Peaked at 6hrs..." className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
-                      </div>
-                      <div>
-                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Bulk ferment (hrs)</label>
-                        <input type="number" value={bulkHours} min={0} max={48} step={0.5} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 48)) setBulkHours(v); }} placeholder="4" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
-                      </div>
-                      <div>
-                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Proof time (hrs)</label>
-                        <input type="number" value={proofHours} min={0} max={48} step={0.5} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 48)) setProofHours(v); }} placeholder="12" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
-                      </div>
-                      <div>
-                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Bake time (min)</label>
-                        <input type="number" value={bakeTimeMin} min={0} max={180} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 180)) setBakeTimeMin(v); }} placeholder="45" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
-                      </div>
-                      <div>
-                        <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Oven temp (°C)</label>
-                        <input type="number" value={bakeTempC} min={0} max={350} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 350)) setBakeTempC(v); }} placeholder="230" className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)" }} />
-                      </div>
+                  <div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                      {[
+                        { label: "Starter hydration", value: starterHydration, set: setStarterHydration, type: "text", placeholder: "100%", max: 20 },
+                        { label: "Starter notes", value: starterNotes, set: setStarterNotes, type: "text", placeholder: "Peaked at 6hrs...", max: 200 },
+                        { label: "Bulk ferment (hrs)", value: bulkHours, set: setBulkHours, type: "number", placeholder: "4", min: 0, max: 48 },
+                        { label: "Proof time (hrs)", value: proofHours, set: setProofHours, type: "number", placeholder: "12", min: 0, max: 48 },
+                        { label: "Bake time (min)", value: bakeTimeMin, set: setBakeTimeMin, type: "number", placeholder: "45", min: 0, max: 180 },
+                        { label: "Oven temp (°C)", value: bakeTempC, set: setBakeTempC, type: "number", placeholder: "230", min: 0, max: 350 },
+                      ].map(({ label, value, set, type, placeholder, min, max }) => (
+                        <div key={label} style={{ marginBottom: 8 }}>
+                          <div className="eyebrow" style={{ marginBottom: 6 }}>{label}</div>
+                          <input
+                            type={type}
+                            value={value}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              if (type === 'text') { set(v); return; }
+                              if (v === "" || (Number(v) >= (min ?? 0) && Number(v) <= (max ?? 999))) set(v);
+                            }}
+                            maxLength={type === 'text' ? (max ?? undefined) : undefined}
+                            placeholder={placeholder}
+                            style={{
+                              width: '100%', padding: '8px 4px',
+                              background: 'transparent',
+                              border: 0, borderBottom: '.5px solid var(--hairline-2)',
+                              fontFamily: 'var(--mono)', fontSize: 14,
+                              color: 'var(--ink)', outline: 'none',
+                            }}
+                          />
+                        </div>
+                      ))}
                     </div>
-                    <button type="button" onClick={finishBake} disabled={saving} className="w-full font-semibold text-sm py-3 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50" style={{ background: "var(--accent)", color: "var(--bg)" }}>
-                      <Save size={16} /> {saving ? "Saving..." : "Record this bake"}
+                    <button type="button" className="btn" onClick={finishBake} disabled={saving} style={{ width: '100%', justifyContent: 'center', marginTop: 20, padding: '14px 24px', opacity: saving ? 0.5 : 1 }}>
+                      {saving ? 'Saving...' : 'Record this bake'}
                     </button>
                   </div>
                 )}
 
-                  </motion.div>
-                </AnimatePresence>
-
-                <button type="button" onClick={abandonBake} className="w-full text-sm py-2 mt-3" style={{ color: "var(--text-faint)" }}>
+                <button type="button" onClick={abandonBake} style={{
+                  width: '100%', textAlign: 'center',
+                  fontFamily: 'var(--serif-display)', fontStyle: 'italic',
+                  fontSize: 14, color: 'var(--muted)', marginTop: 16,
+                  padding: '8px 0', cursor: 'pointer', background: 'none', border: 'none',
+                }}>
                   Abandon
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
-    </div>
+      </div>
     </ErrorBoundary>
   );
 }

@@ -1,13 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Icon } from "@/components/illustrations/icons";
-import { Chip } from "@/components/ui/chip";
-import { BreadIllustration } from "@/components/illustrations/bread-illustration";
+import Link from "next/link";
+import Image from "next/image";
 import { recipes, getCategories, books } from "@/data/recipes";
-import { RecipeCard } from "@/components/ui/recipe-card";
-import { PageHeader } from "@/components/ui/page-header";
 
 const categoryLabels: Record<string, string> = {
   all: "All",
@@ -50,13 +46,18 @@ function parseHydration(h?: string): number {
   return parseInt(h.replace("%", "")) || 0;
 }
 
+const diffColors: Record<string, { color: string; border: string }> = {
+  beginner: { color: "var(--sage)", border: "var(--sage-soft)" },
+  intermediate: { color: "var(--accent)", border: "var(--accent-soft)" },
+  advanced: { color: "var(--rose)", border: "var(--rose)" },
+};
+
 export default function RecipesPage() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [activeBook, setActiveBook] = useState<string>("all");
   const [activeDifficulty, setActiveDifficulty] = useState<string>("all");
   const [sort, setSort] = useState<SortOption>("default");
-  const [showSort, setShowSort] = useState(false);
   const categories = getCategories();
 
   const filtered = useMemo(() => {
@@ -111,189 +112,360 @@ export default function RecipesPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-6xl mx-auto">
-        <PageHeader
-          title="Recipes"
-          subtitle={`${recipes.length} recipes from ${books.length} books`}
-        />
-
-        {/* Filter bar */}
-        <div
-          className="z-30 px-6 lg:px-8 pb-4 pt-2 space-y-3"
-          style={{ background: "var(--bg)" }}
+    <div className="anim-rise proof-page" style={{ maxWidth: 1200 }}>
+      {/* Title Block */}
+      <div style={{ marginBottom: 0 }}>
+        <div className="eyebrow" style={{ marginBottom: 16 }}>
+          &sect; Library &middot; {recipes.length} formulas &middot; {books.length} volumes
+        </div>
+        <h1
+          style={{
+            fontFamily: "var(--serif-display)",
+            fontWeight: 300,
+            fontSize: "clamp(48px, 8vw, 120px)",
+            letterSpacing: "-.02em",
+            lineHeight: 1.0,
+            margin: 0,
+            marginBottom: 16,
+          }}
         >
-          {/* Search row */}
-          <div className="flex gap-2 items-center">
-            <div className="relative flex-1 max-w-xl">
-              <div
-                className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
-                style={{ color: "var(--ink-mute)" }}
-              >
-                <Icon.search width={18} height={18} />
-              </div>
-              <input
-                type="text"
-                placeholder="What are you in the mood for?"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-xl py-2.5 pl-11 pr-11 text-sm transition-all duration-300 focus:outline-none"
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  color: "var(--ink)",
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border)";
-                  e.currentTarget.style.background = "var(--surface)";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border)";
-                  e.currentTarget.style.background = "var(--surface)";
-                }}
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch("")}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded-md"
-                  style={{ color: "var(--ink-mute)", fontSize: 18, lineHeight: 1, fontWeight: 500 }}
-                >
-                  ×
-                </button>
-              )}
-            </div>
+          The <span className="italic">Library</span>
+        </h1>
+        <p style={{ color: "var(--ink-2)", maxWidth: 640, fontSize: 16, lineHeight: 1.55, marginBottom: 24 }}>
+          Every formula in our collection, from foundational loaves to weekend projects.
+          Browse by category, difficulty, or simply search for what calls to you.
+        </p>
+        <div className="hairline" />
+      </div>
 
-            {/* Sort button */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowSort(!showSort)}
-                className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all"
+      {/* Search + Filters */}
+      <div style={{ paddingTop: 28, paddingBottom: 24 }}>
+        {/* Search row */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, borderBottom: ".5px solid var(--hairline)", paddingBottom: 2 }}>
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search formulas..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              flex: 1,
+              fontFamily: "var(--serif-display)",
+              fontSize: "clamp(20px, 3vw, 28px)",
+              fontWeight: 300,
+              background: "transparent",
+              border: "none",
+              color: "var(--ink)",
+              outline: "none",
+              padding: "8px 0",
+            }}
+          />
+          <span className="mono" style={{ fontSize: 13, color: "var(--muted)", whiteSpace: "nowrap" }}>
+            {filtered.length} / {recipes.length}
+          </span>
+        </div>
+
+        {/* Filter rows */}
+        <FilterRow label="Category">
+          {["all", ...categories.map((c) => c.id)].map((cat) => (
+            <FilterLink
+              key={cat}
+              active={activeCategory === cat}
+              onClick={() => setActiveCategory(cat)}
+            >
+              {categoryLabels[cat] || cat}
+            </FilterLink>
+          ))}
+        </FilterRow>
+
+        <FilterRow label="Level">
+          {(["all", "beginner", "intermediate", "advanced"] as const).map((diff) => (
+            <FilterLink
+              key={diff}
+              active={activeDifficulty === diff}
+              onClick={() => setActiveDifficulty(diff)}
+            >
+              {diff === "all" ? "Any" : diff}
+            </FilterLink>
+          ))}
+        </FilterRow>
+
+        <FilterRow label="Volume">
+          {[{ id: "all", title: "All" }, ...books].map((book) => (
+            <FilterLink
+              key={book.id}
+              active={activeBook === book.id}
+              onClick={() => setActiveBook(book.id)}
+            >
+              {book.title}
+            </FilterLink>
+          ))}
+        </FilterRow>
+
+        <FilterRow label="Sort">
+          {(Object.keys(sortLabels) as SortOption[]).map((key) => (
+            <FilterLink
+              key={key}
+              active={sort === key}
+              onClick={() => setSort(key)}
+            >
+              {sortLabels[key]}
+            </FilterLink>
+          ))}
+          {activeFilterCount > 0 && (
+            <button
+              type="button"
+              onClick={clearAll}
+              style={{
+                fontFamily: "var(--serif-display)",
+                fontSize: 14,
+                color: "var(--accent)",
+                fontStyle: "italic",
+                marginLeft: 12,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                textDecoration: "underline",
+                textUnderlineOffset: 3,
+              }}
+            >
+              Clear all
+            </button>
+          )}
+        </FilterRow>
+      </div>
+
+      {/* Recipe Grid */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 320px), 1fr))",
+          gap: 24,
+          paddingBottom: 64,
+        }}
+      >
+        {filtered.map((recipe, i) => {
+          const diff = diffColors[recipe.difficulty] || diffColors.intermediate;
+          const book = books.find((b) => b.id === recipe.bookId);
+          return (
+            <Link
+              key={recipe.id}
+              href={`/recipes/${recipe.id}`}
+              className="rc-card"
+              style={{ textDecoration: "none", color: "inherit", display: "block" }}
+            >
+              {/* Image frame */}
+              <div
+                className="img-frame"
                 style={{
-                  background: sort !== "default" ? "var(--accent-surface)" : "var(--surface)",
-                  border: sort !== "default" ? "1px solid var(--crust)" : "1px solid var(--border)",
-                  color: sort !== "default" ? "var(--crust)" : "var(--ink-soft)",
+                  aspectRatio: "4 / 5",
+                  position: "relative",
+                  overflow: "hidden",
+                  marginBottom: 14,
                 }}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" width={14} height={14}>
-                  <path d="M4 6h16M4 12h10M4 18h6" />
-                </svg>
-                <span className="hidden sm:inline">{sort === "default" ? "Sort" : sortLabels[sort]}</span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" width={12} height={12}>
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
-              </button>
-              {showSort && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowSort(false)} />
-                  <motion.div
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="absolute right-0 top-full mt-1 z-50 rounded-xl py-1 min-w-[160px]"
+                {recipe.image ? (
+                  <Image
+                    src={recipe.image}
+                    alt={recipe.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    style={{ objectFit: "cover", transition: "transform .4s ease" }}
+                  />
+                ) : (
+                  <div
                     style={{
-                      background: "var(--surface)",
-                      border: "1px solid var(--border)",
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+                      width: "100%",
+                      height: "100%",
+                      background: "linear-gradient(135deg, var(--card-2), var(--paper-2))",
+                      display: "grid",
+                      placeItems: "center",
                     }}
                   >
-                    {(Object.keys(sortLabels) as SortOption[]).map((key) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => { setSort(key); setShowSort(false); }}
-                        className="w-full text-left px-4 py-2 text-xs transition-colors"
-                        style={{
-                          color: sort === key ? "var(--crust)" : "var(--ink-soft)",
-                          background: sort === key ? "var(--accent-surface)" : "transparent",
-                        }}
-                      >
-                        {sortLabels[key]}
-                      </button>
-                    ))}
-                  </motion.div>
-                </>
-              )}
-            </div>
-          </div>
+                    <span
+                      style={{
+                        fontFamily: "var(--serif-display)",
+                        fontSize: 64,
+                        fontWeight: 300,
+                        color: "var(--muted-2)",
+                        opacity: 0.4,
+                      }}
+                    >
+                      {recipe.title.charAt(0)}
+                    </span>
+                  </div>
+                )}
 
-          {/* Filter pills — all in one row */}
-          <div className="flex gap-2 items-center overflow-x-auto hide-scrollbar pb-0.5">
-            {/* Book pills */}
-            {[{ id: "all", title: "All Books" }, ...books].map((book) => (
-              <Chip key={`book-${book.id}`} active={activeBook === book.id} onClick={() => setActiveBook(book.id)}>
-                {book.id !== "all" && <Icon.book width={12} height={12} />}
-                {book.id === "all" ? "All Books" : book.title}
-              </Chip>
-            ))}
+                {/* Number badge */}
+                <span
+                  className="mono"
+                  style={{
+                    position: "absolute",
+                    top: 12,
+                    left: 12,
+                    fontSize: 10,
+                    letterSpacing: ".06em",
+                    padding: "5px 10px",
+                    background: "rgba(0,0,0,0.55)",
+                    backdropFilter: "blur(8px)",
+                    color: "#fff",
+                    borderRadius: 2,
+                  }}
+                >
+                  {"№"} {String(i + 1).padStart(3, "0")}
+                </span>
 
-            <div className="w-px h-4 shrink-0" style={{ background: "var(--border)" }} />
-
-            {/* Category pills */}
-            {["all", ...categories.map((c) => c.id)].map((cat) => (
-              <Chip key={`cat-${cat}`} active={activeCategory === cat} small onClick={() => setActiveCategory(cat)}>
-                {categoryLabels[cat] || cat}
-              </Chip>
-            ))}
-
-            <div className="w-px h-4 shrink-0" style={{ background: "var(--border)" }} />
-
-            {/* Difficulty pills */}
-            {(["all", "beginner", "intermediate", "advanced"] as const).map((diff) => (
-              <Chip key={`diff-${diff}`} active={activeDifficulty === diff} small onClick={() => setActiveDifficulty(diff)}>
-                {diff === "all" ? "Any level" : diff}
-              </Chip>
-            ))}
-
-            {/* Clear all */}
-            {activeFilterCount > 0 && (
-              <button
-                type="button"
-                onClick={clearAll}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap shrink-0 transition-all duration-200"
-                style={{ color: "var(--crust)" }}
-              >
-                × Clear {activeFilterCount}
-              </button>
-            )}
-          </div>
-
-          {/* Result count — inline */}
-          <p className="text-[11px] tracking-wide uppercase" style={{ color: "var(--ink-faint)" }}>
-            {filtered.length} recipe{filtered.length !== 1 ? "s" : ""}
-            {(search || activeFilterCount > 0) && " found"}
-          </p>
-        </div>
-
-        {/* Recipe Grid */}
-        <div className="px-6 lg:px-8 pb-12 pt-2">
-          <AnimatePresence mode="popLayout">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5">
-              {filtered.map((recipe, i) => (
-                <RecipeCard key={recipe.id} recipe={recipe} index={i} />
-              ))}
-            </div>
-          </AnimatePresence>
-
-          {filtered.length === 0 && (
-            <div className="text-center py-20">
-              <div style={{ opacity: 0.4, marginBottom: 14 }}>
-                <BreadIllustration seed="empty" size={120} />
+                {/* Difficulty pill */}
+                <span
+                  className="mono"
+                  style={{
+                    position: "absolute",
+                    top: 12,
+                    right: 12,
+                    fontSize: 9.5,
+                    textTransform: "uppercase",
+                    letterSpacing: ".08em",
+                    padding: "4px 10px",
+                    border: `1px solid ${diff.border}`,
+                    color: diff.color,
+                    borderRadius: 2,
+                    background: "rgba(0,0,0,0.35)",
+                    backdropFilter: "blur(8px)",
+                  }}
+                >
+                  {recipe.difficulty}
+                </span>
               </div>
-              <div className="display" style={{ fontSize: 28, marginBottom: 6 }}>no matches.</div>
-              <div style={{ fontSize: 14, color: 'var(--ink-mute)', marginBottom: 4 }}>maybe a pizza instead?</div>
-              <button
-                type="button"
-                onClick={clearAll}
-                className="text-sm mt-3 font-medium"
-                style={{ color: "var(--crust)" }}
-              >
-                Start fresh
-              </button>
-            </div>
-          )}
+
+              {/* Card text */}
+              <div style={{ padding: "0 2px" }}>
+                {/* Eyebrow row */}
+                <div
+                  className="eyebrow"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 6,
+                  }}
+                >
+                  <span>{categoryLabels[recipe.category] || recipe.category}</span>
+                  <span className="mono" style={{ fontSize: 10, color: "var(--muted)" }}>
+                    {recipe.totalTime}
+                    {recipe.hydration && <> &middot; {recipe.hydration}</>}
+                  </span>
+                </div>
+
+                {/* Title */}
+                <h3
+                  style={{
+                    fontFamily: "var(--serif-display)",
+                    fontSize: "clamp(22px, 2.5vw, 26px)",
+                    fontWeight: 400,
+                    lineHeight: 1.15,
+                    margin: 0,
+                    marginBottom: 6,
+                  }}
+                >
+                  {recipe.title}
+                </h3>
+
+                {/* Description */}
+                <p
+                  style={{
+                    fontSize: 13.5,
+                    lineHeight: 1.45,
+                    color: "var(--muted)",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
+                  {recipe.description}
+                </p>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Empty state */}
+      {filtered.length === 0 && (
+        <div style={{ textAlign: "center", padding: "80px 20px" }}>
+          <p
+            style={{
+              fontFamily: "var(--serif-display)",
+              fontStyle: "italic",
+              fontSize: 28,
+              color: "var(--muted)",
+              marginBottom: 16,
+            }}
+          >
+            Nothing in the larder for that.
+          </p>
+          <button
+            type="button"
+            onClick={clearAll}
+            className="btn-link"
+          >
+            Start fresh
+          </button>
         </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Inline sub-components ── */
+
+function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
+      <span
+        className="eyebrow"
+        style={{ minWidth: 80, flexShrink: 0 }}
+      >
+        {label}
+      </span>
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "baseline" }}>
+        {children}
       </div>
     </div>
+  );
+}
+
+function FilterLink({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        fontFamily: "var(--serif-display)",
+        fontSize: 16,
+        fontStyle: active ? "italic" : "normal",
+        textDecoration: active ? "underline" : "none",
+        textUnderlineOffset: 3,
+        color: active ? "var(--ink)" : "var(--muted)",
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        padding: "2px 0",
+        transition: "color .2s ease",
+      }}
+    >
+      {children}
+    </button>
   );
 }

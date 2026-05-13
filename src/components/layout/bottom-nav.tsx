@@ -1,276 +1,201 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/components/auth-provider";
-import { ProofLogo } from "@/components/illustrations/proof-logo";
+
+const ISSUE = { volume: "III", number: "05", date: "May · MMXXVI" };
 
 const navItems = [
-  {
-    href: "/",
-    label: "Home",
-    icon: (p: React.SVGProps<SVGSVGElement>) => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-        <path d="M3 12L12 4l9 8" /><path d="M5 10v10h14V10" />
-      </svg>
-    ),
-  },
-  {
-    href: "/recipes",
-    label: "Recipes",
-    icon: (p: React.SVGProps<SVGSVGElement>) => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-        <path d="M4 5a2 2 0 0 1 2-2h6v18H6a2 2 0 0 1-2-2V5z" /><path d="M20 5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 0 2-2V5z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/bake",
-    label: "Bake",
-    icon: (p: React.SVGProps<SVGSVGElement>) => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-        <path d="M6 14a4 4 0 0 1-2-7.5A4 4 0 0 1 12 5a4 4 0 0 1 8 1.5A4 4 0 0 1 18 14v6H6v-6z" /><path d="M9 20v-3M15 20v-3M12 20v-3" />
-      </svg>
-    ),
-  },
-  {
-    href: "/starter",
-    label: "Starter",
-    icon: (p: React.SVGProps<SVGSVGElement>) => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-        <ellipse cx="12" cy="16" rx="8" ry="5" /><path d="M4 16V12c0-2.8 3.6-5 8-5s8 2.2 8 5v4" /><circle cx="9" cy="13" r="1" /><circle cx="15" cy="14" r="0.8" /><circle cx="12" cy="11" r="1.2" />
-      </svg>
-    ),
-  },
-  {
-    href: "/journal",
-    label: "Journal",
-    icon: (p: React.SVGProps<SVGSVGElement>) => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-        <path d="M4 4h12l4 4v12H4z" /><path d="M16 4v4h4" /><path d="M8 12h8M8 16h6" />
-      </svg>
-    ),
-  },
+  { href: "/", id: "home", label: "Home" },
+  { href: "/recipes", id: "recipes", label: "Library" },
+  { href: "/bake", id: "bake", label: "Bake" },
+  { href: "/starter", id: "starter", label: "Starter" },
+  { href: "/journal", id: "journal", label: "Journal" },
 ];
 
-function SunIcon(p: React.SVGProps<SVGSVGElement>) {
+const mobileTabItems = [
+  { href: "/", id: "home", label: "Home" },
+  { href: "/recipes", id: "recipes", label: "Library" },
+  { href: "/bake", id: "bake", label: "Bake" },
+  { href: "/journal", id: "journal", label: "Journal" },
+];
+
+function Ic({ d, size = 16, sw = 1.25, fill = "none" }: { d: React.ReactNode; size?: number; sw?: number; fill?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-      <circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5" />
+    <svg viewBox="0 0 24 24" width={size} height={size} fill={fill} stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+      {d}
     </svg>
   );
 }
 
-function MoonIcon(p: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-      <path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z" />
-    </svg>
-  );
-}
-
-function SignoutIcon(p: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5M21 12H9" />
-    </svg>
-  );
+function NavIcon({ id }: { id: string }) {
+  const icons: Record<string, React.ReactNode> = {
+    home: <><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /></>,
+    recipes: <><path d="M5 4h6v16H5z" /><path d="M13 4h6v16h-6z" /></>,
+    bake: <><path d="M7 21V11a5 5 0 0110 0v10" /><path d="M5 21h14" /></>,
+    starter: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></>,
+    journal: <><path d="M5 3h14v18H5z" /><path d="M9 7h8M9 11h8M9 15h5" /></>,
+  };
+  return <Ic d={icons[id] || icons.home} />;
 }
 
 export function BottomNav() {
   const pathname = usePathname();
   const { theme, toggle } = useTheme();
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+
   if (pathname.startsWith("/bake/") && pathname.split("/").length > 2) {
     return null;
   }
 
-  const displayName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "";
+  const activeId = pathname === "/"
+    ? "home"
+    : pathname.startsWith("/recipes") ? "recipes"
+    : pathname.startsWith("/bake") ? "bake"
+    : pathname.startsWith("/starter") ? "starter"
+    : pathname.startsWith("/journal") ? "journal"
+    : "home";
 
   return (
     <>
-      {/* Desktop sidebar */}
-      <aside
-        className="proof-sidebar hidden lg:flex fixed top-0 left-0 bottom-0 z-50 flex-col"
-        style={{
-          width: 260,
-          borderRight: "1px solid var(--border)",
-          background: "var(--bg-warm)",
-          padding: "24px 18px",
-          gap: 24,
-          overflowY: "auto",
-          overflowX: "hidden",
-        }}
-      >
-        {/* Brand */}
-        <div style={{ padding: "4px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
-          <ProofLogo size={32} />
-          <span style={{ fontSize: 11, color: "var(--ink-mute)", letterSpacing: "0.05em" }}>sourdough journal</span>
+      {/* ── Desktop Masthead ── */}
+      <header className="hidden lg:flex flex-col sticky top-0 z-50" style={{
+        padding: '20px var(--pad-x) 14px',
+        background: 'var(--paper)',
+        borderBottom: '.5px solid var(--hairline)',
+      }}>
+        <div className="mono" style={{
+          display: 'flex', justifyContent: 'space-between',
+          fontSize: 10.5, letterSpacing: '.16em',
+          color: 'var(--muted)', textTransform: 'uppercase',
+        }}>
+          <span>Vol. {ISSUE.volume} · № {ISSUE.number}</span>
+          <span>{ISSUE.date}</span>
         </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 24, marginTop: 14 }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'baseline', gap: 12, textDecoration: 'none' }}>
+            <span style={{
+              fontFamily: 'var(--serif-display)', fontWeight: 300,
+              fontSize: 'clamp(34px, 5vw, 52px)', letterSpacing: '-.02em',
+              lineHeight: .9, color: 'var(--ink)',
+            }}>Proof</span>
+            <span className="hidden xl:inline" style={{
+              color: 'var(--muted)', fontSize: 'clamp(13px, 1.4vw, 17px)',
+              fontStyle: 'italic', fontFamily: 'var(--serif-display)',
+            }}>— a sourdough journal</span>
+          </Link>
+          <nav className="nav-desktop" style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
+            {navItems.map(item => {
+              const isActive = activeId === item.id;
+              return (
+                <Link key={item.href} href={item.href} style={{
+                  fontFamily: 'var(--serif-display)', fontSize: 18,
+                  color: isActive ? 'var(--ink)' : 'var(--muted)',
+                  fontStyle: isActive ? 'italic' : 'normal',
+                  position: 'relative', paddingBottom: 4,
+                  textDecoration: 'none', transition: 'color .25s ease',
+                }}>
+                  {item.label}
+                  {isActive && <span style={{ position: 'absolute', left: 0, right: 0, bottom: -1, height: 1, background: 'var(--ink)' }} />}
+                </Link>
+              );
+            })}
+            <span style={{ width: 1, height: 18, background: 'var(--hairline)' }} />
+            <button type="button" onClick={toggle} aria-label="Toggle theme" style={{ color: 'var(--muted)', display: 'flex', alignItems: 'center' }}>
+              {theme === "dark"
+                ? <Ic d={<><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>} />
+                : <Ic d={<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />} />
+              }
+            </button>
+          </nav>
+        </div>
+      </header>
 
-        {/* Nav */}
-        <nav style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {navItems.map(({ href, icon: NavIcon, label }) => {
-            const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className="flex items-center gap-3 transition-all duration-200"
-                style={{
-                  padding: "11px 14px",
-                  background: isActive ? "var(--surface-3)" : "transparent",
-                  border: isActive ? "1px solid var(--border-strong)" : "1px solid transparent",
-                  color: isActive ? "var(--crust)" : "var(--ink-soft)",
-                  borderRadius: "var(--radius)",
-                  fontSize: 14,
-                  fontWeight: isActive ? 600 : 500,
-                  textDecoration: "none",
-                  position: "relative",
-                }}
-                onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "var(--surface-2)"; }}
-                onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
-              >
-                <NavIcon width={18} height={18} />
-                {label}
-                {isActive && (
-                  <span style={{
-                    marginLeft: "auto",
-                    width: 6, height: 6, borderRadius: "50%",
-                    background: "var(--crust)",
-                  }} />
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+      {/* ── Mobile Top Bar ── */}
+      <header className="lg:hidden sticky top-0 z-50" style={{
+        background: 'var(--paper)', padding: '14px 20px 12px',
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+        borderBottom: '.5px solid var(--hairline)',
+      }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'baseline', gap: 8, textDecoration: 'none' }}>
+          <span style={{ fontFamily: 'var(--serif-display)', fontWeight: 300, fontSize: 28, letterSpacing: '-.02em', color: 'var(--ink)' }}>Proof</span>
+          <span className="mono" style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '.16em', textTransform: 'uppercase' }}>
+            Vol.{ISSUE.volume}·№{ISSUE.number}
+          </span>
+        </Link>
+        <button type="button" onClick={() => setMenuOpen(true)} aria-label="Menu" style={{ color: 'var(--ink)', display: 'flex' }}>
+          <Ic d={<><path d="M4 7h16M4 12h16M4 17h16" /></>} />
+        </button>
+      </header>
 
-        {/* Bottom controls */}
-        <div className="sidebar-bottom" style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
-          <button
-            type="button"
-            onClick={toggle}
-            className="flex items-center gap-2.5 w-full transition-all duration-200"
-            style={{
-              padding: "10px 12px",
-              background: "transparent",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-              color: "var(--ink-soft)",
-              fontFamily: "inherit",
-              fontSize: 13,
-              cursor: "pointer",
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
-            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-          >
-            {theme === "dark" ? <SunIcon width={16} height={16} /> : <MoonIcon width={16} height={16} />}
-            {theme === "dark" ? "Light mode" : "Dark mode"}
-          </button>
-          <button
-            type="button"
-            onClick={signOut}
-            className="flex items-center gap-2.5 w-full"
-            style={{
-              padding: "10px 12px",
-              background: "transparent",
-              border: "none",
-              color: "var(--ink-mute)",
-              fontFamily: "inherit",
-              fontSize: 13,
-              cursor: "pointer",
-              textAlign: "left",
-            }}
-          >
-            <SignoutIcon width={16} height={16} />
-            Sign out
-          </button>
-          <div className="sidebar-bottom-meta" style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "10px 4px",
-            marginTop: 6,
-            borderTop: "1px solid var(--border)",
-            paddingTop: 14,
-          }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 10,
-              background: "linear-gradient(135deg, var(--crust), var(--jam))",
-              display: "grid", placeItems: "center",
-              color: "var(--bg)", fontWeight: 700, fontSize: 13,
+      {/* ── Mobile Bottom Tabs ── */}
+      <nav className="lg:hidden safe-bot fixed bottom-0 left-0 right-0 z-50" style={{
+        display: 'flex', justifyContent: 'space-around',
+        background: 'var(--paper)', borderTop: '.5px solid var(--hairline)',
+        padding: '10px 12px 12px',
+      }}>
+        {mobileTabItems.map(item => {
+          const isActive = activeId === item.id;
+          return (
+            <Link key={item.href} href={item.href} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              color: isActive ? 'var(--ink)' : 'var(--muted)',
+              textDecoration: 'none', padding: '4px 12px', fontSize: 18,
             }}>
-              {displayName.charAt(0).toUpperCase()}
+              <NavIcon id={item.id} />
+              <span style={{
+                fontFamily: 'var(--serif-display)', fontSize: 12,
+                fontStyle: isActive ? 'italic' : 'normal', letterSpacing: '.02em',
+              }}>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* ── Mobile Menu Overlay ── */}
+      {menuOpen && (
+        <div onClick={() => setMenuOpen(false)} style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          background: 'rgba(28,24,20,.45)', backdropFilter: 'blur(8px)',
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            position: 'absolute', top: 0, right: 0, bottom: 0,
+            width: 'min(360px, 90vw)', background: 'var(--paper)',
+            padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 18,
+            boxShadow: 'var(--shadow-soft)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="eyebrow">Menu</span>
+              <button type="button" onClick={() => setMenuOpen(false)} style={{ color: 'var(--ink)' }}>
+                <Ic d={<><path d="M6 6l12 12M18 6L6 18" /></>} />
+              </button>
             </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 500 }}>{displayName}</div>
-              <div style={{ fontSize: 10, color: "var(--ink-mute)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user?.email}</div>
+            <hr style={{ height: 1, background: 'var(--hairline)', border: 0, margin: 0 }} />
+            {navItems.map(item => (
+              <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} style={{
+                textAlign: 'left', fontFamily: 'var(--serif-display)',
+                fontSize: 30, fontWeight: 300,
+                color: activeId === item.id ? 'var(--ink)' : 'var(--muted)',
+                fontStyle: activeId === item.id ? 'italic' : 'normal',
+                padding: '6px 0', textDecoration: 'none',
+              }}>{item.label}</Link>
+            ))}
+            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <button type="button" onClick={toggle} className="btn-ghost" style={{ fontSize: 14, padding: '10px 16px' }}>
+                {theme === "dark" ? "Light mode" : "Dark mode"}
+              </button>
+              <button type="button" onClick={signOut} style={{
+                fontSize: 14, padding: '10px 16px', color: 'var(--muted)',
+                fontFamily: 'var(--serif-display)', textAlign: 'left',
+              }}>Sign out</button>
             </div>
           </div>
         </div>
-      </aside>
-
-      {/* Mobile topbar */}
-      <div className="mobile-topbar lg:hidden">
-        <ProofLogo size={26} />
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label="Toggle theme"
-            style={{
-              width: 38, height: 38, borderRadius: "50%",
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              color: "var(--ink-soft)",
-              display: "grid", placeItems: "center", cursor: "pointer",
-            }}
-          >
-            {theme === "dark" ? <SunIcon width={16} height={16} /> : <MoonIcon width={16} height={16} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile bottom nav */}
-      <nav
-        className="proof-sidebar lg:hidden fixed bottom-0 left-0 right-0 z-50"
-        style={{
-          borderTop: "1px solid var(--border)",
-          background: "var(--bg-warm)",
-          boxShadow: "0 -12px 32px -16px rgba(0,0,0,0.25)",
-        }}
-      >
-        <div className="flex items-center justify-around px-2 py-2 max-w-lg mx-auto" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>
-          {navItems.map(({ href, icon: NavIcon, label }) => {
-            const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200"
-                style={{
-                  color: isActive ? "var(--crust)" : "var(--ink-mute)",
-                  background: isActive ? "var(--accent-surface)" : "transparent",
-                  textDecoration: "none",
-                }}
-              >
-                <NavIcon width={22} height={22} />
-                <span className="text-[10px] font-medium tracking-wide">{label}</span>
-              </Link>
-            );
-          })}
-          <button
-            type="button"
-            onClick={toggle}
-            className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200"
-            style={{ color: "var(--ink-mute)" }}
-          >
-            {theme === "dark" ? <SunIcon width={20} height={20} /> : <MoonIcon width={20} height={20} />}
-            <span className="text-[10px] font-medium tracking-wide">Theme</span>
-          </button>
-        </div>
-      </nav>
+      )}
     </>
   );
 }

@@ -4,19 +4,18 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase, type BakeSession } from "@/lib/supabase";
 import { getRecipeById } from "@/data/recipes";
-import { PageHeader } from "@/components/ui/page-header";
-import { Chip } from "@/components/ui/chip";
-import { Pill } from "@/components/ui/pill";
-import { Star } from "lucide-react";
-import { Icon } from "@/components/illustrations/icons";
-import { BreadIllustration } from "@/components/illustrations/bread-illustration";
 import { format } from "date-fns";
+
+const filterItems = ["all", "completed", "in-progress"] as const;
+const filterLabels: Record<string, string> = {
+  all: "All",
+  completed: "Completed",
+  "in-progress": "In Progress",
+};
 
 export default function JournalPage() {
   const [bakes, setBakes] = useState<BakeSession[]>([]);
-  const [filter, setFilter] = useState<"all" | "completed" | "in-progress">(
-    "all"
-  );
+  const [filter, setFilter] = useState<"all" | "completed" | "in-progress">("all");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,104 +46,205 @@ export default function JournalPage() {
   }, {});
 
   return (
-    <div className="anim-rise proof-page">
-      <div className="max-w-6xl mx-auto">
-        <PageHeader title="Journal" subtitle="Every loaf tells a story." />
+    <div style={{ padding: "0 var(--pad-x) var(--pad-y)" }}>
 
-        {/* Filter */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 32, paddingLeft: 20, paddingRight: 20 }}>
-          {(["all", "completed", "in-progress"] as const).map((f) => (
-            <Chip key={f} active={filter === f} onClick={() => setFilter(f)}>
-              {f === "all" ? "All" : f === "completed" ? "Completed" : "In Progress"}
-            </Chip>
+      {/* Header */}
+      <section style={{ padding: "calc(var(--pad-y) * .8) 0 calc(var(--pad-y) * .5)" }}>
+        <div className="eyebrow" style={{ marginBottom: 18, display: "flex", gap: 14 }}>
+          <span className="mono" style={{ color: "var(--accent)" }}>§ Journal</span>
+          <span>Field notes from a working kitchen</span>
+        </div>
+        <h1 style={{
+          fontFamily: "var(--serif-display)",
+          fontWeight: 300,
+          fontSize: "clamp(48px, 8vw, 120px)",
+          lineHeight: .92,
+          letterSpacing: "-.03em",
+          margin: 0,
+        }}>
+          Tasting <span className="italic">notes</span>
+        </h1>
+      </section>
+
+      {/* Filter row */}
+      <div style={{
+        display: "flex",
+        alignItems: "baseline",
+        gap: 14,
+        marginBottom: 48,
+        paddingBottom: 18,
+        borderBottom: ".5px solid var(--hairline)",
+      }}>
+        <div className="eyebrow" style={{ minWidth: 60, fontSize: 10.5 }}>Filter</div>
+        <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
+          {filterItems.map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setFilter(f)}
+              style={{
+                fontFamily: "var(--serif-display)",
+                fontStyle: filter === f ? "italic" : "normal",
+                fontSize: 16,
+                color: filter === f ? "var(--ink)" : "var(--muted)",
+                borderBottom: filter === f ? "1px solid var(--ink)" : "1px solid transparent",
+                paddingBottom: 2,
+                background: "none",
+                border: "none",
+                borderBottomWidth: 1,
+                borderBottomStyle: "solid",
+                borderBottomColor: filter === f ? "var(--ink)" : "transparent",
+                cursor: "default",
+                transition: "color .2s ease, border-color .2s ease",
+              }}
+            >
+              {filterLabels[f]}
+            </button>
           ))}
         </div>
+      </div>
 
-        {/* Bakes List */}
-        <div className="px-5 pb-8">
-          {loading ? (
-            <div className="flex justify-center py-16">
-              <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: "var(--border)", borderTopColor: "var(--crust)" }} />
-            </div>
-          ) : bakes.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-              <div style={{ opacity: 0.4, marginBottom: 16 }}>
-                <BreadIllustration seed="empty-journal" size={140} />
+      {/* Content */}
+      {loading ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
+          <div style={{
+            width: 24, height: 24, borderRadius: "50%",
+            border: "2px solid var(--hairline)",
+            borderTopColor: "var(--accent)",
+            animation: "spin 1s linear infinite",
+          }} />
+        </div>
+      ) : bakes.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "80px 0" }}>
+          <p className="italic" style={{
+            fontFamily: "var(--serif-display)",
+            fontSize: 28,
+            color: "var(--muted)",
+            marginBottom: 12,
+          }}>
+            A blank page.
+          </p>
+          <p style={{ fontSize: 15, color: "var(--muted-2)" }}>
+            Your first loaf is calling.
+          </p>
+        </div>
+      ) : (
+        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+          {Object.entries(grouped).map(([month, monthBakes]) => (
+            <li key={month} style={{ marginBottom: 48 }}>
+              {/* Month header */}
+              <div className="eyebrow" style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                marginBottom: 24,
+              }}>
+                <span className="mono" style={{ color: "var(--accent)" }}>§</span>
+                <span>{month}</span>
+                <span style={{ flex: 1, height: 1, background: "var(--hairline)" }} />
               </div>
-              <div className="display" style={{ fontSize: 30, marginBottom: 8 }}>A blank page.</div>
-              <div style={{ fontSize: 14, color: 'var(--ink-mute)', marginBottom: 8 }}>your first loaf is calling.</div>
-            </div>
-          ) : (
-            Object.entries(grouped).map(([month, monthBakes]) => (
-              <div key={month} className="mb-8">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                  <Icon.calendar width={13} height={13} style={{ color: 'var(--ink-mute)' }} />
-                  <span className="label" style={{ whiteSpace: 'nowrap' }}>{month}</span>
-                  <div style={{ flex: 1, height: 1, background: 'var(--border)', marginLeft: 6 }} />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-                  {monthBakes.map((bake) => {
-                    const recipe = getRecipeById(bake.recipe_id);
-                    return (
+
+              {/* Bake entries */}
+              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                {monthBakes.map((bake) => {
+                  const recipe = getRecipeById(bake.recipe_id);
+                  return (
+                    <li key={bake.id}>
                       <Link
-                        key={bake.id}
                         href={`/journal/${bake.id}`}
-                        className="block"
-                        style={{ textDecoration: 'none', color: 'inherit' }}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "90px 1fr",
+                          gap: 28,
+                          padding: "28px 0",
+                          borderBottom: ".5px solid var(--hairline)",
+                          textDecoration: "none",
+                          color: "inherit",
+                        }}
                       >
-                        <div style={{
-                          background: 'var(--surface)',
-                          border: '1px solid var(--border)',
-                          borderRadius: 'var(--radius)',
-                          padding: 16,
-                          display: 'grid',
-                          gridTemplateColumns: '60px 1fr auto auto',
-                          gap: 16,
-                          alignItems: 'center',
-                          transition: 'transform 0.2s var(--ease-bounce), border-color 0.2s',
-                        }}>
-                          <div style={{
-                            width: 60, height: 60, borderRadius: 12,
-                            background: 'var(--surface-3)',
-                            display: 'grid', placeItems: 'center',
+                        {/* Date column */}
+                        <div>
+                          <div className="mono" style={{
+                            fontSize: 11,
+                            letterSpacing: ".16em",
+                            color: "var(--muted)",
+                            textTransform: "uppercase",
                           }}>
-                            <BreadIllustration seed={bake.recipe_id} size={48} />
+                            {format(new Date(bake.started_at), "MMM d")}
                           </div>
-                          <div>
-                            <div style={{ fontWeight: 600, marginBottom: 4 }}>{recipe?.title || bake.recipe_id}</div>
-                            <div style={{ fontSize: 12, color: 'var(--ink-mute)' }}>
-                              {format(new Date(bake.started_at), "EEE, MMM d · h:mm a")}
+                          {bake.overall_rating && (
+                            <div className="mono" style={{
+                              fontSize: 12,
+                              color: "var(--accent)",
+                              marginTop: 6,
+                              letterSpacing: ".1em",
+                            }}>
+                              {"★".repeat(bake.overall_rating)}
+                              <span style={{ color: "var(--hairline-2)" }}>
+                                {"★".repeat(5 - bake.overall_rating)}
+                              </span>
                             </div>
-                            {bake.overall_notes && (
-                              <div style={{ fontSize: 14, color: 'var(--ink-soft)', marginTop: 4 }}>
-                                &quot;{bake.overall_notes}&quot;
-                              </div>
-                            )}
+                          )}
+                          {bake.status === "in-progress" && (
+                            <div style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              marginTop: 8,
+                            }}>
+                              <span style={{
+                                width: 6, height: 6, borderRadius: "50%",
+                                background: "var(--accent)",
+                                animation: "pulse 2s ease-in-out infinite",
+                              }} />
+                              <span className="mono" style={{ fontSize: 9, color: "var(--accent)", letterSpacing: ".12em", textTransform: "uppercase" }}>
+                                Active
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Content column */}
+                        <div>
+                          <h3 style={{
+                            fontFamily: "var(--serif-display)",
+                            fontSize: "clamp(22px, 2.5vw, 28px)",
+                            fontWeight: 400,
+                            marginBottom: 10,
+                            margin: 0,
+                          }}>
+                            {recipe?.title || bake.recipe_id}
+                          </h3>
+                          <div className="mono" style={{
+                            fontSize: 11,
+                            color: "var(--muted)",
+                            letterSpacing: ".1em",
+                            marginTop: 4,
+                          }}>
+                            {format(new Date(bake.started_at), "h:mm a")}
+                            {bake.status === "completed" && " · completed"}
                           </div>
-                          <div>
-                            {bake.overall_rating && (
-                              <div style={{ display: 'flex', gap: 2 }}>
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                  star <= bake.overall_rating!
-                                    ? <Star key={star} size={12} fill="var(--crust)" stroke="var(--crust)" />
-                                    : <Star key={star} size={12} stroke="var(--border)" fill="none" />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <Pill tone={bake.status === "completed" ? "beginner" : "intermediate"}>
-                            {bake.status === "completed" ? "✓ done" : "◐ in progress"}
-                          </Pill>
+                          {bake.overall_notes && (
+                            <p className="italic" style={{
+                              fontSize: 17,
+                              color: "var(--ink-2)",
+                              lineHeight: 1.55,
+                              maxWidth: 760,
+                              marginTop: 10,
+                            }}>
+                              &ldquo;{bake.overall_notes}&rdquo;
+                            </p>
+                          )}
                         </div>
                       </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
