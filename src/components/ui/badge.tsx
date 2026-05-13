@@ -7,19 +7,19 @@ const variants = {
     border: "1px solid var(--border)",
   },
   amber: {
-    background: "rgba(232,155,60,0.12)",
+    background: "var(--accent-surface)",
     color: "var(--crust)",
-    border: "1px solid rgba(232,155,60,0.4)",
+    border: "1px solid var(--border)",
   },
   emerald: {
-    background: "rgba(107,148,98,0.15)",
-    color: "var(--leaf-soft)",
-    border: "1px solid rgba(107,148,98,0.4)",
+    background: "var(--accent-surface)",
+    color: "var(--leaf)",
+    border: "1px solid var(--border)",
   },
   rose: {
-    background: "rgba(199,90,58,0.15)",
-    color: "var(--jam-soft)",
-    border: "1px solid rgba(199,90,58,0.4)",
+    background: "var(--accent-surface)",
+    color: "var(--jam)",
+    border: "1px solid var(--border)",
   },
 };
 

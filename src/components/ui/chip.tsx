@@ -26,13 +26,13 @@ export function Chip({ active, small, children, onClick }: ChipProps) {
 
   const activeStyle: React.CSSProperties = active
     ? {
-        background: "var(--crust)",
-        border: "1px solid var(--crust)",
+        background: "var(--ink)",
+        border: "1px solid var(--ink)",
         color: "var(--bg)",
         fontWeight: 600,
       }
     : {
-        background: hovered ? "var(--surface-2)" : "var(--surface)",
+        background: hovered ? "var(--surface-2)" : "transparent",
         border: hovered
           ? "1px solid var(--border-strong)"
           : "1px solid var(--border)",

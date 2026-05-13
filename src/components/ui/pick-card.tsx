@@ -2,7 +2,6 @@
 
 import { type CSSProperties, useState } from "react";
 import { BreadIllustration } from "@/components/illustrations/bread-illustration";
-import { Pill } from "@/components/ui/pill";
 
 interface PickCardRecipe {
   id: string;
@@ -17,21 +16,13 @@ interface PickCardProps {
   onClick: () => void;
 }
 
-function difficultyTone(d: string): "beginner" | "intermediate" | "advanced" | "default" {
-  const lower = d.toLowerCase();
-  if (lower === "beginner") return "beginner";
-  if (lower === "intermediate") return "intermediate";
-  if (lower === "advanced") return "advanced";
-  return "default";
-}
-
 export function PickCard({ recipe, onClick }: PickCardProps) {
   const [hovered, setHovered] = useState(false);
 
   const buttonStyle: CSSProperties = {
     padding: 16,
-    background: "var(--surface)",
-    border: hovered ? "1px solid var(--border-strong)" : "1px solid var(--border)",
+    background: hovered ? "var(--surface-2)" : "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: "var(--radius-lg)",
     display: "flex",
     flexDirection: "row",
@@ -40,9 +31,7 @@ export function PickCard({ recipe, onClick }: PickCardProps) {
     cursor: "pointer",
     width: "100%",
     textAlign: "left",
-    transition: "all 0.25s var(--ease-out)",
-    transform: hovered ? "translateY(-2px)" : "translateY(0)",
-    boxShadow: hovered ? "var(--shadow-md)" : "none",
+    transition: "all 0.3s ease",
   };
 
   return (
@@ -53,26 +42,21 @@ export function PickCard({ recipe, onClick }: PickCardProps) {
       onMouseLeave={() => setHovered(false)}
       style={buttonStyle}
     >
-      <BreadIllustration seed={recipe.id} size={72} />
+      <BreadIllustration seed={recipe.id} size={64} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, fontSize: 14 }}>{recipe.title}</div>
+        <div style={{ fontWeight: 500, fontSize: 14 }}>{recipe.title}</div>
         <div
           style={{
             fontSize: 11,
             color: "var(--ink-mute)",
             marginTop: 4,
-            display: "flex",
-            gap: 8,
-            alignItems: "center",
+            fontFamily: "var(--font-mono)",
+            letterSpacing: "0.02em",
           }}
         >
-          <span>{recipe.totalTime}</span>
-          {recipe.hydration && <span>{recipe.hydration}</span>}
-        </div>
-        <div style={{ marginTop: 6 }}>
-          <Pill tone={difficultyTone(recipe.difficulty)}>
-            {recipe.difficulty}
-          </Pill>
+          {recipe.totalTime}
+          {recipe.hydration && ` · ${recipe.hydration}`}
+          {` · ${recipe.difficulty}`}
         </div>
       </div>
     </button>

@@ -13,24 +13,24 @@ interface StatTileProps {
 
 const toneMap: Record<Tone, { bg: string; color: string; border: string }> = {
   crust: {
-    bg: "rgba(232,155,60,0.10)",
+    bg: "var(--accent-surface)",
     color: "var(--crust)",
-    border: "rgba(232,155,60,0.3)",
+    border: "var(--border)",
   },
   leaf: {
-    bg: "rgba(107,148,98,0.10)",
+    bg: "var(--accent-surface)",
     color: "var(--leaf)",
-    border: "rgba(107,148,98,0.3)",
+    border: "var(--border)",
   },
   plum: {
-    bg: "rgba(139,90,143,0.12)",
+    bg: "var(--accent-surface)",
     color: "var(--plum)",
-    border: "rgba(139,90,143,0.3)",
+    border: "var(--border)",
   },
   butter: {
-    bg: "rgba(247,216,137,0.10)",
+    bg: "var(--accent-surface)",
     color: "var(--butter)",
-    border: "rgba(247,216,137,0.35)",
+    border: "var(--border)",
   },
 };
 
@@ -39,13 +39,11 @@ export function StatTile({ icon, value, label, tone }: StatTileProps) {
   const t = toneMap[tone];
 
   const outerStyle: CSSProperties = {
-    padding: 18,
+    padding: 20,
     background: "var(--surface)",
     borderRadius: "var(--radius-lg)",
-    border: "1px solid var(--border)",
-    transition: "all 0.25s var(--ease-out)",
-    transform: hovered ? "translateY(-3px)" : "translateY(0)",
-    boxShadow: hovered ? "var(--shadow-md)" : "none",
+    border: hovered ? "1px solid var(--border-strong)" : "1px solid var(--border)",
+    transition: "border-color 0.3s ease",
   };
 
   const badgeStyle: CSSProperties = {

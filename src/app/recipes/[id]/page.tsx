@@ -566,7 +566,7 @@ export default function RecipeDetailPage({
                     <div
                       className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5"
                       style={{
-                        background: "rgba(232,155,60,0.12)",
+                        background: "var(--accent-surface)",
                         color: "var(--crust)",
                       }}
                     >

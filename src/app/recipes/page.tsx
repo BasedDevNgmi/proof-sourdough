@@ -171,7 +171,7 @@ export default function RecipesPage() {
                 onClick={() => setShowSort(!showSort)}
                 className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all"
                 style={{
-                  background: sort !== "default" ? "rgba(232,155,60,0.12)" : "var(--surface)",
+                  background: sort !== "default" ? "var(--accent-surface)" : "var(--surface)",
                   border: sort !== "default" ? "1px solid var(--crust)" : "1px solid var(--border)",
                   color: sort !== "default" ? "var(--crust)" : "var(--ink-soft)",
                 }}
@@ -205,7 +205,7 @@ export default function RecipesPage() {
                         className="w-full text-left px-4 py-2 text-xs transition-colors"
                         style={{
                           color: sort === key ? "var(--crust)" : "var(--ink-soft)",
-                          background: sort === key ? "rgba(232,155,60,0.12)" : "transparent",
+                          background: sort === key ? "var(--accent-surface)" : "transparent",
                         }}
                       >
                         {sortLabels[key]}

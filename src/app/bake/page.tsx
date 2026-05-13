@@ -54,7 +54,7 @@ export default function BakePage() {
                     key={bake.id}
                     href={`/bake/${bake.recipe_id}?session=${bake.id}`}
                     className="flex items-center justify-between rounded-xl p-3.5 transition-colors"
-                    style={{ background: "rgba(232,155,60,0.12)", border: "1px solid rgba(232,155,60,0.12)" }}
+                    style={{ background: "var(--accent-surface)", border: "1px solid var(--border)" }}
                   >
                     <div>
                       <p className="text-sm font-medium" style={{ color: "var(--ink)" }}>

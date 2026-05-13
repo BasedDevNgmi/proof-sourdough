@@ -251,7 +251,7 @@ export function BottomNav() {
                 className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200"
                 style={{
                   color: isActive ? "var(--crust)" : "var(--ink-mute)",
-                  background: isActive ? "rgba(232,155,60,0.1)" : "transparent",
+                  background: isActive ? "var(--accent-surface)" : "transparent",
                   textDecoration: "none",
                 }}
               >

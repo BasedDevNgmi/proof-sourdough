@@ -17,13 +17,13 @@ const accentMap: Record<
   { from: string; to: string; border: string }
 > = {
   crust: {
-    from: "rgba(232,155,60,0.18)",
-    to: "rgba(232,155,60,0.04)",
+    from: "rgba(140,122,94,0.06)",
+    to: "rgba(140,122,94,0.01)",
     border: "var(--crust)",
   },
   jam: {
-    from: "rgba(199,90,58,0.18)",
-    to: "rgba(199,90,58,0.04)",
+    from: "rgba(142,94,79,0.06)",
+    to: "rgba(142,94,79,0.01)",
     border: "var(--jam-soft)",
   },
 };
@@ -59,21 +59,17 @@ export function ActionTile({
     position: "relative",
     padding: 28,
     background: `linear-gradient(135deg, ${a.from}, ${a.to}), var(--surface)`,
-    border: "1px solid var(--border)",
+    border: hovered ? "1px solid var(--border-strong)" : "1px solid var(--border)",
     borderRadius: "var(--radius-xl)",
     cursor: "pointer",
     textAlign: "left",
     overflow: "hidden",
-    minHeight: 200,
+    minHeight: 180,
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
     width: "100%",
-    transition: "all 0.25s var(--ease-out)",
-    transform: hovered
-      ? "translateY(-2px)"
-      : "translateY(0)",
-    boxShadow: hovered ? "var(--shadow-lg)" : "none",
+    transition: "border-color 0.3s ease",
   };
 
   const arrowStyle: CSSProperties = {
