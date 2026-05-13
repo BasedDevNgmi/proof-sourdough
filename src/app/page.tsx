@@ -110,7 +110,7 @@ export default function HomePage() {
         <h1 className="display" style={{ fontSize: 48, margin: 0, marginBottom: 12, letterSpacing: "-0.02em" }}>
           Dashboard.
         </h1>
-        <p style={{ fontSize: 16, fontStyle: "italic", color: "var(--ink-soft)", margin: 0 }}>
+        <p style={{ fontSize: 16, color: "var(--ink-soft)", margin: 0 }}>
           {getDailyWisdom()}
         </p>
       </div>
@@ -155,27 +155,24 @@ export default function HomePage() {
 
       {/* ── Stats ── */}
       <div className="label" style={{ marginBottom: 14 }}>This month</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 14, marginBottom: 48 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 16, marginBottom: 48 }}>
         <StatTile
           icon={<Icon.flame width={18} height={18} />}
           value={stats.total}
           label="Total bakes"
           tone="crust"
-          subtext={stats.total === 0 ? "oven is lonely" : "keep rising"}
         />
         <StatTile
           icon={<Icon.calendar width={18} height={18} />}
           value={stats.thisMonth}
           label="This month"
           tone="leaf"
-          subtext={stats.thisMonth === 0 ? "let's change that" : "on a roll"}
         />
         <StatTile
           icon={<Icon.trend width={18} height={18} />}
           value={stats.avgRating ? `${stats.avgRating}★` : "—"}
           label="Avg rating"
           tone="plum"
-          subtext={stats.avgRating ? "your harshest critic: you" : "no verdicts yet"}
         />
       </div>
 
@@ -197,7 +194,7 @@ export default function HomePage() {
       </div>
 
       {/* ── Try Something New ── */}
-      <div style={{ borderTop: "1px dashed var(--border)", paddingTop: 32, marginBottom: 28 }}>
+      <div style={{ borderTop: "1px solid var(--border)", paddingTop: 32, marginBottom: 32 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
           <Icon.sparkle width={14} height={14} style={{ color: "var(--crust)" }} />
           <div className="label">Try something new</div>

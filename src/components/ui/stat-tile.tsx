@@ -9,7 +9,6 @@ interface StatTileProps {
   value: string | number;
   label: string;
   tone: Tone;
-  subtext: string;
 }
 
 const toneMap: Record<Tone, { bg: string; color: string; border: string }> = {
@@ -35,7 +34,7 @@ const toneMap: Record<Tone, { bg: string; color: string; border: string }> = {
   },
 };
 
-export function StatTile({ icon, value, label, tone, subtext }: StatTileProps) {
+export function StatTile({ icon, value, label, tone }: StatTileProps) {
   const [hovered, setHovered] = useState(false);
   const t = toneMap[tone];
 
@@ -73,9 +72,6 @@ export function StatTile({ icon, value, label, tone, subtext }: StatTileProps) {
         {value}
       </div>
       <div className="label">{label}</div>
-      <div style={{ fontSize: 13, fontStyle: "italic", color: "var(--ink-mute)" }}>
-        {subtext}
-      </div>
     </div>
   );
 }

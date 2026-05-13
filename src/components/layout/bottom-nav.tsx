@@ -139,7 +139,6 @@ export function BottomNav() {
                     marginLeft: "auto",
                     width: 6, height: 6, borderRadius: "50%",
                     background: "var(--crust)",
-                    boxShadow: "0 0 8px var(--crust)",
                   }} />
                 )}
               </Link>

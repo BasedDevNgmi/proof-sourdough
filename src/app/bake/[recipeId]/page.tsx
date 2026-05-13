@@ -13,6 +13,7 @@ import {
   Lightbulb,
   MessageSquare,
   Save,
+  Star,
   X,
   Thermometer,
 } from "lucide-react";
@@ -493,7 +494,7 @@ export default function BakeSessionPage({
             return (
               <div className="px-3 pb-3">
                 <p className="text-[9px] font-semibold uppercase tracking-wider mb-2 px-1 flex items-center gap-1.5" style={{ color: "var(--accent)" }}>
-                  🧂 This step
+                  This step
                 </p>
                 <div className="space-y-2.5">
                   {sidebarIngs.map(({ group, label, items }) => (
@@ -744,7 +745,6 @@ export default function BakeSessionPage({
                           className="text-sm flex items-start gap-2"
                           style={{
                             color: "var(--text-secondary)",
-                            fontStyle: "italic",
                           }}
                         >
                           <Lightbulb size={14} className="mt-1 shrink-0" style={{ color: "var(--accent)" }} />
@@ -1129,7 +1129,7 @@ export default function BakeSessionPage({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="w-full lg:max-w-2xl lg:rounded-3xl rounded-t-3xl max-h-[85vh] overflow-y-auto"
+              className="w-full lg:max-w-2xl lg:rounded-3xl rounded-t-xl max-h-[85vh] overflow-y-auto"
               style={{ background: "var(--card)" }}
             >
               {/* Wizard header */}
@@ -1182,8 +1182,8 @@ export default function BakeSessionPage({
                           <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>{label}</p>
                           <div className="flex gap-1.5">
                             {[1, 2, 3, 4, 5].map((star) => (
-                              <button key={star} type="button" onClick={() => { navigator.vibrate?.(10); set(star); }} className="text-xl transition-transform active:scale-125">
-                                {star <= value ? "★" : "☆"}
+                              <button key={star} type="button" onClick={() => { navigator.vibrate?.(10); set(star); }} className="transition-transform active:scale-125">
+                                {star <= value ? <Star size={14} fill="var(--crust)" stroke="var(--crust)" /> : <Star size={14} stroke="var(--border)" fill="none" />}
                               </button>
                             ))}
                           </div>

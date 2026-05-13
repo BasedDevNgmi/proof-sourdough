@@ -26,12 +26,12 @@ export default function BakePage() {
   }, []);
 
   const categories = [
-    { id: "tutorial", label: "Start Here", emoji: "\u{1F4D6}" },
-    { id: "free-form-loaves", label: "Free-Form Loaves", emoji: "\u{1F35E}" },
-    { id: "pan-loaves", label: "Pan Loaves", emoji: "\u{1F35E}" },
-    { id: "pizzas-flatbreads", label: "Pizza & Flatbreads", emoji: "\u{1F355}" },
-    { id: "buns-rolls-more", label: "Rolls & More", emoji: "\u{1F950}" },
-    { id: "sweets", label: "Sweets", emoji: "\u{1F9C1}" },
+    { id: "tutorial", label: "Start Here" },
+    { id: "free-form-loaves", label: "Free-Form Loaves" },
+    { id: "pan-loaves", label: "Pan Loaves" },
+    { id: "pizzas-flatbreads", label: "Pizza & Flatbreads" },
+    { id: "buns-rolls-more", label: "Rolls & More" },
+    { id: "sweets", label: "Sweets" },
   ];
 
   return (
@@ -84,7 +84,6 @@ export default function BakePage() {
             return (
               <div key={cat.id} className="mb-8">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                  <span style={{ fontSize: 22 }}>{cat.emoji}</span>
                   <div className="display" style={{ fontSize: 28, whiteSpace: 'nowrap' }}>{cat.label}</div>
                   <span style={{ color: 'var(--ink-mute)', fontSize: 14 }}>({catRecipes.length})</span>
                   <div style={{ flex: 1, height: 1, background: 'var(--border)', marginLeft: 12 }} />

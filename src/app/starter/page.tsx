@@ -145,7 +145,7 @@ export default function StarterPage() {
               className="px-5 mb-8 overflow-hidden"
             >
               <div
-                className="rounded-2xl p-5 space-y-4"
+                className="rounded-xl p-5 space-y-4"
                 style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
               >
                 <div className="flex items-center justify-between">
@@ -195,7 +195,7 @@ export default function StarterPage() {
                     </div>
                   </div>
                   <div className="text-center mt-2">
-                    <span style={{ fontSize: 14, fontStyle: "italic", color: "var(--ink-soft)" }}>
+                    <span style={{ fontSize: 14, color: "var(--ink-soft)" }}>
                       {calcHydration()} hydration
                     </span>
                   </div>
@@ -266,7 +266,7 @@ export default function StarterPage() {
 
         {/* Feeding History */}
         <div className="px-5 pb-8">
-          <div className="label" style={{ marginBottom: 14 }}>Feeding History</div>
+          <div className="label" style={{ marginBottom: 16 }}>Feeding History</div>
 
           {loading ? (
             <div className="flex justify-center py-16">
@@ -274,8 +274,8 @@ export default function StarterPage() {
             </div>
           ) : feedings.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
-              <div className="display" style={{ fontSize: 24, fontStyle: "italic", marginBottom: 6 }}>No feedings yet.</div>
-              <div style={{ fontSize: 14, fontStyle: "italic", color: "var(--ink-mute)" }}>log your first feeding above.</div>
+              <div className="display" style={{ fontSize: 24, marginBottom: 8 }}>No feedings yet.</div>
+              <div style={{ fontSize: 14, color: "var(--ink-mute)" }}>log your first feeding above.</div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -337,7 +337,7 @@ export default function StarterPage() {
                   </div>
 
                   {f.notes && (
-                    <p className="mt-2" style={{ fontSize: 14, fontStyle: "italic", color: "var(--ink-soft)" }}>
+                    <p className="mt-2" style={{ fontSize: 14, color: "var(--ink-soft)" }}>
                       &quot;{f.notes}&quot;
                     </p>
                   )}

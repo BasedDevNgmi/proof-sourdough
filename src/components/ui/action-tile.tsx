@@ -71,8 +71,8 @@ export function ActionTile({
     width: "100%",
     transition: "all 0.25s var(--ease-out)",
     transform: hovered
-      ? "translateY(-4px) rotate(-0.4deg)"
-      : "translateY(0) rotate(0deg)",
+      ? "translateY(-2px)"
+      : "translateY(0)",
     boxShadow: hovered ? "var(--shadow-lg)" : "none",
   };
 

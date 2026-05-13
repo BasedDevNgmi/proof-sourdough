@@ -277,11 +277,11 @@ export default function RecipesPage() {
 
           {filtered.length === 0 && (
             <div className="text-center py-20">
-              <div className="anim-float" style={{ opacity: 0.4, marginBottom: 14 }}>
+              <div style={{ opacity: 0.4, marginBottom: 14 }}>
                 <BreadIllustration seed="empty" size={120} />
               </div>
-              <div className="display" style={{ fontSize: 28, fontStyle: 'italic', marginBottom: 6 }}>no matches.</div>
-              <div style={{ fontSize: 14, fontStyle: 'italic', color: 'var(--ink-mute)', marginBottom: 4 }}>maybe a pizza instead?</div>
+              <div className="display" style={{ fontSize: 28, marginBottom: 6 }}>no matches.</div>
+              <div style={{ fontSize: 14, color: 'var(--ink-mute)', marginBottom: 4 }}>maybe a pizza instead?</div>
               <button
                 type="button"
                 onClick={clearAll}

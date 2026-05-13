@@ -19,7 +19,7 @@ export function PageHeader({
     >
       <h1
         className="display"
-        style={{ fontSize: 68, margin: 0, marginBottom: 4, color: "var(--ink)" }}
+        style={{ fontSize: 48, margin: 0, marginBottom: 4, color: "var(--ink)" }}
       >
         {title}
       </h1>

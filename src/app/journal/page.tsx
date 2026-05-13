@@ -7,6 +7,7 @@ import { getRecipeById } from "@/data/recipes";
 import { PageHeader } from "@/components/ui/page-header";
 import { Chip } from "@/components/ui/chip";
 import { Pill } from "@/components/ui/pill";
+import { Star } from "lucide-react";
 import { Icon } from "@/components/illustrations/icons";
 import { BreadIllustration } from "@/components/illustrations/bread-illustration";
 import { format } from "date-fns";
@@ -51,7 +52,7 @@ export default function JournalPage() {
         <PageHeader title="Journal" subtitle="Every loaf tells a story." />
 
         {/* Filter */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 28, paddingLeft: 20, paddingRight: 20 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 32, paddingLeft: 20, paddingRight: 20 }}>
           {(["all", "completed", "in-progress"] as const).map((f) => (
             <Chip key={f} active={filter === f} onClick={() => setFilter(f)}>
               {f === "all" ? "All" : f === "completed" ? "Completed" : "In Progress"}
@@ -67,16 +68,16 @@ export default function JournalPage() {
             </div>
           ) : bakes.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-              <div className="anim-float" style={{ opacity: 0.4, marginBottom: 18 }}>
+              <div style={{ opacity: 0.4, marginBottom: 16 }}>
                 <BreadIllustration seed="empty-journal" size={140} />
               </div>
-              <div className="display" style={{ fontSize: 30, fontStyle: 'italic', marginBottom: 6 }}>A blank page.</div>
-              <div style={{ fontSize: 14, fontStyle: 'italic', color: 'var(--ink-mute)', marginBottom: 4 }}>your first loaf is calling.</div>
+              <div className="display" style={{ fontSize: 30, marginBottom: 8 }}>A blank page.</div>
+              <div style={{ fontSize: 14, color: 'var(--ink-mute)', marginBottom: 8 }}>your first loaf is calling.</div>
             </div>
           ) : (
             Object.entries(grouped).map(([month, monthBakes]) => (
               <div key={month} className="mb-8">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
                   <Icon.calendar width={13} height={13} style={{ color: 'var(--ink-mute)' }} />
                   <span className="label" style={{ whiteSpace: 'nowrap' }}>{month}</span>
                   <div style={{ flex: 1, height: 1, background: 'var(--border)', marginLeft: 6 }} />
@@ -95,7 +96,7 @@ export default function JournalPage() {
                           background: 'var(--surface)',
                           border: '1px solid var(--border)',
                           borderRadius: 'var(--radius)',
-                          padding: 18,
+                          padding: 16,
                           display: 'grid',
                           gridTemplateColumns: '60px 1fr auto auto',
                           gap: 16,
@@ -115,7 +116,7 @@ export default function JournalPage() {
                               {format(new Date(bake.started_at), "EEE, MMM d · h:mm a")}
                             </div>
                             {bake.overall_notes && (
-                              <div style={{ fontSize: 14, fontStyle: 'italic', color: 'var(--ink-soft)', marginTop: 4 }}>
+                              <div style={{ fontSize: 14, color: 'var(--ink-soft)', marginTop: 4 }}>
                                 &quot;{bake.overall_notes}&quot;
                               </div>
                             )}
@@ -124,7 +125,9 @@ export default function JournalPage() {
                             {bake.overall_rating && (
                               <div style={{ display: 'flex', gap: 2 }}>
                                 {[1, 2, 3, 4, 5].map((star) => (
-                                  <span key={star} style={{ fontSize: 13, color: star <= bake.overall_rating! ? 'var(--crust)' : 'var(--ink-faint)' }}>★</span>
+                                  star <= bake.overall_rating!
+                                    ? <Star key={star} size={12} fill="var(--crust)" stroke="var(--crust)" />
+                                    : <Star key={star} size={12} stroke="var(--border)" fill="none" />
                                 ))}
                               </div>
                             )}

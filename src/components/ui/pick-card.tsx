@@ -29,13 +29,13 @@ export function PickCard({ recipe, onClick }: PickCardProps) {
   const [hovered, setHovered] = useState(false);
 
   const buttonStyle: CSSProperties = {
-    padding: 18,
+    padding: 16,
     background: "var(--surface)",
     border: hovered ? "1px solid var(--border-strong)" : "1px solid var(--border)",
     borderRadius: "var(--radius-lg)",
     display: "flex",
     flexDirection: "row",
-    gap: 14,
+    gap: 16,
     alignItems: "center",
     cursor: "pointer",
     width: "100%",

@@ -142,7 +142,6 @@ export default function RecipeDetailPage({
               padding: "14px 26px", background: "var(--crust)", border: "none", color: "#1c1611",
               borderRadius: 12, fontWeight: 700, fontFamily: "inherit", fontSize: 15,
               textDecoration: "none",
-              boxShadow: "0 8px 24px -8px rgba(232,155,60,0.5)",
               transition: "transform 0.2s var(--ease-bounce)",
             }}
           >
@@ -169,21 +168,14 @@ export default function RecipeDetailPage({
         ) : (
           <div style={{
             position: "relative", aspectRatio: "1 / 1",
-            background: "radial-gradient(circle at 50% 30%, var(--surface-2), var(--surface))",
+            background: "var(--surface)",
             borderRadius: "var(--radius-xl)", border: "1px solid var(--border)",
             display: "grid", placeItems: "center", overflow: "hidden",
           }}>
-            <div style={{
-              position: "absolute", inset: 0,
-              background: `radial-gradient(circle at 20% 30%, var(--crust-soft) 1.5px, transparent 2.5px),
-                           radial-gradient(circle at 60% 70%, var(--leaf-soft) 1px, transparent 2px),
-                           radial-gradient(circle at 80% 20%, var(--jam-soft) 1px, transparent 2px)`,
-              backgroundSize: "60px 60px", opacity: 0.3,
-            }} />
             <div style={{ position: "absolute", top: 40, left: "50%", transform: "translateX(-50%)", width: 60, height: 60 }}>
               <Steam count={6} />
             </div>
-            <div className="anim-float">
+            <div>
               <BreadIllustration seed={recipe.id} size={300} />
             </div>
           </div>
@@ -207,37 +199,6 @@ export default function RecipeDetailPage({
         ))}
       </div>
 
-      {/* Meta row */}
-      <div className="flex flex-wrap gap-4 mb-6 text-xs" style={{ color: "var(--ink-mute)" }}>
-        <span className="flex items-center gap-1.5">
-          <Icon.clock width={13} height={13} /> {recipe.totalTime}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Icon.clock width={13} height={13} /> {recipe.activeTime} active
-        </span>
-        {recipe.hydration && (
-          <span className="flex items-center gap-1.5">💧 {recipe.hydration}</span>
-        )}
-        <span className="flex items-center gap-1.5">{recipe.yield}</span>
-      </div>
-
-      {/* Book source */}
-      {(() => {
-        const book = books.find(b => b.id === recipe.bookId);
-        return book ? (
-          <div className="flex items-center gap-2 mb-6 text-xs" style={{ color: "var(--ink-mute)" }}>
-            <div className="w-6 h-8 rounded-sm flex items-center justify-center" style={{ background: book.coverColor }}>
-              <span className="text-[7px] text-white/80 font-bold">{book.title.charAt(0)}</span>
-            </div>
-            <div>
-              <p className="font-medium" style={{ color: "var(--ink-soft)" }}>
-                {book.title}{book.subtitle ? `: ${book.subtitle}` : ""}
-              </p>
-              <p className="text-[11px]" style={{ color: "var(--ink-faint)" }}>by {book.author}</p>
-            </div>
-          </div>
-        ) : null;
-      })()}
 
       {/* Divider */}
       <div style={{ borderBottom: "1px solid var(--border)", marginBottom: 24 }} />
@@ -744,7 +705,7 @@ export default function RecipeDetailPage({
                               fontStyle: "italic",
                             }}
                           >
-                            <span className="mt-1 shrink-0" style={{ fontSize: 14 }}>💡</span>
+                            <Icon.sparkle width={14} height={14} className="mt-1 shrink-0" style={{ color: "var(--crust)" }} />
                             {step.tip}
                           </p>
                         </div>
@@ -772,7 +733,7 @@ export default function RecipeDetailPage({
                     border: "1px solid var(--border)",
                   }}
                 >
-                  <span className="mt-1 shrink-0" style={{ fontSize: 16 }}>💡</span>
+                  <Icon.sparkle width={16} height={16} className="mt-1 shrink-0" style={{ color: "var(--crust)" }} />
                   <p
                     className="text-sm leading-relaxed"
                     style={{

@@ -14,6 +14,7 @@ import {
   Save,
   ChefHat,
   Share2,
+  Star,
 } from "lucide-react";
 import { supabase, type BakeSession, type BakeStepLog } from "@/lib/supabase";
 import { getRecipeById } from "@/data/recipes";
@@ -245,13 +246,9 @@ export default function JournalDetailPage({
                         </p>
                         <div className="flex items-center gap-0.5 mt-1">
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <span
-                              key={star}
-                              className="text-sm"
-                              style={{ color: star <= (value || 0) ? "var(--accent)" : "var(--text-ghost)" }}
-                            >
-                              &#9733;
-                            </span>
+                            star <= (value || 0)
+                              ? <Star key={star} size={14} fill="var(--crust)" stroke="var(--crust)" />
+                              : <Star key={star} size={14} stroke="var(--border)" fill="none" />
                           ))}
                         </div>
                       </div>
