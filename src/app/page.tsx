@@ -16,6 +16,11 @@ import { supabase, type BakeSession } from "@/lib/supabase";
 import { recipes, getRecipeById } from "@/data/recipes";
 import { formatDistanceToNow } from "date-fns";
 
+const fadeIn = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+};
+
 export default function HomePage() {
   const [recentBakes, setRecentBakes] = useState<BakeSession[]>([]);
   const [activeBake, setActiveBake] = useState<BakeSession | null>(null);
@@ -74,58 +79,93 @@ export default function HomePage() {
   return (
     <div className="min-h-screen noise">
       <div className="max-w-6xl mx-auto">
-        {/* Hero */}
+        {/* ── Hero ── */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8 }}
-          className="relative px-5 pt-16 pb-8 lg:pt-12 overflow-hidden"
+          transition={{ duration: 1 }}
+          className="relative px-6 pt-20 pb-12 lg:pt-16 lg:pb-14 overflow-hidden"
         >
-          {/* Ambient glow */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-amber-600/3 rounded-full blur-3xl pointer-events-none" />
+          {/* Ambient glow orbs — visible in dark, transparent in light via --glow-color */}
+          <div
+            className="absolute -top-10 right-0 w-80 h-80 rounded-full blur-3xl pointer-events-none"
+            style={{ background: "var(--glow-color)" }}
+          />
+          <div
+            className="absolute bottom-0 -left-10 w-60 h-60 rounded-full blur-3xl pointer-events-none"
+            style={{ background: "var(--glow-color)" }}
+          />
 
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
+            transition={{ delay: 0.15, duration: 0.6 }}
           >
-            <p className="text-stone-600 text-xs font-medium tracking-[0.2em] uppercase">
+            <p
+              className="text-[11px] font-medium tracking-[0.25em] uppercase"
+              style={{ color: "var(--text-muted)" }}
+            >
               Welcome back
             </p>
-            <h1 className="font-[family-name:var(--font-playfair)] text-5xl lg:text-6xl font-semibold tracking-tight text-stone-100 mt-2 lg:hidden">
+            <h1
+              className="font-[family-name:var(--font-playfair)] text-5xl lg:text-6xl font-semibold tracking-tight mt-3 lg:hidden"
+              style={{ color: "var(--text)" }}
+            >
               Proof
             </h1>
-            <h1 className="hidden lg:block font-[family-name:var(--font-playfair)] text-5xl font-semibold tracking-tight text-stone-100 mt-2">
+            <h1
+              className="hidden lg:block font-[family-name:var(--font-playfair)] text-5xl font-semibold tracking-tight mt-3"
+              style={{ color: "var(--text)" }}
+            >
               Dashboard
             </h1>
-            <p className="text-stone-500 text-sm mt-2 lg:text-base">
+            <p
+              className="text-sm mt-3 lg:text-base leading-relaxed max-w-sm"
+              style={{ color: "var(--text-faint)" }}
+            >
               Your sourdough companion
             </p>
           </motion.div>
         </motion.div>
 
-        {/* Active Bake Banner */}
+        {/* ── Active Bake Banner ── */}
         {activeBake && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="mx-5 mb-6"
+            transition={{ duration: 0.5 }}
+            className="mx-6 mb-8"
           >
             <Link
               href={`/bake/${activeBake.recipe_id}?session=${activeBake.id}`}
-              className="block bg-gradient-to-br from-amber-900/20 to-amber-950/10 border border-amber-800/30 rounded-2xl p-4 hover:border-amber-700/40 transition-all duration-300 glow-amber animate-shimmer"
+              className="block rounded-2xl p-5 glow-amber animate-shimmer transition-all duration-300"
+              style={{
+                background: "var(--accent-surface)",
+                border: "1px solid var(--accent-dim)",
+              }}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-2 h-2 rounded-full bg-amber-500 animate-gentle-pulse" />
-                <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-[0.15em]">
+              <div className="flex items-center gap-2.5 mb-2">
+                <div
+                  className="w-2 h-2 rounded-full animate-gentle-pulse"
+                  style={{ background: "var(--accent)" }}
+                />
+                <span
+                  className="text-[10px] font-semibold uppercase tracking-[0.15em]"
+                  style={{ color: "var(--accent)" }}
+                >
                   Bake in progress
                 </span>
               </div>
-              <p className="text-stone-200 font-medium">
+              <p
+                className="font-medium text-base"
+                style={{ color: "var(--text)" }}
+              >
                 {getRecipeById(activeBake.recipe_id)?.title || "Unknown Recipe"}
               </p>
-              <p className="text-xs text-stone-500 mt-1">
+              <p
+                className="text-xs mt-1.5"
+                style={{ color: "var(--text-faint)" }}
+              >
                 Started{" "}
                 {formatDistanceToNow(new Date(activeBake.started_at), {
                   addSuffix: true,
@@ -135,35 +175,54 @@ export default function HomePage() {
           </motion.div>
         )}
 
-        {/* Stats + Quick Actions row on desktop */}
-        <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:px-5 lg:mb-8">
+        {/* ── Stats + Quick Actions ── */}
+        <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:px-6 lg:mb-10">
           {/* Stats */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="px-5 mb-6 lg:px-0 lg:mb-0"
+            {...fadeIn}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="px-6 mb-8 lg:px-0 lg:mb-0"
           >
+            <h2
+              className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-4"
+              style={{ color: "var(--text-muted)" }}
+            >
+              Overview
+            </h2>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { icon: Flame, label: "Total Bakes", value: stats.total, accent: "text-orange-400" },
-                { icon: Clock, label: "This Month", value: stats.thisMonth, accent: "text-amber-400" },
+                { icon: Flame, label: "Total Bakes", value: stats.total },
+                { icon: Clock, label: "This Month", value: stats.thisMonth },
                 {
                   icon: TrendingUp,
                   label: "Avg Rating",
                   value: stats.avgRating || "—",
-                  accent: "text-emerald-400",
                 },
-              ].map(({ icon: Icon, label, value, accent }) => (
+              ].map(({ icon: Icon, label, value }) => (
                 <div
                   key={label}
-                  className="bg-gradient-to-b from-stone-900 to-stone-900/50 rounded-2xl p-3.5 border border-stone-800/50 card-glow"
+                  className="rounded-2xl p-4 card-glow transition-all duration-300"
+                  style={{
+                    background: "var(--card)",
+                    border: "1px solid var(--border-subtle)",
+                    boxShadow: "var(--shadow-card)",
+                  }}
                 >
-                  <Icon size={16} className={`${accent} opacity-60 mb-2`} />
-                  <p className="text-2xl font-semibold text-stone-200 tabular-nums tracking-tight">
+                  <Icon
+                    size={15}
+                    className="mb-3 opacity-50"
+                    style={{ color: "var(--accent)" }}
+                  />
+                  <p
+                    className="text-2xl font-semibold tabular-nums tracking-tight"
+                    style={{ color: "var(--text)" }}
+                  >
                     {value}
                   </p>
-                  <p className="text-[10px] text-stone-600 mt-0.5 uppercase tracking-wider font-medium">
+                  <p
+                    className="text-[10px] mt-1 uppercase tracking-wider font-medium"
+                    style={{ color: "var(--text-muted)" }}
+                  >
                     {label}
                   </p>
                 </div>
@@ -173,59 +232,104 @@ export default function HomePage() {
 
           {/* Quick Actions */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="px-5 mb-8 lg:px-0 lg:mb-0"
+            {...fadeIn}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="px-6 mb-10 lg:px-0 lg:mb-0"
           >
-            <div className="grid grid-cols-2 gap-3 h-full">
+            <h2
+              className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-4"
+              style={{ color: "var(--text-muted)" }}
+            >
+              Quick Actions
+            </h2>
+            <div className="grid grid-cols-2 gap-3 h-[calc(100%-2rem)]">
               <Link
                 href="/recipes"
-                className="group flex items-center gap-3 bg-stone-900 rounded-2xl p-4 border border-stone-800/50 active:bg-stone-800 hover:border-stone-700/60 transition-all duration-300 card-glow"
+                className="group flex flex-col justify-between rounded-2xl p-5 card-glow transition-all duration-300"
+                style={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border-subtle)",
+                  boxShadow: "var(--shadow-card)",
+                }}
               >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-900/40 to-amber-950/20 flex items-center justify-center group-hover:from-amber-900/50 transition-all">
-                  <BookOpen size={18} className="text-amber-500" />
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                  style={{ background: "var(--accent-surface)" }}
+                >
+                  <BookOpen size={18} style={{ color: "var(--accent)" }} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-stone-200">Browse</p>
-                  <p className="text-[11px] text-stone-500">
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: "var(--text)" }}
+                  >
+                    Browse
+                  </p>
+                  <p
+                    className="text-[11px] mt-0.5"
+                    style={{ color: "var(--text-faint)" }}
+                  >
                     {recipes.length} recipes
                   </p>
                 </div>
               </Link>
               <Link
                 href="/bake"
-                className="group flex items-center gap-3 bg-stone-900 rounded-2xl p-4 border border-stone-800/50 active:bg-stone-800 hover:border-stone-700/60 transition-all duration-300 card-glow"
+                className="group flex flex-col justify-between rounded-2xl p-5 card-glow transition-all duration-300"
+                style={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border-subtle)",
+                  boxShadow: "var(--shadow-card)",
+                }}
               >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-900/40 to-emerald-950/20 flex items-center justify-center group-hover:from-emerald-900/50 transition-all">
-                  <ChefHat size={18} className="text-emerald-500" />
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                  style={{ background: "var(--accent-surface)" }}
+                >
+                  <ChefHat size={18} style={{ color: "var(--accent)" }} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-stone-200">Start Bake</p>
-                  <p className="text-[11px] text-stone-500">New session</p>
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: "var(--text)" }}
+                  >
+                    Start Bake
+                  </p>
+                  <p
+                    className="text-[11px] mt-0.5"
+                    style={{ color: "var(--text-faint)" }}
+                  >
+                    New session
+                  </p>
                 </div>
               </Link>
             </div>
           </motion.div>
         </div>
 
-        {/* Recent + Suggested side by side on desktop */}
-        <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:px-5 lg:pb-8">
+        {/* ── Divider ── */}
+        <div className="mx-6 mb-10 lg:mb-12" style={{ borderTop: "1px solid var(--border-subtle)" }} />
+
+        {/* ── Recent Bakes + Suggested Recipes ── */}
+        <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:px-6 lg:pb-12">
           {/* Recent Bakes */}
           {recentBakes.length > 0 && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="px-5 mb-8 lg:px-0 lg:mb-0"
+              {...fadeIn}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              className="px-6 mb-10 lg:px-0 lg:mb-0"
             >
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-[0.12em]">
+              <div className="flex items-center justify-between mb-5">
+                <h2
+                  className="text-[10px] font-semibold uppercase tracking-[0.2em]"
+                  style={{ color: "var(--text-muted)" }}
+                >
                   Recent Bakes
                 </h2>
                 <Link
                   href="/journal"
-                  className="text-xs text-amber-500 flex items-center gap-1 hover:text-amber-400 transition-colors"
+                  className="text-xs flex items-center gap-1.5 transition-colors duration-200"
+                  style={{ color: "var(--accent)" }}
                 >
                   View all <ArrowRight size={12} />
                 </Link>
@@ -237,28 +341,45 @@ export default function HomePage() {
                     <Link
                       key={bake.id}
                       href={`/journal/${bake.id}`}
-                      className="flex items-center justify-between bg-stone-900 rounded-xl p-3.5 border border-stone-800/50 active:bg-stone-800 hover:border-stone-700/60 transition-all duration-300 card-glow"
+                      className="flex items-center justify-between rounded-xl p-4 card-glow transition-all duration-300"
+                      style={{
+                        background: "var(--card)",
+                        border: "1px solid var(--border-subtle)",
+                        boxShadow: "var(--shadow-card)",
+                      }}
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-stone-200 truncate">
+                        <p
+                          className="text-sm truncate"
+                          style={{ color: "var(--text)" }}
+                        >
                           {recipe?.title || bake.recipe_id}
                         </p>
-                        <p className="text-[11px] text-stone-500 mt-0.5">
+                        <p
+                          className="text-[11px] mt-1"
+                          style={{ color: "var(--text-faint)" }}
+                        >
                           {formatDistanceToNow(new Date(bake.started_at), {
                             addSuffix: true,
                           })}
                         </p>
                       </div>
                       {bake.overall_rating && (
-                        <div className="flex items-center gap-0.5 text-amber-500">
+                        <div
+                          className="flex items-center gap-1 ml-3"
+                          style={{ color: "var(--accent)" }}
+                        >
                           <span className="text-sm font-medium tabular-nums">
                             {bake.overall_rating}
                           </span>
-                          <span className="text-[10px]">★</span>
+                          <span className="text-[10px]">{"★"}</span>
                         </div>
                       )}
                       {bake.status === "in-progress" && (
-                        <div className="w-2 h-2 rounded-full bg-amber-500 animate-gentle-pulse" />
+                        <div
+                          className="w-2 h-2 rounded-full animate-gentle-pulse ml-3"
+                          style={{ background: "var(--accent)" }}
+                        />
                       )}
                     </Link>
                   );
@@ -269,13 +390,15 @@ export default function HomePage() {
 
           {/* Suggested Recipes */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="px-5 pb-8 lg:px-0 lg:pb-0"
+            {...fadeIn}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="px-6 pb-10 lg:px-0 lg:pb-0"
           >
-            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-[0.12em] mb-3 flex items-center gap-1.5">
-              <Sparkles size={12} className="text-amber-500/50" />
+            <h2
+              className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-5 flex items-center gap-2"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <Sparkles size={11} style={{ color: "var(--accent)", opacity: 0.5 }} />
               Try Something New
             </h2>
             <div className="space-y-2">
@@ -283,17 +406,32 @@ export default function HomePage() {
                 <Link
                   key={recipe.id}
                   href={`/recipes/${recipe.id}`}
-                  className="group flex items-center gap-3 bg-stone-900 rounded-xl p-3.5 border border-stone-800/50 active:bg-stone-800 hover:border-stone-700/60 transition-all duration-300 card-glow"
+                  className="group flex items-center gap-4 rounded-xl p-4 card-glow transition-all duration-300"
+                  style={{
+                    background: "var(--card)",
+                    border: "1px solid var(--border-subtle)",
+                    boxShadow: "var(--shadow-card)",
+                  }}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-stone-200 truncate group-hover:text-amber-50 transition-colors">
+                    <p
+                      className="text-sm truncate transition-colors duration-200"
+                      style={{ color: "var(--text)" }}
+                    >
                       {recipe.title}
                     </p>
-                    <p className="text-[11px] text-stone-500 mt-0.5">
-                      {recipe.totalTime} · {recipe.difficulty}
+                    <p
+                      className="text-[11px] mt-1"
+                      style={{ color: "var(--text-faint)" }}
+                    >
+                      {recipe.totalTime} &middot; {recipe.difficulty}
                     </p>
                   </div>
-                  <ArrowRight size={14} className="text-stone-700 group-hover:text-amber-500/50 transition-colors" />
+                  <ArrowRight
+                    size={14}
+                    className="shrink-0 transition-colors duration-200"
+                    style={{ color: "var(--text-ghost)" }}
+                  />
                 </Link>
               ))}
             </div>

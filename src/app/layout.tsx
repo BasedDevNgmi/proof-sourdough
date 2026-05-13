@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Playfair_Display } from "next/font/google";
-import { BottomNav } from "@/components/layout/bottom-nav";
+import { Providers } from "@/components/providers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -47,11 +47,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-theme="dark"
       className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-stone-950">
-        <main className="flex-1 pb-20 lg:pb-0 lg:pl-64">{children}</main>
-        <BottomNav />
+      <body className="min-h-full flex flex-col" style={{ background: "var(--bg)", color: "var(--text)" }}>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

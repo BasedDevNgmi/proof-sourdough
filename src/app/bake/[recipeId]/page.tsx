@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { getRecipeById } from "@/data/recipes";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/components/auth-provider";
 import { Timer } from "@/components/ui/timer";
 import { requestWakeLock, releaseWakeLock, reacquireOnVisibility } from "@/lib/wake-lock";
 
@@ -28,6 +29,7 @@ export default function BakeSessionPage({
   const { recipeId } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const recipe = getRecipeById(recipeId);
 
   const [sessionId, setSessionId] = useState<string | null>(
@@ -119,6 +121,7 @@ export default function BakeSessionPage({
         recipe_id: recipeId,
         book_id: recipe?.bookId || "the-perfect-loaf",
         status: "in-progress",
+        user_id: user?.id,
       })
       .select()
       .single();
@@ -136,6 +139,7 @@ export default function BakeSessionPage({
       if (sessionId) {
         await supabase.from("bake_step_logs").insert({
           session_id: sessionId,
+          user_id: user?.id,
           step_number: stepNum,
           step_title: recipe?.steps[stepNum]?.title || `Step ${stepNum + 1}`,
           completed_at: new Date().toISOString(),
@@ -200,7 +204,7 @@ export default function BakeSessionPage({
   if (!recipe) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-stone-500">Recipe not found</p>
+        <p style={{ color: "var(--text-muted)" }}>Recipe not found</p>
       </div>
     );
   }
@@ -223,27 +227,29 @@ export default function BakeSessionPage({
   const timerMinutes = parseTimerMinutes(step?.duration);
 
   return (
-    <div className="min-h-screen bg-stone-950 flex flex-col lg:pl-0">
+    <div className="min-h-screen flex flex-col lg:pl-0" style={{ background: "var(--bg)" }}>
       <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full">
         {/* Top Bar */}
         <div className="flex items-center justify-between px-4 pt-14 pb-3 lg:pt-8">
           <button
             type="button"
             onClick={() => router.push("/")}
-            className="text-stone-500 active:text-stone-300 hover:text-stone-300 transition-colors p-1"
+            className="transition-colors p-1"
+            style={{ color: "var(--text-muted)" }}
           >
             <ArrowLeft size={20} />
           </button>
           <div className="text-center">
-            <p className="text-xs text-stone-500 font-medium">{recipe.title}</p>
-            <p className="text-[10px] text-stone-600">
+            <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{recipe.title}</p>
+            <p className="text-[10px]" style={{ color: "var(--text-faint)" }}>
               Step {currentStep + 1} of {totalSteps}
             </p>
           </div>
           <button
             type="button"
             onClick={() => setShowFinishModal(true)}
-            className="text-xs text-amber-500 font-medium px-2 py-1 active:text-amber-400 hover:text-amber-400"
+            className="text-xs font-medium px-2 py-1"
+            style={{ color: "var(--accent)" }}
           >
             Finish
           </button>
@@ -251,9 +257,10 @@ export default function BakeSessionPage({
 
         {/* Progress Bar */}
         <div className="px-4 mb-4">
-          <div className="h-1 bg-stone-800 rounded-full overflow-hidden">
+          <div className="h-1 rounded-full overflow-hidden" style={{ background: "var(--card-hover)" }}>
             <motion.div
-              className="h-full bg-amber-500 rounded-full"
+              className="h-full rounded-full"
+              style={{ background: "var(--accent)" }}
               initial={{ width: 0 }}
               animate={{ width: `${progress * 100}%` }}
               transition={{ duration: 0.3 }}
@@ -276,11 +283,12 @@ export default function BakeSessionPage({
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
+                    style={
                       completedSteps.has(currentStep)
-                        ? "bg-emerald-500 text-stone-950"
-                        : "bg-amber-900/30 text-amber-500"
-                    }`}
+                        ? { background: "var(--success, #10b981)", color: "var(--bg)" }
+                        : { background: "var(--accent-muted, rgba(217,119,6,0.15))", color: "var(--accent)" }
+                    }
                   >
                     {completedSteps.has(currentStep) ? (
                       <Check size={16} />
@@ -288,12 +296,12 @@ export default function BakeSessionPage({
                       step.step
                     )}
                   </div>
-                  <h2 className="font-[family-name:var(--font-playfair)] text-xl lg:text-2xl font-semibold text-stone-100">
+                  <h2 className="font-[family-name:var(--font-playfair)] text-xl lg:text-2xl font-semibold" style={{ color: "var(--text)" }}>
                     {step.title}
                   </h2>
                 </div>
                 {step.duration && (
-                  <p className="text-xs text-stone-500 flex items-center gap-1 ml-10">
+                  <p className="text-xs flex items-center gap-1 ml-10" style={{ color: "var(--text-muted)" }}>
                     <Clock size={12} /> {step.duration}
                   </p>
                 )}
@@ -303,12 +311,12 @@ export default function BakeSessionPage({
               <div className="lg:grid lg:grid-cols-2 lg:gap-6">
                 <div>
                   {/* Instructions */}
-                  <div className="bg-stone-900 rounded-2xl p-4 border border-stone-800/50 mb-4">
-                    <p className="text-sm text-stone-300 leading-relaxed">
+                  <div className="rounded-2xl p-4 mb-4" style={{ background: "var(--card)", border: "1px solid var(--border-subtle)" }}>
+                    <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                       {step.instructions}
                     </p>
                     {step.temperature && (
-                      <p className="text-xs text-amber-500/80 mt-3 flex items-center gap-1.5">
+                      <p className="text-xs mt-3 flex items-center gap-1.5" style={{ color: "var(--accent)", opacity: 0.8 }}>
                         <Thermometer size={12} /> Target: {step.temperature}
                       </p>
                     )}
@@ -316,11 +324,12 @@ export default function BakeSessionPage({
 
                   {/* Tip */}
                   {step.tip && (
-                    <div className="bg-amber-900/10 border border-amber-800/20 rounded-xl p-3 mb-4">
-                      <p className="text-xs text-stone-400 flex items-start gap-2">
+                    <div className="rounded-xl p-3 mb-4" style={{ background: "var(--accent-muted, rgba(217,119,6,0.05))", border: "1px solid var(--accent-border, rgba(217,119,6,0.1))" }}>
+                      <p className="text-xs flex items-start gap-2" style={{ color: "var(--text-secondary)" }}>
                         <Lightbulb
                           size={14}
-                          className="text-amber-500 mt-0.5 shrink-0"
+                          className="mt-0.5 shrink-0"
+                          style={{ color: "var(--accent)" }}
                         />
                         {step.tip}
                       </p>
@@ -352,7 +361,12 @@ export default function BakeSessionPage({
                           }))
                         }
                         placeholder="How does the dough look? Any observations..."
-                        className="w-full bg-stone-900 border border-stone-800 rounded-xl p-3 text-sm text-stone-300 placeholder:text-stone-600 resize-none h-20 focus:outline-none focus:border-stone-700"
+                        className="w-full rounded-xl p-3 text-sm resize-none h-20 focus:outline-none"
+                        style={{
+                          background: "var(--card)",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
                       />
                     </motion.div>
                   )}
@@ -375,9 +389,14 @@ export default function BakeSessionPage({
                             }))
                           }
                           placeholder="Temp"
-                          className="w-24 bg-stone-900 border border-stone-800 rounded-xl px-3 py-2 text-sm text-stone-300 placeholder:text-stone-600 focus:outline-none focus:border-stone-700"
+                          className="w-24 rounded-xl px-3 py-2 text-sm focus:outline-none"
+                          style={{
+                            background: "var(--card)",
+                            border: "1px solid var(--border-subtle)",
+                            color: "var(--text-secondary)",
+                          }}
                         />
-                        <span className="text-xs text-stone-500">°C</span>
+                        <span className="text-xs" style={{ color: "var(--text-muted)" }}>°C</span>
                       </div>
                     </motion.div>
                   )}
@@ -389,22 +408,24 @@ export default function BakeSessionPage({
                 <button
                   type="button"
                   onClick={() => setShowNoteInput(!showNoteInput)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+                  style={
                     showNoteInput || stepNotes[currentStep]
-                      ? "bg-stone-700 text-stone-200"
-                      : "bg-stone-800/50 text-stone-500 hover:bg-stone-700/50"
-                  }`}
+                      ? { background: "var(--card-hover)", color: "var(--text)" }
+                      : { background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", color: "var(--text-muted)" }
+                  }
                 >
                   <MessageSquare size={12} /> Note
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowTempInput(!showTempInput)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+                  style={
                     showTempInput || stepTemps[currentStep]
-                      ? "bg-stone-700 text-stone-200"
-                      : "bg-stone-800/50 text-stone-500 hover:bg-stone-700/50"
-                  }`}
+                      ? { background: "var(--card-hover)", color: "var(--text)" }
+                      : { background: "var(--card-hover-subtle, rgba(120,113,108,0.15))", color: "var(--text-muted)" }
+                  }
                 >
                   <Thermometer size={12} /> Temp
                 </button>
@@ -419,9 +440,10 @@ export default function BakeSessionPage({
             type="button"
             onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
             disabled={currentStep === 0}
-            className="w-12 h-12 rounded-xl bg-stone-800 flex items-center justify-center disabled:opacity-30 active:bg-stone-700 hover:bg-stone-700 transition-colors"
+            className="w-12 h-12 rounded-xl flex items-center justify-center disabled:opacity-30 transition-colors"
+            style={{ background: "var(--card-hover)" }}
           >
-            <ChevronLeft size={20} className="text-stone-300" />
+            <ChevronLeft size={20} style={{ color: "var(--text-secondary)" }} />
           </button>
 
           {!completedSteps.has(currentStep) ? (
@@ -433,7 +455,8 @@ export default function BakeSessionPage({
                   setCurrentStep(currentStep + 1);
                 }
               }}
-              className="flex-1 h-12 bg-amber-500 text-stone-950 font-semibold text-sm rounded-xl flex items-center justify-center gap-2 active:bg-amber-600 hover:bg-amber-400 transition-colors"
+              className="flex-1 h-12 font-semibold text-sm rounded-xl flex items-center justify-center gap-2 transition-colors"
+              style={{ background: "var(--accent)", color: "var(--bg)" }}
             >
               <Check size={16} />
               {currentStep === totalSteps - 1 ? "Complete Last Step" : "Done — Next"}
@@ -448,7 +471,8 @@ export default function BakeSessionPage({
                   setShowFinishModal(true);
                 }
               }}
-              className="flex-1 h-12 bg-stone-800 text-stone-300 font-medium text-sm rounded-xl flex items-center justify-center gap-2 active:bg-stone-700 hover:bg-stone-700 transition-colors"
+              className="flex-1 h-12 font-medium text-sm rounded-xl flex items-center justify-center gap-2 transition-colors"
+              style={{ background: "var(--card-hover)", color: "var(--text-secondary)" }}
             >
               {currentStep === totalSteps - 1 ? "Finish Bake" : "Next Step"}
               <ChevronRight size={16} />
@@ -461,9 +485,10 @@ export default function BakeSessionPage({
               setCurrentStep(Math.min(totalSteps - 1, currentStep + 1))
             }
             disabled={currentStep === totalSteps - 1}
-            className="w-12 h-12 rounded-xl bg-stone-800 flex items-center justify-center disabled:opacity-30 active:bg-stone-700 hover:bg-stone-700 transition-colors"
+            className="w-12 h-12 rounded-xl flex items-center justify-center disabled:opacity-30 transition-colors"
+            style={{ background: "var(--card-hover)" }}
           >
-            <ChevronRight size={20} className="text-stone-300" />
+            <ChevronRight size={20} style={{ color: "var(--text-secondary)" }} />
           </button>
         </div>
 
@@ -474,13 +499,16 @@ export default function BakeSessionPage({
               key={i}
               type="button"
               onClick={() => setCurrentStep(i)}
-              className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
-                i === currentStep
-                  ? "w-4 bg-amber-500"
-                  : completedSteps.has(i)
-                  ? "bg-emerald-500"
-                  : "bg-stone-700"
+              className={`h-1.5 rounded-full transition-all duration-200 ${
+                i === currentStep ? "w-4" : "w-1.5"
               }`}
+              style={{
+                background: i === currentStep
+                  ? "var(--accent)"
+                  : completedSteps.has(i)
+                  ? "var(--success, #10b981)"
+                  : "var(--text-ghost, var(--text-faint))",
+              }}
             />
           ))}
         </div>
@@ -503,16 +531,18 @@ export default function BakeSessionPage({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="w-full lg:max-w-2xl lg:rounded-3xl bg-stone-900 rounded-t-3xl max-h-[85vh] overflow-y-auto"
+              className="w-full lg:max-w-2xl lg:rounded-3xl rounded-t-3xl max-h-[85vh] overflow-y-auto"
+              style={{ background: "var(--card)" }}
             >
-              <div className="sticky top-0 bg-stone-900 px-5 pt-4 pb-2 flex items-center justify-between border-b border-stone-800/50">
-                <h2 className="font-[family-name:var(--font-playfair)] text-lg font-semibold text-stone-100">
+              <div className="sticky top-0 px-5 pt-4 pb-2 flex items-center justify-between" style={{ background: "var(--card)", borderBottom: "1px solid var(--border-subtle)" }}>
+                <h2 className="font-[family-name:var(--font-playfair)] text-lg font-semibold" style={{ color: "var(--text)" }}>
                   Finish Bake
                 </h2>
                 <button
                   type="button"
                   onClick={() => setShowFinishModal(false)}
-                  className="text-stone-500 p-1 hover:text-stone-300"
+                  className="p-1"
+                  style={{ color: "var(--text-muted)" }}
                 >
                   <X size={20} />
                 </button>
@@ -521,7 +551,7 @@ export default function BakeSessionPage({
               <div className="px-5 py-4 space-y-5">
                 {/* Ratings */}
                 <div>
-                  <h3 className="text-xs font-medium text-stone-500 uppercase tracking-wider mb-3">
+                  <h3 className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
                     Rate Your Bake
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
@@ -531,8 +561,8 @@ export default function BakeSessionPage({
                       { label: "Crust", value: crustRating, set: setCrustRating },
                       { label: "Flavor", value: flavorRating, set: setFlavorRating },
                     ].map(({ label, value, set }) => (
-                      <div key={label} className="bg-stone-800/50 rounded-xl p-3">
-                        <p className="text-xs text-stone-500 mb-1.5">{label}</p>
+                      <div key={label} className="rounded-xl p-3" style={{ background: "var(--card-hover-subtle, rgba(120,113,108,0.15))" }}>
+                        <p className="text-xs mb-1.5" style={{ color: "var(--text-muted)" }}>{label}</p>
                         <div className="flex gap-1">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <button
@@ -552,52 +582,72 @@ export default function BakeSessionPage({
 
                 {/* Notes */}
                 <div>
-                  <h3 className="text-xs font-medium text-stone-500 uppercase tracking-wider mb-3">
+                  <h3 className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
                     Notes
                   </h3>
                   <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
                     <div>
-                      <label className="text-xs text-stone-500 mb-1 block">
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
                         What went well?
                       </label>
                       <textarea
                         value={whatWentWell}
                         onChange={(e) => setWhatWentWell(e.target.value)}
                         placeholder="Great oven spring, nice ear..."
-                        className="w-full bg-stone-800/50 border border-stone-700/50 rounded-xl p-3 text-sm text-stone-300 placeholder:text-stone-600 resize-none h-16 focus:outline-none focus:border-stone-600"
+                        className="w-full rounded-xl p-3 text-sm resize-none h-16 focus:outline-none"
+                        style={{
+                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-stone-500 mb-1 block">
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
                         What to improve?
                       </label>
                       <textarea
                         value={whatToImprove}
                         onChange={(e) => setWhatToImprove(e.target.value)}
                         placeholder="Shape was a bit loose, need more tension..."
-                        className="w-full bg-stone-800/50 border border-stone-700/50 rounded-xl p-3 text-sm text-stone-300 placeholder:text-stone-600 resize-none h-16 focus:outline-none focus:border-stone-600"
+                        className="w-full rounded-xl p-3 text-sm resize-none h-16 focus:outline-none"
+                        style={{
+                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-stone-500 mb-1 block">
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
                         Modifications from recipe
                       </label>
                       <textarea
                         value={modifications}
                         onChange={(e) => setModifications(e.target.value)}
                         placeholder="Used 80% hydration instead of 75%..."
-                        className="w-full bg-stone-800/50 border border-stone-700/50 rounded-xl p-3 text-sm text-stone-300 placeholder:text-stone-600 resize-none h-16 focus:outline-none focus:border-stone-600"
+                        className="w-full rounded-xl p-3 text-sm resize-none h-16 focus:outline-none"
+                        style={{
+                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-stone-500 mb-1 block">
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
                         Overall notes
                       </label>
                       <textarea
                         value={overallNotes}
                         onChange={(e) => setOverallNotes(e.target.value)}
                         placeholder="Any other observations..."
-                        className="w-full bg-stone-800/50 border border-stone-700/50 rounded-xl p-3 text-sm text-stone-300 placeholder:text-stone-600 resize-none h-16 focus:outline-none focus:border-stone-600"
+                        className="w-full rounded-xl p-3 text-sm resize-none h-16 focus:outline-none"
+                        style={{
+                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
                       />
                     </div>
                   </div>
@@ -605,12 +655,12 @@ export default function BakeSessionPage({
 
                 {/* Environment */}
                 <div>
-                  <h3 className="text-xs font-medium text-stone-500 uppercase tracking-wider mb-3">
+                  <h3 className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
                     Environment
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-stone-500 mb-1 block">
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
                         Flour brand
                       </label>
                       <input
@@ -618,11 +668,16 @@ export default function BakeSessionPage({
                         value={flourBrand}
                         onChange={(e) => setFlourBrand(e.target.value)}
                         placeholder="King Arthur..."
-                        className="w-full bg-stone-800/50 border border-stone-700/50 rounded-xl px-3 py-2 text-sm text-stone-300 placeholder:text-stone-600 focus:outline-none focus:border-stone-600"
+                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                        style={{
+                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-stone-500 mb-1 block">
+                      <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
                         Room temp (°C)
                       </label>
                       <input
@@ -630,7 +685,12 @@ export default function BakeSessionPage({
                         value={ambientTemp}
                         onChange={(e) => setAmbientTemp(e.target.value)}
                         placeholder="22"
-                        className="w-full bg-stone-800/50 border border-stone-700/50 rounded-xl px-3 py-2 text-sm text-stone-300 placeholder:text-stone-600 focus:outline-none focus:border-stone-600"
+                        className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                        style={{
+                          background: "var(--card-hover-subtle, rgba(120,113,108,0.15))",
+                          border: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
                       />
                     </div>
                   </div>
@@ -642,7 +702,8 @@ export default function BakeSessionPage({
                     type="button"
                     onClick={finishBake}
                     disabled={saving}
-                    className="w-full bg-amber-500 text-stone-950 font-semibold text-sm py-3 rounded-xl flex items-center justify-center gap-2 active:bg-amber-600 hover:bg-amber-400 transition-colors disabled:opacity-50"
+                    className="w-full font-semibold text-sm py-3 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                    style={{ background: "var(--accent)", color: "var(--bg)" }}
                   >
                     <Save size={16} />
                     {saving ? "Saving..." : "Save & Complete"}
@@ -650,7 +711,8 @@ export default function BakeSessionPage({
                   <button
                     type="button"
                     onClick={abandonBake}
-                    className="w-full text-stone-500 text-sm py-2 hover:text-stone-400"
+                    className="w-full text-sm py-2"
+                    style={{ color: "var(--text-muted)" }}
                   >
                     Abandon Bake
                   </button>

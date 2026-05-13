@@ -97,7 +97,7 @@ export default function JournalDetailPage({
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-stone-700 border-t-amber-500 rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: "var(--border)", borderTopColor: "var(--accent)" }} />
       </div>
     );
   }
@@ -105,7 +105,7 @@ export default function JournalDetailPage({
   if (!bake) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-stone-500">Bake not found</p>
+        <p style={{ color: "var(--text-muted)" }}>Bake not found</p>
       </div>
     );
   }
@@ -120,7 +120,8 @@ export default function JournalDetailPage({
           <button
             type="button"
             onClick={() => router.back()}
-            className="flex items-center gap-1.5 text-stone-500 text-sm mb-4 active:text-stone-300 hover:text-stone-300 transition-colors"
+            className="flex items-center gap-1.5 text-sm mb-4 transition-colors"
+            style={{ color: "var(--text-muted)" }}
           >
             <ArrowLeft size={16} /> Back
           </button>
@@ -142,7 +143,7 @@ export default function JournalDetailPage({
                 >
                   {bake.status}
                 </Badge>
-                <h1 className="font-[family-name:var(--font-playfair)] text-2xl lg:text-3xl font-semibold tracking-tight text-stone-100 mt-2">
+                <h1 className="font-[family-name:var(--font-playfair)] text-2xl lg:text-3xl font-semibold tracking-tight mt-2" style={{ color: "var(--text)" }}>
                   {recipe?.title || bake.recipe_id}
                 </h1>
               </div>
@@ -150,22 +151,23 @@ export default function JournalDetailPage({
                 <button
                   type="button"
                   onClick={() => setEditing(!editing)}
-                  className="p-2 text-stone-500 active:text-stone-300 hover:text-stone-300"
+                  className="p-2 transition-colors"
+                  style={{ color: "var(--text-muted)" }}
                 >
                   <Edit3 size={16} />
                 </button>
                 <button
                   type="button"
                   onClick={deleteBake}
-                  className="p-2 text-stone-600 active:text-rose-400 hover:text-rose-400"
+                  className="p-2 transition-colors hover:text-rose-400"
+                  style={{ color: "var(--text-faint)" }}
                 >
                   <Trash2 size={16} />
                 </button>
               </div>
             </div>
 
-            {/* Meta */}
-            <div className="flex flex-wrap gap-3 mt-3 text-xs text-stone-500">
+            <div className="flex flex-wrap gap-3 mt-3 text-xs" style={{ color: "var(--text-muted)" }}>
               <span className="flex items-center gap-1">
                 <Calendar size={12} />
                 {format(new Date(bake.started_at), "EEE, MMM d yyyy · h:mm a")}
@@ -178,11 +180,11 @@ export default function JournalDetailPage({
               )}
             </div>
 
-            {/* Bake again link */}
             {recipe && (
               <Link
                 href={`/bake/${recipe.id}`}
-                className="inline-flex items-center gap-1.5 mt-3 text-xs text-amber-500 font-medium hover:text-amber-400"
+                className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium"
+                style={{ color: "var(--accent)" }}
               >
                 <ChefHat size={12} /> Bake this again
               </Link>
@@ -190,10 +192,8 @@ export default function JournalDetailPage({
           </motion.div>
         </div>
 
-        <div className="px-5 py-4 space-y-5 pb-8">
-          {/* Desktop: two-column layout for ratings + notes */}
+        <div className="px-5 py-4 space-y-6 pb-8">
           <div className="lg:grid lg:grid-cols-2 lg:gap-6">
-            {/* Ratings */}
             {(bake.overall_rating ||
               bake.crumb_rating ||
               bake.crust_rating ||
@@ -203,7 +203,7 @@ export default function JournalDetailPage({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <h3 className="text-xs font-medium text-stone-500 uppercase tracking-wider mb-3">
+                <h3 className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
                   Ratings
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
@@ -217,22 +217,20 @@ export default function JournalDetailPage({
                     .map(({ label, value }) => (
                       <div
                         key={label}
-                        className="bg-stone-900 rounded-xl p-3 border border-stone-800/50"
+                        className="rounded-xl p-3"
+                        style={{ background: "var(--card)", border: "1px solid var(--border-subtle)" }}
                       >
-                        <p className="text-[10px] text-stone-600 uppercase tracking-wider">
+                        <p className="text-[10px] uppercase tracking-wider" style={{ color: "var(--text-faint)" }}>
                           {label}
                         </p>
                         <div className="flex items-center gap-0.5 mt-1">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <span
                               key={star}
-                              className={`text-sm ${
-                                star <= (value || 0)
-                                  ? "text-amber-500"
-                                  : "text-stone-700"
-                              }`}
+                              className="text-sm"
+                              style={{ color: star <= (value || 0) ? "var(--accent)" : "var(--text-ghost)" }}
                             >
-                              ★
+                              &#9733;
                             </span>
                           ))}
                         </div>
@@ -242,25 +240,24 @@ export default function JournalDetailPage({
               </motion.div>
             )}
 
-            {/* Environment */}
             {(bake.flour_brand || bake.ambient_temp_f) && (
               <div>
-                <h3 className="text-xs font-medium text-stone-500 uppercase tracking-wider mb-2 mt-5 lg:mt-0">
+                <h3 className="text-xs font-medium uppercase tracking-wider mb-2 mt-5 lg:mt-0" style={{ color: "var(--text-muted)" }}>
                   Environment
                 </h3>
-                <div className="bg-stone-900 rounded-xl p-3 border border-stone-800/50 space-y-2">
+                <div className="rounded-xl p-3 space-y-2" style={{ background: "var(--card)", border: "1px solid var(--border-subtle)" }}>
                   {bake.flour_brand && (
                     <div className="flex items-center gap-2 text-sm">
-                      <Wheat size={13} className="text-stone-600" />
-                      <span className="text-stone-400">Flour:</span>
-                      <span className="text-stone-200">{bake.flour_brand}</span>
+                      <Wheat size={13} style={{ color: "var(--text-faint)" }} />
+                      <span style={{ color: "var(--text-secondary)" }}>Flour:</span>
+                      <span style={{ color: "var(--text)" }}>{bake.flour_brand}</span>
                     </div>
                   )}
                   {bake.ambient_temp_f && (
                     <div className="flex items-center gap-2 text-sm">
-                      <Thermometer size={13} className="text-stone-600" />
-                      <span className="text-stone-400">Room temp:</span>
-                      <span className="text-stone-200">
+                      <Thermometer size={13} style={{ color: "var(--text-faint)" }} />
+                      <span style={{ color: "var(--text-secondary)" }}>Room temp:</span>
+                      <span style={{ color: "var(--text)" }}>
                         {bake.ambient_temp_f}°C
                       </span>
                     </div>
@@ -270,137 +267,89 @@ export default function JournalDetailPage({
             )}
           </div>
 
-          {/* Notes */}
           {editing ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="space-y-3 max-w-2xl"
             >
-              <div>
-                <label className="text-xs text-stone-500 mb-1 block">
-                  What went well
-                </label>
-                <textarea
-                  value={editWell}
-                  onChange={(e) => setEditWell(e.target.value)}
-                  className="w-full bg-stone-900 border border-stone-800 rounded-xl p-3 text-sm text-stone-300 placeholder:text-stone-600 resize-none h-20 focus:outline-none focus:border-stone-700"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-stone-500 mb-1 block">
-                  What to improve
-                </label>
-                <textarea
-                  value={editImprove}
-                  onChange={(e) => setEditImprove(e.target.value)}
-                  className="w-full bg-stone-900 border border-stone-800 rounded-xl p-3 text-sm text-stone-300 placeholder:text-stone-600 resize-none h-20 focus:outline-none focus:border-stone-700"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-stone-500 mb-1 block">
-                  Modifications
-                </label>
-                <textarea
-                  value={editMods}
-                  onChange={(e) => setEditMods(e.target.value)}
-                  className="w-full bg-stone-900 border border-stone-800 rounded-xl p-3 text-sm text-stone-300 placeholder:text-stone-600 resize-none h-20 focus:outline-none focus:border-stone-700"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-stone-500 mb-1 block">
-                  Overall notes
-                </label>
-                <textarea
-                  value={editNotes}
-                  onChange={(e) => setEditNotes(e.target.value)}
-                  className="w-full bg-stone-900 border border-stone-800 rounded-xl p-3 text-sm text-stone-300 placeholder:text-stone-600 resize-none h-20 focus:outline-none focus:border-stone-700"
-                />
-              </div>
+              {[
+                { label: "What went well", value: editWell, setter: setEditWell },
+                { label: "What to improve", value: editImprove, setter: setEditImprove },
+                { label: "Modifications", value: editMods, setter: setEditMods },
+                { label: "Overall notes", value: editNotes, setter: setEditNotes },
+              ].map(({ label, value, setter }) => (
+                <div key={label}>
+                  <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
+                    {label}
+                  </label>
+                  <textarea
+                    value={value}
+                    onChange={(e) => setter(e.target.value)}
+                    className="w-full rounded-xl p-3 text-sm resize-none h-20 focus:outline-none transition-colors"
+                    style={{ background: "var(--bg-subtle)", border: "1px solid var(--border)", color: "var(--text)" }}
+                  />
+                </div>
+              ))}
               <button
                 type="button"
                 onClick={saveEdits}
-                className="w-full md:w-auto md:px-12 bg-amber-500 text-stone-950 font-semibold text-sm py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors"
+                className="w-full md:w-auto md:px-12 font-semibold text-sm py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                style={{ background: "var(--accent)", color: "var(--bg)" }}
               >
                 <Save size={14} /> Save Changes
               </button>
             </motion.div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {bake.what_went_well && (
-                <div>
-                  <h3 className="text-xs font-medium text-emerald-500 uppercase tracking-wider mb-2">
-                    What went well
-                  </h3>
-                  <p className="text-sm text-stone-300 bg-stone-900 rounded-xl p-3 border border-stone-800/50 leading-relaxed">
-                    {bake.what_went_well}
-                  </p>
-                </div>
-              )}
-
-              {bake.what_to_improve && (
-                <div>
-                  <h3 className="text-xs font-medium text-amber-500 uppercase tracking-wider mb-2">
-                    To improve
-                  </h3>
-                  <p className="text-sm text-stone-300 bg-stone-900 rounded-xl p-3 border border-stone-800/50 leading-relaxed">
-                    {bake.what_to_improve}
-                  </p>
-                </div>
-              )}
-
-              {bake.modifications && (
-                <div>
-                  <h3 className="text-xs font-medium text-stone-500 uppercase tracking-wider mb-2">
-                    Modifications
-                  </h3>
-                  <p className="text-sm text-stone-300 bg-stone-900 rounded-xl p-3 border border-stone-800/50 leading-relaxed">
-                    {bake.modifications}
-                  </p>
-                </div>
-              )}
-
-              {bake.overall_notes && (
-                <div>
-                  <h3 className="text-xs font-medium text-stone-500 uppercase tracking-wider mb-2">
-                    Notes
-                  </h3>
-                  <p className="text-sm text-stone-300 bg-stone-900 rounded-xl p-3 border border-stone-800/50 leading-relaxed">
-                    {bake.overall_notes}
-                  </p>
-                </div>
-              )}
+              {[
+                { label: "What went well", value: bake.what_went_well, color: "#34d399" },
+                { label: "To improve", value: bake.what_to_improve, color: "var(--accent)" },
+                { label: "Modifications", value: bake.modifications, color: "var(--text-muted)" },
+                { label: "Notes", value: bake.overall_notes, color: "var(--text-muted)" },
+              ]
+                .filter((n) => n.value)
+                .map(({ label, value, color }) => (
+                  <div key={label}>
+                    <h3 className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color }}>
+                      {label}
+                    </h3>
+                    <p className="text-sm rounded-xl p-3 leading-relaxed" style={{ color: "var(--text-secondary)", background: "var(--card)", border: "1px solid var(--border-subtle)" }}>
+                      {value}
+                    </p>
+                  </div>
+                ))}
             </div>
           )}
 
-          {/* Step Logs */}
           {stepLogs.length > 0 && (
             <div>
-              <h3 className="text-xs font-medium text-stone-500 uppercase tracking-wider mb-2">
+              <h3 className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>
                 Step Log
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
                 {stepLogs.map((log) => (
                   <div
                     key={log.id}
-                    className="bg-stone-900 rounded-xl p-3 border border-stone-800/50"
+                    className="rounded-xl p-3"
+                    style={{ background: "var(--card)", border: "1px solid var(--border-subtle)" }}
                   >
                     <div className="flex items-center justify-between">
-                      <p className="text-sm text-stone-200 font-medium">
+                      <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
                         {log.step_title}
                       </p>
                       {log.completed_at && (
-                        <p className="text-[10px] text-stone-600">
+                        <p className="text-[10px]" style={{ color: "var(--text-faint)" }}>
                           {format(new Date(log.completed_at), "h:mm a")}
                         </p>
                       )}
                     </div>
                     {log.notes && (
-                      <p className="text-xs text-stone-400 mt-1">{log.notes}</p>
+                      <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>{log.notes}</p>
                     )}
                     {log.temperature_reading && (
-                      <p className="text-xs text-amber-500/70 mt-1">
-                        🌡️ {log.temperature_reading}°C
+                      <p className="text-xs mt-1" style={{ color: "var(--accent)" }}>
+                        {log.temperature_reading}°C
                       </p>
                     )}
                   </div>

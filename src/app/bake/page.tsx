@@ -25,12 +25,12 @@ export default function BakePage() {
   }, []);
 
   const categories = [
-    { id: "tutorial", label: "Start Here", emoji: "📖" },
-    { id: "free-form-loaves", label: "Free-Form Loaves", emoji: "🍞" },
-    { id: "pan-loaves", label: "Pan Loaves", emoji: "🍞" },
-    { id: "pizzas-flatbreads", label: "Pizza & Flatbreads", emoji: "🍕" },
-    { id: "buns-rolls-more", label: "Rolls & More", emoji: "🥐" },
-    { id: "sweets", label: "Sweets", emoji: "🧁" },
+    { id: "tutorial", label: "Start Here", emoji: "\u{1F4D6}" },
+    { id: "free-form-loaves", label: "Free-Form Loaves", emoji: "\u{1F35E}" },
+    { id: "pan-loaves", label: "Pan Loaves", emoji: "\u{1F35E}" },
+    { id: "pizzas-flatbreads", label: "Pizza & Flatbreads", emoji: "\u{1F355}" },
+    { id: "buns-rolls-more", label: "Rolls & More", emoji: "\u{1F950}" },
+    { id: "sweets", label: "Sweets", emoji: "\u{1F9C1}" },
   ];
 
   return (
@@ -41,8 +41,8 @@ export default function BakePage() {
         {/* Active Bakes */}
         {activeBakes.length > 0 && (
           <div className="px-5 mb-6">
-            <h2 className="text-xs font-medium text-amber-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-amber-500 animate-gentle-pulse" />
+            <h2 className="text-xs font-medium uppercase tracking-wider mb-3 flex items-center gap-1.5" style={{ color: "var(--accent)" }}>
+              <div className="w-2 h-2 rounded-full animate-gentle-pulse" style={{ background: "var(--accent)" }} />
               In Progress
             </h2>
             <div className="space-y-2 max-w-xl">
@@ -52,20 +52,21 @@ export default function BakePage() {
                   <Link
                     key={bake.id}
                     href={`/bake/${bake.recipe_id}?session=${bake.id}`}
-                    className="flex items-center justify-between bg-amber-900/15 border border-amber-800/20 rounded-xl p-3.5 active:bg-amber-900/25 hover:bg-amber-900/25 transition-colors"
+                    className="flex items-center justify-between rounded-xl p-3.5 transition-colors"
+                    style={{ background: "var(--accent-surface)", border: "1px solid var(--accent-surface)" }}
                   >
                     <div>
-                      <p className="text-sm font-medium text-stone-200">
+                      <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
                         {recipe?.title || bake.recipe_id}
                       </p>
-                      <p className="text-[11px] text-stone-500 mt-0.5">
+                      <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>
                         Started{" "}
                         {formatDistanceToNow(new Date(bake.started_at), {
                           addSuffix: true,
                         })}
                       </p>
                     </div>
-                    <ArrowRight size={14} className="text-amber-500" />
+                    <ArrowRight size={14} style={{ color: "var(--accent)" }} />
                   </Link>
                 );
               })}
@@ -85,12 +86,12 @@ export default function BakePage() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: catIdx * 0.08 }}
-                className="mb-6"
+                className="mb-8"
               >
-                <h2 className="text-sm font-medium text-stone-400 mb-3 flex items-center gap-2">
+                <h2 className="text-sm font-medium mb-3 flex items-center gap-2" style={{ color: "var(--text-secondary)" }}>
                   <span>{cat.emoji}</span>
                   {cat.label}
-                  <span className="text-stone-600 text-xs">
+                  <span className="text-xs" style={{ color: "var(--text-faint)" }}>
                     ({catRecipes.length})
                   </span>
                 </h2>
@@ -99,14 +100,15 @@ export default function BakePage() {
                     <Link
                       key={recipe.id}
                       href={`/bake/${recipe.id}`}
-                      className="flex items-center justify-between bg-stone-900 rounded-xl p-3 border border-stone-800/50 active:bg-stone-800 hover:bg-stone-800/80 transition-colors"
+                      className="flex items-center justify-between rounded-xl p-3 transition-all duration-200 card-glow"
+                      style={{ background: "var(--card)", border: "1px solid var(--border-subtle)" }}
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-stone-200 truncate">
+                        <p className="text-sm truncate" style={{ color: "var(--text)" }}>
                           {recipe.title}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[11px] text-stone-500 flex items-center gap-1">
+                          <span className="text-[11px] flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
                             <Clock size={10} /> {recipe.totalTime}
                           </span>
                           <Badge
@@ -122,7 +124,7 @@ export default function BakePage() {
                           </Badge>
                         </div>
                       </div>
-                      <ChefHat size={16} className="text-stone-600 shrink-0" />
+                      <ChefHat size={16} className="shrink-0" style={{ color: "var(--text-faint)" }} />
                     </Link>
                   ))}
                 </div>

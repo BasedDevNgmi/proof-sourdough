@@ -3,10 +3,17 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+})
 
 export type BakeSession = {
   id: string
+  user_id: string
   recipe_id: string
   book_id: string
   started_at: string
@@ -16,7 +23,6 @@ export type BakeSession = {
   crumb_rating: number | null
   crust_rating: number | null
   flavor_rating: number | null
-  // DB columns keep _f suffix but we store Celsius values
   ambient_temp_f: number | null
   humidity_percent: number | null
   dough_temp_f: number | null
@@ -36,10 +42,8 @@ export type BakeSession = {
   updated_at: string
 }
 
-// UI-facing aliases for clarity
 export type { BakeSession as BakeSessionRow }
 
-// Helper to access ambient temp as Celsius
 export function getAmbientTempC(session: BakeSession): number | null {
   return session.ambient_temp_f
 }
@@ -47,6 +51,7 @@ export function getAmbientTempC(session: BakeSession): number | null {
 export type BakeStepLog = {
   id: string
   session_id: string
+  user_id: string
   step_number: number
   step_title: string
   started_at: string
@@ -60,6 +65,7 @@ export type BakeStepLog = {
 export type BakePhoto = {
   id: string
   session_id: string
+  user_id: string
   photo_url: string
   caption: string | null
   stage: string | null

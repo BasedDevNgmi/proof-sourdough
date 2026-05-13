@@ -27,6 +27,7 @@ export interface Recipe {
   bookId: string;
   title: string;
   subtitle?: string;
+  image?: string;
   category: RecipeCategory;
   description: string;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
@@ -2072,6 +2073,73 @@ function generateHartRecipes(): Recipe[] {
 // ═══════════════════════════════════════
 // HELPER FUNCTIONS
 // ═══════════════════════════════════════
+
+const recipeImages: Record<string, string> = {
+  'hart-super-seed-rye': '/recipes/hart/329_Hart_9780593234297_art_r1.jpg',
+  'hart-danish-rye': '/recipes/hart/415_Hart_9780593234297_art_r1.jpg',
+  'hart-caraway-rye': '/recipes/hart/439_Hart_9780593234297_art_r1.jpg',
+  'hart-100-rye': '/recipes/hart/438_Hart_9780593234297_art_r1.jpg',
+  'hart-dark-ale-rye': '/recipes/hart/621_Hart_9780593234297_art_r1.jpg',
+  'hart-marble-rye': '/recipes/hart/046_Hart_9780593234297_art_r1.jpg',
+  'hart-fig-walnut-rye': '/recipes/hart/627_Hart_9780593234297_art_r1.jpg',
+  'hart-pumpernickel': '/recipes/hart/623_Hart_9780593234297_art_r1.jpg',
+  'hart-local-grain-pan': '/recipes/hart/620_Hart_9780593234297_art_r1.jpg',
+  'hart-city-loaf': '/recipes/hart/538_Hart_9780593234297_art_r1.jpg',
+  'hart-sesame-city': '/recipes/hart/012_Hart_9780593234297_art_r1.jpg',
+  'hart-olive-city': '/recipes/hart/262_Hart_9780593234297_art_r1.jpg',
+  'hart-walnut-city': '/recipes/hart/251_Hart_9780593234297_art_r1.jpg',
+  'hart-polenta-city': '/recipes/hart/078_Hart_9780593234297_art_r1.jpg',
+  'hart-honey-walnut-ww-city': '/recipes/hart/076_Hart_9780593234297_art_r1.jpg',
+  'hart-barley-loaf': '/recipes/hart/485_Hart_9780593234297_art_r1.jpg',
+  'hart-oat-porridge-loaf': '/recipes/hart/177_Hart_9780593234297_art_r1.jpg',
+  'hart-spelt-loaf': '/recipes/hart/479_Hart_9780593234297_art_r1.jpg',
+  'hart-triple-rye': '/recipes/hart/180_Hart_9780593234297_art_r1.jpg',
+  'hart-einkorn-loaf': '/recipes/hart/490_Hart_9780593234297_art_r1.jpg',
+  'hart-kamut-loaf': '/recipes/hart/179_Hart_9780593234297_art_r1.jpg',
+  'hart-corn-loaf': '/recipes/hart/136_Hart_9780593234297_art_r1.jpg',
+  'hart-buckwheat-loaf': '/recipes/hart/579_Hart_9780593234297_art_r1.jpg',
+  'hart-flour-tortillas': '/recipes/hart/3.jpg',
+  'hart-naan': '/recipes/hart/127_Hart_9780593234297_art_r1.jpg',
+  'hart-pita': '/recipes/hart/667_Hart_9780593234297_art_r1.jpg',
+  'hart-flatbread': '/recipes/hart/4.jpg',
+  'hart-pain-de-mie': '/recipes/hart/057_Hart_9780593234297_art_r1.jpg',
+  'hart-focaccia': '/recipes/hart/330_Hart_9780593234297_art_r1.jpg',
+  'hart-ciabatta': '/recipes/hart/699_Hart_9780593234297_art_r1.jpg',
+  'hart-roman-pizza': '/recipes/hart/671_Hart_9780593234297_art_r1.jpg',
+  'hart-pizza-dough': '/recipes/hart/671_Hart_9780593234297_art_r1.jpg',
+  'hart-english-bloomer': '/recipes/hart/001_Hart_9780593234297_art_r1.jpg',
+  'hart-morning-buns': '/recipes/hart/503_Hart_9780593234297_art_r1.jpg',
+  'hart-fougasse': '/recipes/hart/503_Hart_9780593234297_art_r1.jpg',
+  'hart-baguettes': '/recipes/hart/507_Hart_9780593234297_art_r1.jpg',
+  'hart-grissini': '/recipes/hart/019_Hart_9780593234297_art_r1.jpg',
+  'hart-skillet-bread': '/recipes/hart/593_Hart_9780593234297_art_r1.jpg',
+  'hart-sourdough-crumpets': '/recipes/hart/130_Hart_9780593234297_art_r1.jpg',
+  'hart-crackers': '/recipes/hart/210_Hart_9780593234297_art_r1.jpg',
+  'hart-cracked-rye-discard': '/recipes/hart/366_Hart_9780593234297_art_r1.jpg',
+  'hart-brioche': '/recipes/hart/710_Hart_9780593234297_art_r1.jpg',
+  'hart-chocolate-babka': '/recipes/hart/598_Hart_9780593234297_art_r1.jpg',
+  'hart-milk-bread': '/recipes/hart/665_Hart_9780593234297_art_r1.jpg',
+  'hart-hot-cross-buns': '/recipes/hart/721_Hart_9780593234297_art_r1.jpg',
+  'hart-cinnamon-swirl': '/recipes/hart/391_Hart_9780593234297_art_r1.jpg',
+  'hart-sticky-buns': '/recipes/hart/5.jpg',
+  'hart-croissants': '/recipes/hart/240_Hart_9780593234297_art_r1.jpg',
+  'hart-pain-au-chocolat': '/recipes/hart/112_Hart_9780593234297_art_r1.jpg',
+  'hart-challah': '/recipes/hart/693_Hart_9780593234297_art_r1.jpg',
+  'hart-fruit-bread': '/recipes/hart/691_Hart_9780593234297_art_r1.jpg',
+  'hart-stollen': '/recipes/hart/296_Hart_9780593234297_art_r1.jpg',
+  'hart-classic-panettone': '/recipes/hart/296_Hart_9780593234297_art_r1.jpg',
+  'hart-honey-oat-pan': '/recipes/hart/063_Hart_9780593234297_art_r1.jpg',
+  'hart-whole-wheat-pan': '/recipes/hart/552_Hart_9780593234297_art_r1.jpg',
+  'hart-sourdough-pancakes': '/recipes/hart/130_Hart_9780593234297_art_r1.jpg',
+  'hart-breadcrumbs': '/recipes/hart/529_Hart_9780593234297_art_r1.jpg',
+  'hart-stuffing': '/recipes/hart/582_Hart_9780593234297_art_r2.jpg',
+};
+
+for (const recipe of recipes) {
+  if (recipeImages[recipe.id]) {
+    recipe.image = recipeImages[recipe.id];
+  }
+}
 
 export function getRecipeById(id: string): Recipe | undefined {
   return recipes.find((r) => r.id === id);

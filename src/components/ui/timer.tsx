@@ -44,7 +44,6 @@ export function Timer({
   onCompleteRef.current = onComplete;
   const completedRef = useRef(false);
 
-  // Restore state from localStorage on mount
   useEffect(() => {
     requestNotificationPermission();
 
@@ -70,7 +69,6 @@ export function Timer({
             }
           }
         } else if (!wasRunning && storedEnd) {
-          // Was paused — restore remaining time
           const left = Math.max(0, Math.ceil((storedEnd - Date.now()) / 1000));
           setRemaining(left > 0 ? left : totalSeconds);
         }
@@ -80,7 +78,6 @@ export function Timer({
     }
   }, [lsKey, totalSeconds, label]);
 
-  // Persist state changes to localStorage
   useEffect(() => {
     if (running && endTime) {
       localStorage.setItem(lsKey, JSON.stringify({ endTime, running: true }));
@@ -90,7 +87,6 @@ export function Timer({
     }
   }, [running, endTime, remaining, lsKey, totalSeconds]);
 
-  // Tick loop — calculates from endTime so it works after backgrounding
   useEffect(() => {
     if (!running || !endTime) return;
 
@@ -115,7 +111,6 @@ export function Timer({
     return () => clearInterval(interval);
   }, [running, endTime, lsKey, label]);
 
-  // Also recalculate on visibility change (tab/app comes back to foreground)
   useEffect(() => {
     const handler = () => {
       if (document.visibilityState === "visible" && running && endTime) {
@@ -173,11 +168,11 @@ export function Timer({
   return (
     <div className="flex flex-col items-center gap-4">
       {label && (
-        <span className="text-[10px] text-stone-600 font-medium uppercase tracking-wider">{label}</span>
+        <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: "var(--text-faint)" }}>{label}</span>
       )}
       <div className="relative w-32 h-32">
         {running && (
-          <div className="absolute inset-0 rounded-full bg-amber-500/5 blur-xl animate-gentle-pulse" />
+          <div className="absolute inset-0 rounded-full blur-xl animate-gentle-pulse" style={{ background: "var(--accent-surface)" }} />
         )}
         <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
           <circle
@@ -185,35 +180,31 @@ export function Timer({
             cy="50"
             r={radius}
             fill="none"
-            stroke="currentColor"
             strokeWidth="2"
-            className="text-stone-800/50"
+            style={{ stroke: "var(--border)" }}
           />
           <circle
             cx="50"
             cy="50"
             r={radius}
             fill="none"
-            stroke="currentColor"
             strokeWidth="2.5"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
-            className={`transition-all duration-1000 ease-linear ${
-              isComplete ? "text-emerald-400" : "text-amber-500"
-            }`}
+            className="transition-all duration-1000 ease-linear"
+            style={{ stroke: isComplete ? "#34d399" : "var(--accent)" }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span
-            className={`font-mono text-2xl font-light tabular-nums tracking-wider ${
-              isComplete ? "text-emerald-400" : "text-stone-200"
-            } ${running ? "animate-gentle-pulse" : ""}`}
+            className={`font-mono text-2xl font-light tabular-nums tracking-wider ${running ? "animate-gentle-pulse" : ""}`}
+            style={{ color: isComplete ? "#34d399" : "var(--text)" }}
           >
             {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
           </span>
           {isComplete && (
-            <span className="text-[9px] text-emerald-500/80 uppercase tracking-widest mt-1">Done</span>
+            <span className="text-[9px] uppercase tracking-widest mt-1" style={{ color: "rgba(52, 211, 153, 0.8)" }}>Done</span>
           )}
         </div>
       </div>
@@ -221,24 +212,24 @@ export function Timer({
         <button
           type="button"
           onClick={() => (running ? pause() : start())}
-          className={`flex items-center justify-center w-11 h-11 rounded-full transition-all duration-200 ${
-            running
-              ? "bg-stone-800 hover:bg-stone-700"
-              : "bg-gradient-to-b from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500"
-          }`}
+          className="flex items-center justify-center w-11 h-11 rounded-full transition-all duration-200"
+          style={{
+            background: running ? "var(--bg-subtle)" : "var(--accent)",
+          }}
         >
           {running ? (
-            <Pause size={16} className="text-stone-300" />
+            <Pause size={16} style={{ color: "var(--text-secondary)" }} />
           ) : (
-            <Play size={16} className="text-stone-950 ml-0.5" />
+            <Play size={16} className="ml-0.5" style={{ color: "var(--bg)" }} />
           )}
         </button>
         <button
           type="button"
           onClick={reset}
-          className="flex items-center justify-center w-11 h-11 rounded-full bg-stone-800/50 hover:bg-stone-800 transition-colors"
+          className="flex items-center justify-center w-11 h-11 rounded-full transition-colors"
+          style={{ background: "var(--accent-surface)" }}
         >
-          <RotateCcw size={14} className="text-stone-400" />
+          <RotateCcw size={14} style={{ color: "var(--text-secondary)" }} />
         </button>
       </div>
     </div>
