@@ -48,7 +48,7 @@ export default function JournalPage() {
   return (
     <div className="anim-rise proof-page">
       <div className="max-w-6xl mx-auto">
-        <PageHeader title="Journal" subtitle="Every loaf tells a story." scriptTag="even the flat ones." />
+        <PageHeader title="Journal" subtitle="Every loaf tells a story." />
 
         {/* Filter */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 28, paddingLeft: 20, paddingRight: 20 }}>
@@ -71,7 +71,7 @@ export default function JournalPage() {
                 <BreadIllustration seed="empty-journal" size={140} />
               </div>
               <div className="display" style={{ fontSize: 30, fontStyle: 'italic', marginBottom: 6 }}>A blank page.</div>
-              <div className="script" style={{ fontSize: 20, color: 'var(--crust)', marginBottom: 4 }}>your first loaf is calling.</div>
+              <div style={{ fontSize: 14, fontStyle: 'italic', color: 'var(--ink-mute)', marginBottom: 4 }}>your first loaf is calling.</div>
             </div>
           ) : (
             Object.entries(grouped).map(([month, monthBakes]) => (
@@ -115,7 +115,7 @@ export default function JournalPage() {
                               {format(new Date(bake.started_at), "EEE, MMM d · h:mm a")}
                             </div>
                             {bake.overall_notes && (
-                              <div className="script" style={{ fontSize: 16, color: 'var(--ink-soft)', marginTop: 4 }}>
+                              <div style={{ fontSize: 14, fontStyle: 'italic', color: 'var(--ink-soft)', marginTop: 4 }}>
                                 &quot;{bake.overall_notes}&quot;
                               </div>
                             )}

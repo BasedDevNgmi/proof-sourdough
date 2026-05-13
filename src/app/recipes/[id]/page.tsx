@@ -738,10 +738,10 @@ export default function RecipeDetailPage({
                           }}
                         >
                           <p
-                            className="text-base flex items-start gap-2 leading-relaxed"
+                            className="text-sm flex items-start gap-2 leading-relaxed"
                             style={{
                               color: "var(--ink-soft)",
-                              fontFamily: "var(--font-caveat)",
+                              fontStyle: "italic",
                             }}
                           >
                             <span className="mt-1 shrink-0" style={{ fontSize: 14 }}>💡</span>
@@ -774,10 +774,10 @@ export default function RecipeDetailPage({
                 >
                   <span className="mt-1 shrink-0" style={{ fontSize: 16 }}>💡</span>
                   <p
-                    className="text-base leading-relaxed"
+                    className="text-sm leading-relaxed"
                     style={{
                       color: "var(--ink-soft)",
-                      fontFamily: "var(--font-caveat)",
+                      fontStyle: "italic",
                     }}
                   >
                     {tip}

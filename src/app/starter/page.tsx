@@ -112,7 +112,6 @@ export default function StarterPage() {
         <PageHeader
           title="My Starter"
           subtitle="Track feedings, watch patterns emerge."
-          scriptTag="it remembers so you don't have to."
         />
 
         {/* Starter stats */}
@@ -196,7 +195,7 @@ export default function StarterPage() {
                     </div>
                   </div>
                   <div className="text-center mt-2">
-                    <span className="script" style={{ fontSize: 16, color: "var(--crust)" }}>
+                    <span style={{ fontSize: 14, fontStyle: "italic", color: "var(--ink-soft)" }}>
                       {calcHydration()} hydration
                     </span>
                   </div>
@@ -276,7 +275,7 @@ export default function StarterPage() {
           ) : feedings.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
               <div className="display" style={{ fontSize: 24, fontStyle: "italic", marginBottom: 6 }}>No feedings yet.</div>
-              <div className="script" style={{ fontSize: 18, color: "var(--crust)" }}>log your first feeding above.</div>
+              <div style={{ fontSize: 14, fontStyle: "italic", color: "var(--ink-mute)" }}>log your first feeding above.</div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -338,7 +337,7 @@ export default function StarterPage() {
                   </div>
 
                   {f.notes && (
-                    <p className="script mt-2" style={{ fontSize: 15, color: "var(--ink-soft)" }}>
+                    <p className="mt-2" style={{ fontSize: 14, fontStyle: "italic", color: "var(--ink-soft)" }}>
                       &quot;{f.notes}&quot;
                     </p>
                   )}

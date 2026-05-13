@@ -5,11 +5,9 @@ import { motion } from "framer-motion";
 export function PageHeader({
   title,
   subtitle,
-  scriptTag,
 }: {
   title: string;
   subtitle?: string;
-  scriptTag?: string;
 }) {
   return (
     <motion.div
@@ -28,14 +26,6 @@ export function PageHeader({
       {subtitle && (
         <p className="text-sm mt-1.5 lg:text-base" style={{ color: "var(--ink-mute)" }}>
           {subtitle}
-          {scriptTag && (
-            <>
-              {" · "}
-              <span className="script" style={{ fontSize: 18, color: "var(--crust)" }}>
-                {scriptTag}
-              </span>
-            </>
-          )}
         </p>
       )}
     </motion.div>

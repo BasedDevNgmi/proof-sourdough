@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, Instrument_Serif, Caveat } from "next/font/google";
+import { DM_Sans, Instrument_Serif } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
@@ -11,11 +11,6 @@ const dmSans = DM_Sans({
 const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif",
   weight: "400",
-  subsets: ["latin"],
-});
-
-const caveat = Caveat({
-  variable: "--font-caveat",
   subsets: ["latin"],
 });
 
@@ -48,7 +43,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-theme="dark"
-      className={`${dmSans.variable} ${instrumentSerif.variable} ${caveat.variable} h-full antialiased`}
+      className={`${dmSans.variable} ${instrumentSerif.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col" style={{ background: "var(--bg)", color: "var(--ink)" }}>

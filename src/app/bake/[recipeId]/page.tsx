@@ -741,10 +741,10 @@ export default function BakeSessionPage({
                         }}
                       >
                         <p
-                          className="text-base flex items-start gap-2"
+                          className="text-sm flex items-start gap-2"
                           style={{
                             color: "var(--text-secondary)",
-                            fontFamily: "var(--font-caveat)",
+                            fontStyle: "italic",
                           }}
                         >
                           <Lightbulb size={14} className="mt-1 shrink-0" style={{ color: "var(--accent)" }} />

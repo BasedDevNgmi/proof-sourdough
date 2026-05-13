@@ -37,7 +37,7 @@ export default function BakePage() {
   return (
     <div className="anim-rise proof-page min-h-screen">
       <div className="max-w-6xl mx-auto">
-        <PageHeader title="Start a Bake" subtitle="Pick your adventure" scriptTag="flour is patient. you don't have to be." />
+        <PageHeader title="Start a Bake" subtitle="Pick your adventure" />
 
         {/* Active Bakes */}
         {activeBakes.length > 0 && (

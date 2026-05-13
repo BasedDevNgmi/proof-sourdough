@@ -73,7 +73,7 @@ export function StatTile({ icon, value, label, tone, subtext }: StatTileProps) {
         {value}
       </div>
       <div className="label">{label}</div>
-      <div className="script" style={{ fontSize: 14, color: "var(--ink-mute)" }}>
+      <div style={{ fontSize: 13, fontStyle: "italic", color: "var(--ink-mute)" }}>
         {subtext}
       </div>
     </div>

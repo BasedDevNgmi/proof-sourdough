@@ -5,8 +5,6 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/components/auth-provider";
 import { ProofLogo } from "@/components/illustrations/proof-logo";
-import { Doughy } from "@/components/illustrations/doughy";
-import { useDoughy } from "@/hooks/use-doughy";
 
 const navItems = [
   {
@@ -84,8 +82,6 @@ export function BottomNav() {
   const pathname = usePathname();
   const { theme, toggle } = useTheme();
   const { user, signOut } = useAuth();
-  const { happiness, mood, feed } = useDoughy();
-
   if (pathname.startsWith("/bake/") && pathname.split("/").length > 2) {
     return null;
   }
@@ -108,12 +104,9 @@ export function BottomNav() {
         }}
       >
         {/* Brand */}
-        <div className="sidebar-brand" style={{ display: "flex", alignItems: "center", gap: 12, padding: "4px 8px" }}>
-          <ProofLogo size={42} />
-          <div className="sidebar-brand-text">
-            <div className="display" style={{ fontSize: 28, lineHeight: 1, marginBottom: 2 }}>Proof</div>
-            <div style={{ fontSize: 11, color: "var(--ink-mute)", fontStyle: "italic" }}>your dough&apos;s diary</div>
-          </div>
+        <div style={{ padding: "4px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
+          <ProofLogo size={32} />
+          <span style={{ fontSize: 11, color: "var(--ink-mute)", letterSpacing: "0.05em" }}>sourdough journal</span>
         </div>
 
         {/* Nav */}
@@ -153,58 +146,6 @@ export function BottomNav() {
             );
           })}
         </nav>
-
-        {/* Doughy card */}
-        <button
-          type="button"
-          className="sidebar-doughy-card"
-          onClick={feed}
-          title="Click to feed Doughy"
-          style={{
-            background: "linear-gradient(180deg, var(--surface-2), var(--surface))",
-            borderRadius: "var(--radius-lg)",
-            border: "1px dashed var(--border-strong)",
-            padding: 14,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 6,
-            cursor: "pointer",
-            fontFamily: "inherit",
-            color: "inherit",
-            transition: "transform 0.2s var(--ease-bounce), border-color 0.2s",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.borderColor = "var(--crust)"; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.borderColor = "var(--border-strong)"; }}
-          onMouseDown={e => { e.currentTarget.style.transform = "scale(0.97)"; }}
-          onMouseUp={e => { e.currentTarget.style.transform = "scale(1.02)"; }}
-        >
-          <div style={{ position: "relative" }}>
-            <Doughy happiness={happiness} mood={mood} size={72} />
-          </div>
-          <div className="sidebar-doughy-meta" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0 }}>
-            <span className="display" style={{ fontSize: 20, color: "var(--ink)", lineHeight: 1 }}>Doughy</span>
-            <span style={{ fontSize: 10, color: "var(--ink-mute)", fontStyle: "italic", marginTop: 2, whiteSpace: "nowrap" }}>your starter</span>
-          </div>
-          <div className="sidebar-doughy-bar" style={{ width: "100%", display: "flex", flexDirection: "column", gap: 4, marginTop: 2 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--ink-mute)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-              <span>fed</span>
-              <span>{happiness}%</span>
-            </div>
-            <div style={{ height: 5, background: "var(--surface-3)", borderRadius: 4, overflow: "hidden" }}>
-              <div style={{
-                height: "100%",
-                width: `${happiness}%`,
-                background: happiness > 60 ? "linear-gradient(90deg, var(--leaf), var(--leaf-soft))" : happiness > 30 ? "linear-gradient(90deg, var(--butter), var(--crust))" : "linear-gradient(90deg, var(--jam), var(--jam-soft))",
-                transition: "width 0.6s var(--ease-out)",
-                borderRadius: 4,
-              }} />
-            </div>
-          </div>
-          <div className="sidebar-doughy-quip" style={{ fontFamily: "var(--font-script), var(--font-caveat), cursive", fontSize: 14, color: "var(--ink-soft)", textAlign: "center", lineHeight: 1.2, marginTop: 4 }}>
-            {happiness > 80 ? '"Bubbling and proud!"' : happiness > 60 ? '"Feeling peppy."' : happiness > 30 ? '"Could use a snack..."' : '"...feed me, please."'}
-          </div>
-        </button>
 
         {/* Bottom controls */}
         <div className="sidebar-bottom" style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
@@ -273,13 +214,7 @@ export function BottomNav() {
 
       {/* Mobile topbar */}
       <div className="mobile-topbar lg:hidden">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <ProofLogo size={36} />
-          <div>
-            <div className="display" style={{ fontSize: 24, lineHeight: 1 }}>Proof</div>
-            <div style={{ fontSize: 10, color: "var(--ink-mute)", fontStyle: "italic" }}>your dough&apos;s diary</div>
-          </div>
-        </div>
+        <ProofLogo size={26} />
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
             type="button"

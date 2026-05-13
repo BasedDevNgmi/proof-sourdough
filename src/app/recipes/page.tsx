@@ -116,7 +116,6 @@ export default function RecipesPage() {
         <PageHeader
           title="Recipes"
           subtitle={`${recipes.length} recipes from ${books.length} books`}
-          scriptTag="pick a friend"
         />
 
         {/* Filter bar */}
@@ -282,7 +281,7 @@ export default function RecipesPage() {
                 <BreadIllustration seed="empty" size={120} />
               </div>
               <div className="display" style={{ fontSize: 28, fontStyle: 'italic', marginBottom: 6 }}>no matches.</div>
-              <div className="script" style={{ fontSize: 18, color: 'var(--crust)', marginBottom: 4 }}>maybe a pizza instead?</div>
+              <div style={{ fontSize: 14, fontStyle: 'italic', color: 'var(--ink-mute)', marginBottom: 4 }}>maybe a pizza instead?</div>
               <button
                 type="button"
                 onClick={clearAll}

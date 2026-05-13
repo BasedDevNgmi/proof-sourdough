@@ -9,7 +9,7 @@ interface ActionTileProps {
   accent: Accent;
   title: string;
   desc: string;
-  art: ReactNode;
+  art?: ReactNode;
 }
 
 const accentMap: Record<
@@ -107,7 +107,7 @@ export function ActionTile({
           {desc}
         </div>
       </div>
-      <div>{art}</div>
+      {art && <div>{art}</div>}
       <div style={arrowStyle}>
         <ArrowIcon />
       </div>

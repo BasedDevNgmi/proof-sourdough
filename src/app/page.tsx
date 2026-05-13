@@ -10,10 +10,6 @@ import { Icon } from "@/components/illustrations/icons";
 import { StatTile } from "@/components/ui/stat-tile";
 import { ActionTile } from "@/components/ui/action-tile";
 import { PickCard } from "@/components/ui/pick-card";
-import { BreadIllustration } from "@/components/illustrations/bread-illustration";
-import { Steam } from "@/components/illustrations/steam";
-import { Doughy } from "@/components/illustrations/doughy";
-import { useDoughy } from "@/hooks/use-doughy";
 
 const BAKING_WISDOMS = [
   "Cold dough shapes easier.",
@@ -52,8 +48,6 @@ export default function HomePage() {
   const [recentBakes, setRecentBakes] = useState<BakeSession[]>([]);
   const [activeBake, setActiveBake] = useState<BakeSession | null>(null);
   const [stats, setStats] = useState({ total: 0, thisMonth: 0, avgRating: 0 });
-  const { happiness, mood, feed } = useDoughy();
-
   useEffect(() => {
     loadData();
   }, []);
@@ -108,33 +102,17 @@ export default function HomePage() {
   return (
     <div className="anim-rise proof-page" style={{ maxWidth: 1200 }}>
       {/* ── Hero ── */}
-      <div style={{ position: "relative", marginBottom: 40, display: "flex", alignItems: "flex-end", gap: 20, minHeight: 220 }}>
-        <div style={{ flex: 1, minWidth: 0, position: "relative", zIndex: 1 }}>
-          <div className="label" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-            <Icon.sparkle width={14} height={14} style={{ color: "var(--crust)" }} />
-            {getGreeting()}
-          </div>
-          <h1 className="display" style={{ fontSize: 76, margin: 0, marginBottom: 8, letterSpacing: "-0.02em" }}>
-            <span className="doodle-underline">Dashboard.</span>
-          </h1>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-            <div className="script" style={{ fontSize: 22, color: "var(--crust)" }}>
-              {getDailyWisdom()}
-            </div>
-          </div>
+      <div style={{ marginBottom: 48 }}>
+        <div className="label" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+          <Icon.sparkle width={14} height={14} style={{ color: "var(--crust)" }} />
+          {getGreeting()}
         </div>
-        {/* Hero bread illustration cluster */}
-        <div className="proof-hero-art" style={{ position: "relative", width: 220, height: 220, flexShrink: 0, opacity: 0.95 }}>
-          <div className="anim-float" style={{ position: "absolute", right: 0, top: 10 }}>
-            <BreadIllustration seed="hero" size={180} />
-          </div>
-          <div className="anim-float" style={{ position: "absolute", left: 0, bottom: 20, animationDelay: "1.2s", opacity: 0.7 }}>
-            <BreadIllustration seed="hero2" size={90} />
-          </div>
-          <div style={{ position: "absolute", top: -10, right: 70, width: 40, height: 30 }}>
-            <Steam count={4} />
-          </div>
-        </div>
+        <h1 className="display" style={{ fontSize: 48, margin: 0, marginBottom: 12, letterSpacing: "-0.02em" }}>
+          Dashboard.
+        </h1>
+        <p style={{ fontSize: 16, fontStyle: "italic", color: "var(--ink-soft)", margin: 0 }}>
+          {getDailyWisdom()}
+        </p>
       </div>
 
       {/* ── Active Bake Banner ── */}
@@ -175,8 +153,8 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ── Stats: The Dough Report ── */}
-      <div className="label" style={{ marginBottom: 14 }}>The Dough Report</div>
+      {/* ── Stats ── */}
+      <div className="label" style={{ marginBottom: 14 }}>This month</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 14, marginBottom: 48 }}>
         <StatTile
           icon={<Icon.flame width={18} height={18} />}
@@ -209,27 +187,12 @@ export default function HomePage() {
           accent="crust"
           title="Browse the library"
           desc={`${recipes.length} recipes · infinite afternoons`}
-          art={
-            <div style={{ position: "relative", height: 120, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: -8 }}>
-              <div style={{ transform: "rotate(-8deg) translateX(20px)" }}><BreadIllustration seed="b1" size={110} /></div>
-              <div style={{ transform: "translateY(-10px)", zIndex: 2 }}><BreadIllustration seed="b2" size={130} /></div>
-              <div style={{ transform: "rotate(10deg) translateX(-20px)" }}><BreadIllustration seed="b3" size={110} /></div>
-            </div>
-          }
         />
         <ActionTile
           onClick={() => router.push("/bake")}
           accent="jam"
           title="Start a bake"
           desc="From mix to crust, with a timer that nags."
-          art={
-            <div style={{ position: "relative", height: 120, display: "grid", placeItems: "center" }}>
-              <div style={{ position: "relative" }}>
-                <Steam count={6} />
-                <BreadIllustration seed="hot" size={100} />
-              </div>
-            </div>
-          }
         />
       </div>
 
@@ -239,9 +202,9 @@ export default function HomePage() {
           <Icon.sparkle width={14} height={14} style={{ color: "var(--crust)" }} />
           <div className="label">Try something new</div>
         </div>
-        <div className="script" style={{ fontSize: 18, color: "var(--crust)", marginBottom: 18 }}>
-          pick a friend, any friend.
-        </div>
+        <p style={{ fontSize: 14, color: "var(--ink-mute)", margin: 0, marginBottom: 18 }}>
+          Recipes you haven&apos;t tried yet.
+        </p>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16, marginBottom: 48 }}>
         {suggested.map((recipe) => (
@@ -311,26 +274,6 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ── Doughy nag banner ── */}
-      {happiness < 50 && (
-        <div className="anim-rise" style={{
-          marginTop: 48, padding: "18px 22px",
-          background: "linear-gradient(135deg, rgba(199,90,58,0.15), rgba(232,155,60,0.08))",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-lg)",
-          display: "flex", alignItems: "center", gap: 16,
-        }}>
-          <Doughy happiness={happiness} mood={mood} size={56} />
-          <div style={{ flex: 1 }}>
-            <div className="display" style={{ fontSize: 22, fontStyle: "italic" }}>Doughy is peckish.</div>
-            <div style={{ fontSize: 13, color: "var(--ink-mute)" }}>It&apos;s been a while. Feed equal flour + water, leave covered for 4&ndash;6 hours.</div>
-          </div>
-          <button type="button" onClick={feed} style={{
-            padding: "10px 18px", background: "var(--crust)", border: "none",
-            color: "var(--bg)", borderRadius: 999, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-          }}>Feed now</button>
-        </div>
-      )}
     </div>
   );
 }
