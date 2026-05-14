@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -21,6 +21,19 @@ export default function RecipeDetailPage({
   const [pastBakes, setPastBakes] = useState<BakeSession[]>([]);
   const [multiplier, setMultiplier] = useState(1);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(new Set());
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const heroCTARef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = heroCTARef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [recipe]);
 
   // Load checklist from localStorage
   useEffect(() => {
@@ -201,7 +214,7 @@ export default function RecipeDetailPage({
           </div>
 
           {/* CTAs */}
-          <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 24 }}>
+          <div ref={heroCTARef} style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 24 }}>
             <Link href={`/bake/${recipe.id}`} className="btn" style={{ textDecoration: "none" }}>
               Begin this bake
             </Link>
@@ -642,6 +655,49 @@ export default function RecipeDetailPage({
             </p>
           </div>
         )}
+      </div>
+
+      {/* Sticky bottom CTA — appears when hero CTA scrolls out */}
+      <div
+        style={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: 72,
+          zIndex: 40,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          padding: "12px var(--pad-x)",
+          background: "var(--paper)",
+          borderTop: ".5px solid var(--hairline)",
+          transform: showStickyBar ? "translateY(0)" : "translateY(calc(100% + 72px))",
+          opacity: showStickyBar ? 1 : 0,
+          transition: "transform .3s ease, opacity .25s ease",
+          pointerEvents: showStickyBar ? "auto" : "none",
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <div className="eyebrow" style={{ fontSize: 9, marginBottom: 2 }}>{recipe.category.replace(/-/g, " ")}</div>
+          <div style={{
+            fontFamily: "var(--serif-display)",
+            fontSize: 18,
+            fontWeight: 400,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}>
+            {recipe.title}
+          </div>
+        </div>
+        <Link
+          href={`/bake/${recipe.id}`}
+          className="btn"
+          style={{ textDecoration: "none", flexShrink: 0, fontSize: 14, padding: "10px 22px" }}
+        >
+          Begin this bake
+        </Link>
       </div>
     </div>
   );
