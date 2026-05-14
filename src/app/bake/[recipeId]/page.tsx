@@ -217,6 +217,7 @@ export default function BakeSessionPage({
   const { beginner, toggle: toggleBeginner } = useBeginnerMode();
 
   const [justCompletedStep, setJustCompletedStep] = useState<number | null>(null);
+  const [showStepList, setShowStepList] = useState(false);
   const [stepPhotos, setStepPhotos] = useState<Record<number, string[]>>({});
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -472,6 +473,7 @@ export default function BakeSessionPage({
 
   function goStep(idx: number) {
     setCurrentStep(Math.max(0, Math.min(idx, totalSteps - 1)));
+    setShowStepList(false);
   }
 
   if (!recipe) {
@@ -718,6 +720,43 @@ export default function BakeSessionPage({
             >
               {step.title}
             </h2>
+
+            {/* ── Mobile timer (hidden on desktop) ── */}
+            <div className="bake-mobile-timer" style={{ marginBottom: 24 }}>
+              <RingTimer
+                total={timerTotal || 1}
+                remaining={hasTimer ? timerRemaining : 0}
+                running={timerRunning}
+                hasTimer={hasTimer}
+              />
+              {hasTimer ? (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 14 }}>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => setTimerRunning(!timerRunning)}
+                    style={{ padding: '10px 20px', fontSize: 14, gap: 6 }}
+                  >
+                    {timerRunning ? <IcoPause /> : <IcoPlay />}
+                    {timerRunning ? 'Pause' : 'Start'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => { setTimerRunning(false); setTimerRemaining(timerTotal); }}
+                    style={{ padding: '10px 14px', fontSize: 13 }}
+                  >
+                    <IcoReset /> Reset
+                  </button>
+                </div>
+              ) : (
+                <p className="italic" style={{
+                  fontSize: 14, color: 'var(--muted)', textAlign: 'center', marginTop: 10,
+                }}>
+                  No fixed time. Watch the dough.
+                </p>
+              )}
+            </div>
 
             {/* Step body text */}
             <div
@@ -978,6 +1017,218 @@ export default function BakeSessionPage({
                   {currentStep === totalSteps - 1 ? 'Finish bake' : 'Skip'} <IcoNext />
                 </button>
               )}
+            </div>
+
+            {/* ── Mobile: Step ingredients (hidden on desktop) ── */}
+            {stepIngs.length > 0 && (
+              <div className="bake-mobile-timer" style={{ marginTop: 28 }}>
+                <div className="eyebrow" style={{ marginBottom: 12 }}>This step</div>
+                {stepIngs.map(({ group, label, items }) => (
+                  <div key={group} style={{ marginBottom: 16 }}>
+                    <div className="eyebrow" style={{ fontSize: 9, marginBottom: 6, color: 'var(--muted-2)' }}>
+                      {label}
+                    </div>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                      {items.map((row) => {
+                        const key = `${group}-${row.name}`;
+                        return (
+                          <li
+                            key={key}
+                            onClick={() => {
+                              setCheckedIngredients((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(key)) next.delete(key);
+                                else next.add(key);
+                                return next;
+                              });
+                            }}
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: '1fr 48px',
+                              padding: '10px 0',
+                              borderBottom: '.5px dotted var(--hairline)',
+                              alignItems: 'baseline',
+                              gap: 10,
+                              cursor: 'pointer',
+                              textDecoration: checkedIngredients.has(key) ? 'line-through' : 'none',
+                              opacity: checkedIngredients.has(key) ? 0.5 : 1,
+                            }}
+                          >
+                            <span style={{ fontSize: 14, color: 'var(--ink)' }}>{row.name}</span>
+                            <span className="mono num" style={{ fontSize: 13, textAlign: 'right', color: 'var(--ink)' }}>
+                              {scaleWeight(row.weight)}<span style={{ color: 'var(--muted)', fontSize: 10 }}>g</span>
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ── Mobile: Tools row (hidden on desktop) ── */}
+            <div className="bake-mobile-tools" style={{
+              marginTop: 28,
+              padding: '20px 0',
+              borderTop: '.5px solid var(--hairline)',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: 12,
+            }}>
+              {/* Scale pills */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="eyebrow" style={{ fontSize: 9, marginRight: 2 }}>Scale</span>
+                {[0.5, 1, 1.5, 2].map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setMultiplier(m)}
+                    className="mono"
+                    style={{
+                      padding: '3px 7px',
+                      fontSize: 10,
+                      borderRadius: 999,
+                      border: '.5px solid',
+                      borderColor: multiplier === m ? 'var(--accent)' : 'var(--hairline)',
+                      background: multiplier === m ? 'var(--accent)' : 'transparent',
+                      color: multiplier === m ? 'var(--paper)' : 'var(--muted)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {m}x
+                  </button>
+                ))}
+              </div>
+
+              <span style={{ width: 1, height: 16, background: 'var(--hairline)' }} />
+
+              {/* Beginner toggle */}
+              <button
+                type="button"
+                onClick={toggleBeginner}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  fontSize: 11, color: beginner ? 'var(--accent)' : 'var(--muted)',
+                  cursor: 'pointer', background: 'none', border: 'none',
+                }}
+              >
+                <div style={{
+                  width: 22, height: 12, borderRadius: 6, position: 'relative',
+                  background: beginner ? 'var(--accent)' : 'var(--hairline)',
+                  transition: 'background .2s ease',
+                }}>
+                  <div style={{
+                    position: 'absolute', top: 2, width: 8, height: 8, borderRadius: '50%',
+                    background: 'var(--paper)',
+                    left: beginner ? 12 : 2,
+                    transition: 'left .2s ease',
+                  }} />
+                </div>
+                Beginner
+              </button>
+            </div>
+
+            {/* ── Mobile: Phases drawer (hidden on desktop) ── */}
+            <div className="bake-mobile-phases" style={{ marginTop: 4 }}>
+              <button
+                type="button"
+                onClick={() => setShowStepList(!showStepList)}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '14px 0',
+                  background: 'none',
+                  border: 'none',
+                  borderTop: '.5px solid var(--hairline)',
+                  borderBottom: '.5px solid var(--hairline)',
+                  cursor: 'pointer',
+                }}
+              >
+                <span className="eyebrow" style={{ fontSize: 10 }}>
+                  All phases · {completedSteps.size}/{totalSteps}
+                </span>
+                <svg
+                  width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+                  style={{
+                    transition: 'transform .2s ease',
+                    transform: showStepList ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }}
+                >
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+
+              {showStepList && (
+                <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {recipe.steps.map((s, i) => {
+                    const isDone = completedSteps.has(i);
+                    const isCurrent = i === currentStep;
+                    return (
+                      <li key={i}>
+                        <button
+                          type="button"
+                          onClick={() => goStep(i)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            width: '100%',
+                            padding: '12px 0',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            background: isCurrent ? 'var(--accent-soft)' : 'none',
+                            border: 'none',
+                            borderBottom: '.5px solid var(--hairline)',
+                          }}
+                        >
+                          <span
+                            className="mono"
+                            style={{
+                              fontSize: 11,
+                              width: 20,
+                              flexShrink: 0,
+                              color: isDone ? 'var(--sage)' : isCurrent ? 'var(--accent)' : 'var(--muted-2)',
+                            }}
+                          >
+                            {isDone ? <IcoCheck size={14} /> : String(i + 1).padStart(2, '0')}
+                          </span>
+                          <span style={{
+                            fontFamily: 'var(--serif-display)',
+                            fontSize: 15,
+                            fontWeight: 400,
+                            fontStyle: isCurrent ? 'italic' : 'normal',
+                            textDecoration: isDone ? 'line-through' : 'none',
+                            color: isCurrent ? 'var(--ink)' : isDone ? 'var(--muted)' : 'var(--ink-2)',
+                            flex: 1,
+                          }}>
+                            {s.title}
+                          </span>
+                          {s.duration && (
+                            <span className="mono" style={{ fontSize: 10, color: 'var(--muted-2)' }}>
+                              {s.duration}
+                            </span>
+                          )}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+
+              {/* Pause button */}
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={abandonBake}
+                style={{ width: '100%', justifyContent: 'center', padding: '12px 16px', fontSize: 13, marginTop: 16 }}
+              >
+                Pause &amp; come back
+              </button>
             </div>
           </div>
 

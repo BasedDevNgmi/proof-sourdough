@@ -406,18 +406,22 @@ button:focus-visible, a:focus-visible {
 .recipe-hero-grid { grid-template-columns: minmax(0, 1fr) !important; }
 .recipe-overview-grid { grid-template-columns: minmax(0, 1fr) !important; }
 .boftw-grid { grid-template-columns: minmax(0, 1fr) !important; }
-.bake-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
-.bake-steps, .bake-timer { border: 0 !important; padding: 0 !important; }
-.bake-body { padding: 0 !important; }
+.bake-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+.bake-steps { display: none !important; border: 0 !important; padding: 0 !important; }
+.bake-timer { display: none !important; border: 0 !important; padding: 0 !important; }
+.bake-body { padding: 0 !important; order: -1; }
 
 @media (min-width: 1024px) {
   .recipe-hero-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) !important; }
   .recipe-overview-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; }
   .boftw-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr) !important; }
   .bake-grid { grid-template-columns: 260px minmax(0, 1fr) 280px; gap: 0; }
-  .bake-steps { border-right: .5px solid var(--hairline) !important; padding-right: 28px !important; }
-  .bake-timer { border-left: .5px solid var(--hairline) !important; padding-left: 28px !important; }
-  .bake-body { padding: 0 28px !important; }
+  .bake-steps { display: block !important; border-right: .5px solid var(--hairline) !important; padding-right: 28px !important; }
+  .bake-timer { display: block !important; border-left: .5px solid var(--hairline) !important; padding-left: 28px !important; }
+  .bake-body { padding: 0 28px !important; order: 0; }
+  .bake-mobile-timer { display: none !important; }
+  .bake-mobile-phases { display: none !important; }
+  .bake-mobile-tools { display: none !important; }
   .jnl-thumb { display: block !important; }
 }
 
